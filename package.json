@@ -1,0 +1,8 @@
+{
+  "name": "fidex",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
+}
