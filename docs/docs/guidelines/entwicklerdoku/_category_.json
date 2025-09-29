@@ -1,0 +1,8 @@
+{
+  "label": "Entwicklerdokumentation",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Dieses Entwicklerhandbuch dokumentiert alle technischen Aspekte des Projekts. Es enthält Anleitungen zum lokalen Setup, Erklärungen zur CI/CD-Pipeline, zur Projektstruktur sowie zu Entwicklungs- und Deploymentprozessen. Ziel ist es, neuen wie bestehenden Teammitgliedern einen schnellen Einstieg und eine einheitliche Arbeitsweise zu ermöglichen."
+  }
+}
