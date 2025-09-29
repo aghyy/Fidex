@@ -6,7 +6,7 @@ sidebar_position: 4
 Das System wird eine REST API bereitstellen, um die Kommunikation zwischen Frontend und Backend zu ermöglichen.
 Anhand des Backend-Komponenten-Diagramms wird die Struktur der Schnittstellen wie folgt beschrieben:
 
-Im Laufe der Entwicklung im 4. Semester werden die Schnittstellen weiter spezifiziert und dokumentiert.
+Im Laufe der Entwicklung im 5. & 6. Semester werden die Schnittstellen weiter spezifiziert und dokumentiert.
 
 
 **Weitere Info:** Es wird im folgenden auch noch nicht der Body der Requests und Responses spezifiziert, sondern nur die Endpunkte und die Query-Parameter.
