@@ -10,4 +10,4 @@ Im Laufe der Entwicklung im 4. Semester werden die Schnittstellen weiter spezifi
 
 
 **Weitere Info:** Es wird im folgenden auch noch nicht der Body der Requests und Responses spezifiziert, sondern nur die Endpunkte und die Query-Parameter.
-An sich besteht dieser Body aus den einzelnen Attributen der jeweiligen Entität anhand des Datenbank Schemas. (siehe [Datenmodell](/docs/architektur/datamodel))
+An sich besteht dieser Body aus den einzelnen Attributen der jeweiligen Entität anhand des Datenbank Schemas. (siehe [Datenmodell](/docs/docs/architektur/datamodel.md))
