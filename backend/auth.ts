@@ -21,7 +21,7 @@ const providers: any[] = [
           where: {
             email: credentials.email as string,
           },
-        });
+        }) as { id: string; email: string; name: string | null; password: string | null } | null;
 
         if (!user || !user.password) {
           return null;
@@ -40,8 +40,9 @@ const providers: any[] = [
           id: user.id,
           email: user.email,
           name: user.name,
-          image: user.image,
-        };
+          // DO NOT return image - it causes headers overflow
+          // image: user.image,
+        } as any;
       },
     }),
 ];
@@ -52,6 +53,15 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          email: profile.email,
+          name: profile.name,
+          // DO NOT include image - it causes headers overflow
+          // image: profile.picture,
+        };
+      },
     })
   );
 }
@@ -88,15 +98,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Default to frontend root
       return frontendUrl;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session: updatedSession }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        // DO NOT include image in JWT - it's too large and causes header overflow
+        // token.image = user.image; // REMOVED
       }
+      
+      // Handle session updates (when user updates their profile)
+      if (trigger === "update" && updatedSession) {
+        token.name = updatedSession.user?.name;
+        // Still don't include image in token
+      }
+      
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
+        // DO NOT include image from token
+        // Fetch image from database when needed instead
       }
       return session;
     },

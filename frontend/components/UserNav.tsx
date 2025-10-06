@@ -2,9 +2,30 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function UserNav() {
   const { data: session, status } = useSession();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch profile image from API if user is logged in
+    if (session?.user) {
+      setImageLoading(true);
+      fetch("/api/user/profile", {
+        credentials: "include",
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.user?.image) {
+            setProfileImage(data.user.image);
+          }
+        })
+        .catch(err => console.error("Failed to fetch profile image:", err))
+        .finally(() => setImageLoading(false));
+    }
+  }, [session]);
 
   if (status === "loading") {
     return (
@@ -15,15 +36,29 @@ export default function UserNav() {
   }
 
   if (session?.user) {
+    const userName = session.user.name || session.user.email || "User";
+    const userInitials = userName.charAt(0).toUpperCase();
+
     return (
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20">
-          {session.user.image && (
+          {/* Show profile image or initials */}
+          {!imageLoading && profileImage ? (
             <img
-              src={session.user.image}
-              alt={session.user.name || "User"}
-              className="w-8 h-8 rounded-full"
+              src={profileImage}
+              alt={userName}
+              className="w-8 h-8 rounded-full object-cover border-2 border-white/30"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                setProfileImage(null);
+              }}
             />
+          ) : !imageLoading ? (
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30">
+              <span className="text-white text-sm font-bold">{userInitials}</span>
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse"></div>
           )}
           <div className="text-white">
             <p className="text-sm font-medium">
