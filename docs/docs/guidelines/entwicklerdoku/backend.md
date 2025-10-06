@@ -9,3 +9,4 @@ sidebar_position: 10
 ---
 
 ## Beispiel: Neu-Implementierung eines Endpunkts
+
