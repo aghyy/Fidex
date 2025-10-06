@@ -1,15 +1,22 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create SMTP transporter for Gmail
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}`;
+  const resetLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/reset-password?token=${token}`;
 
   try {
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || "Fidex <onboarding@resend.dev>",
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: email,
-      subject: "Reset your password",
+      subject: "Reset your password - Fidex",
       html: `
         <!DOCTYPE html>
         <html>
@@ -60,9 +67,10 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       `,
     });
 
+    console.log("✅ Password reset email sent to:", email);
     return { success: true };
   } catch (error) {
-    console.error("Failed to send password reset email:", error);
+    console.error("❌ Failed to send password reset email:", error);
     return { success: false, error };
   }
 }
