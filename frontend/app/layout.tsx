@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fidex - Authentication Demo",
-  description: "Next.js app with NextAuth",
+  title: "Fidex",
+  description: "Where your finances and documents find structure",
 };
 
 export default function RootLayout({

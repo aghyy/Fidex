@@ -72,7 +72,7 @@ export default function Home() {
         {session && (
           <div className="mt-12 bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20">
             <h3 className="text-2xl font-bold text-white mb-4">
-              You're signed in! 🎉
+              You&apos;re signed in! 🎉
             </h3>
             <p className="text-white/80 mb-4">
               Welcome back, <strong>{session.user.name || session.user.email}</strong>!
