@@ -59,7 +59,8 @@ export async function PATCH(request: Request) {
     const { firstName, lastName, username, image } = body;
 
     // If username is being updated, check if it's already taken
-    if (username !== undefined && username !== (session.user as any).username) {
+    const currentUsername = 'username' in session.user ? (session.user as { username?: string }).username : undefined;
+    if (username !== undefined && username !== currentUsername) {
       // Validate username format
       const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
       if (!usernameRegex.test(username)) {
