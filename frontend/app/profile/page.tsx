@@ -105,12 +105,23 @@ export default function ProfilePage() {
                   <p className="text-indigo-100 mt-2">{session.user.email}</p>
                 </div>
               </div>
-              <Link
-                href="/profile/edit"
-                className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium shadow-lg"
-              >
-                Edit Profile
-              </Link>
+              <div className="flex gap-3">
+                <Link
+                  href="/profile/edit"
+                  className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium shadow-lg"
+                >
+                  Edit Profile
+                </Link>
+                <Link
+                  href="/profile/passkeys"
+                  className="px-6 py-3 bg-white/90 text-indigo-600 rounded-lg hover:bg-white transition-colors font-medium shadow-lg flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  Passkeys
+                </Link>
+              </div>
             </div>
           </div>
 

@@ -2,17 +2,39 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import WebAuthn from "next-auth/providers/webauthn";
 import bcrypt from "bcryptjs";
 import { prisma } from "./lib/prisma";
 
 const providers: any[] = [
+  WebAuthn({
+    // Enable passkey authentication
+    enableConditionalUI: true,
+  }),
   Credentials({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        passkey: { label: "Passkey", type: "text" },
       },
       async authorize(credentials) {
+        // Special case: passkey authentication (already verified)
+        if (credentials?.passkey === "verified" && credentials?.email) {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          }) as { id: string; email: string; name: string | null; password: string | null } | null;
+
+          if (user) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+            } as any;
+          }
+        }
+
+        // Regular password authentication
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -75,6 +97,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/signin`,
   },
   providers,
+  experimental: {
+    enableWebAuthn: true,
+  },
   callbacks: {
     async redirect({ url, baseUrl }) {
       // Always redirect to frontend
