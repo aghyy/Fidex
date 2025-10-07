@@ -28,12 +28,16 @@ export async function POST() {
     const rpName = process.env.WEBAUTHN_RP_NAME || "Fidex";
     const rpID = process.env.WEBAUTHN_RP_ID || "localhost";
 
+    const displayName = user.firstName && user.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : user.firstName || user.username || user.email;
+
     const opts: GenerateRegistrationOptionsOpts = {
       rpName,
       rpID,
       userID: user.id,
       userName: user.email,
-      userDisplayName: user.name || user.email,
+      userDisplayName: displayName,
       // Prevent users from re-registering existing authenticators
       excludeCredentials: user.authenticators.map((authenticator) => ({
         id: Buffer.from(authenticator.credentialID, "base64"),

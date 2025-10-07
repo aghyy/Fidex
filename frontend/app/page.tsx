@@ -57,7 +57,7 @@ export default function Home() {
               You&apos;re signed in! 🎉
             </h3>
             <p className="text-white/80 mb-4">
-              Welcome back, <strong>{(session.user as any).firstName} {(session.user as any).lastName}</strong>!
+              Welcome back, <strong>{(session.user as { firstName?: string; lastName?: string }).firstName} {(session.user as { firstName?: string; lastName?: string }).lastName}</strong>!
             </p>
             <p className="text-white/80 text-sm">
               You now have access to protected routes and can interact with the backend API securely.

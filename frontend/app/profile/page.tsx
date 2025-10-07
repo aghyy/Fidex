@@ -6,11 +6,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import LoadingScreen from "../../components/LoadingScreen";
 
+interface UserProfile {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  image?: string;
+  isOAuthUser?: boolean;
+  createdAt?: string;
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [backendUser, setBackendUser] = useState<any>(null);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [backendUser, setBackendUser] = useState<UserProfile | null>(null);
+  const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -154,12 +165,16 @@ export default function ProfilePage() {
                   <p className="text-gray-900 mt-1">{session.user.email}</p>
                 </div>
 
-                {(profileData?.name || session.user.name) && (
+                {((profileData?.firstName && profileData?.lastName) || ('name' in session.user && session.user.name)) && (
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <label className="text-sm font-medium text-gray-600">
                       Name
                     </label>
-                    <p className="text-gray-900 mt-1">{profileData?.name || session.user.name}</p>
+                    <p className="text-gray-900 mt-1">
+                      {profileData?.firstName && profileData?.lastName 
+                        ? `${profileData.firstName} ${profileData.lastName}` 
+                        : ('name' in session.user ? session.user.name : '')}
+                    </p>
                   </div>
                 )}
 

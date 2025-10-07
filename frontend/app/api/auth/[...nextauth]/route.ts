@@ -15,7 +15,7 @@ async function handler(req: NextRequest) {
       method: req.method,
       headers,
       body: req.body,
-      // @ts-ignore
+      // @ts-expect-error - duplex is required for streaming but not in types
       duplex: "half",
     });
 

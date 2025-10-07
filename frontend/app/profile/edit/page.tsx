@@ -638,7 +638,7 @@ export default function EditProfile() {
 
                         {isOAuthUser && (
                           <p className="text-sm text-gray-600">
-                            Click "Yes, Delete My Account" below to confirm deletion.
+                            Click &ldquo;Yes, Delete My Account&rdquo; below to confirm deletion.
                           </p>
                         )}
 

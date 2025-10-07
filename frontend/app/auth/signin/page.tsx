@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { startAuthentication } from "@simplewebauthn/browser";
 
-export default function SignIn() {
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -143,7 +143,8 @@ export default function SignIn() {
           router.refresh();
         }
       }
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as Error & { name?: string };
       console.error("Passkey sign-in error:", error);
       if (error.name === "NotAllowedError") {
         setError("Authentication cancelled or timed out");
@@ -318,6 +319,14 @@ export default function SignIn() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   );
 }
 

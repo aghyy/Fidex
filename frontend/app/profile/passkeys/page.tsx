@@ -6,10 +6,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { startRegistration } from "@simplewebauthn/browser";
 
+interface Passkey {
+  credentialID: string;
+  name: string | null;
+  createdAt: string;
+  credentialDeviceType: string;
+  credentialBackedUp: boolean;
+}
+
 export default function PasskeysPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [passkeys, setPasskeys] = useState<any[]>([]);
+  const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [message, setMessage] = useState("");
@@ -150,7 +158,8 @@ export default function PasskeysPage() {
       setMessage("Passkey registered successfully!");
       setPasskeyName("");
       fetchPasskeys();
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as Error & { name?: string };
       console.error("Error registering passkey:", error);
       if (error.name === "NotAllowedError") {
         setError("Registration cancelled or timed out");
@@ -188,7 +197,8 @@ export default function PasskeysPage() {
 
       setMessage("Passkey deleted successfully");
       fetchPasskeys();
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as Error;
       console.error("Error deleting passkey:", error);
       setError(error.message || "Failed to delete passkey");
     }
@@ -253,8 +263,8 @@ export default function PasskeysPage() {
                 <div>
                   <h3 className="font-semibold text-blue-900 mb-1">What are Passkeys?</h3>
                   <p className="text-sm text-blue-800">
-                    Passkeys are a secure, passwordless way to sign in using your device's biometrics (fingerprint, face recognition) or PIN. 
-                    They're more secure than passwords and can't be phished.
+                    Passkeys are a secure, passwordless way to sign in using your device&apos;s biometrics (fingerprint, face recognition) or PIN. 
+                    They&apos;re more secure than passwords and can&apos;t be phished.
                   </p>
                 </div>
               </div>

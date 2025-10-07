@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export default function UserNav() {
   const { data: session, status } = useSession();
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<{ image?: string; firstName?: string; lastName?: string; username?: string } | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
