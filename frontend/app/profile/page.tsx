@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import LoadingScreen from "../../components/LoadingScreen";
 
 interface UserProfile {
@@ -91,30 +92,26 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 {profileData?.image ? (
-                  <img
-                    src={profileData.image}
-                    alt={`${profileData?.firstName} ${profileData?.lastName}` || "User"}
-                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
-                    onError={(e) => {
-                      console.error("Image failed to load");
-                      e.currentTarget.style.display = 'none';
-                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center"
-                  style={{ display: profileData?.image ? 'none' : 'flex' }}
-                >
-                  <span className="text-4xl font-bold text-indigo-600">
-                    {profileData?.firstName && profileData?.lastName
-                      ? `${profileData.firstName.charAt(0)}${profileData.lastName.charAt(0)}`.toUpperCase()
-                      : profileData?.firstName
-                        ? `${profileData.firstName.charAt(0)}`.toUpperCase()
-                        : session.user.email?.charAt(0)?.toUpperCase() || '?'}
-                  </span>
-                </div>
+                  <div className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
+                    <Image
+                      src={profileData.image}
+                      alt={`${profileData?.firstName} ${profileData?.lastName}` || "User"}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                    <span className="text-4xl font-bold text-indigo-600">
+                      {profileData?.firstName && profileData?.lastName
+                        ? `${profileData.firstName.charAt(0)}${profileData.lastName.charAt(0)}`.toUpperCase()
+                        : profileData?.firstName
+                          ? `${profileData.firstName.charAt(0)}`.toUpperCase()
+                          : session.user.email?.charAt(0)?.toUpperCase() || '?'}
+                    </span>
+                  </div>
+                )}
                 <div className="text-white">
                   <h1 className="text-3xl font-bold">
                     {profileData?.firstName && profileData?.lastName 

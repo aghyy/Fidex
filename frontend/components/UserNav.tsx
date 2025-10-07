@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function UserNav() {
@@ -53,15 +54,15 @@ export default function UserNav() {
         <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20">
           {/* Show profile image or initials */}
           {!imageLoading && profileImage ? (
-            <img
-              src={profileImage}
-              alt={userName}
-              className="w-8 h-8 rounded-full object-cover border-2 border-white/30"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                setProfileImage(null);
-              }}
-            />
+            <div className="relative w-8 h-8 rounded-full border-2 border-white/30 overflow-hidden bg-white">
+              <Image
+                src={profileImage}
+                alt={userName}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
           ) : !imageLoading ? (
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30">
               <span className="text-white text-sm font-bold">{userInitials}</span>
