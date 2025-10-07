@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { startAuthentication } from "@simplewebauthn/browser";
 
 export default function SignIn() {
@@ -24,7 +25,7 @@ export default function SignIn() {
 
     try {
       const result = await signIn("credentials", {
-        emailOrUsername,
+        emailOrUsername: emailOrUsername.trim(),
         password,
         redirect: false,
       });
@@ -47,7 +48,9 @@ export default function SignIn() {
   };
 
   const handlePasskeySignIn = async () => {
-    if (!emailOrUsername) {
+    const trimmedEmailOrUsername = emailOrUsername.trim();
+    
+    if (!trimmedEmailOrUsername) {
       setError("Please enter your email or username first to sign in with passkey");
       return;
     }
@@ -69,7 +72,7 @@ export default function SignIn() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ emailOrUsername }),
+        body: JSON.stringify({ emailOrUsername: trimmedEmailOrUsername }),
       });
 
       if (!optionsResponse.ok) {
@@ -171,7 +174,10 @@ export default function SignIn() {
       <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
         <div className="max-w-md w-full space-y-8">
           <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <div className="flex justify-center mb-6">
+            <Image src="/icon.svg" alt="Fidex Logo" width={120} height={40} priority />
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">

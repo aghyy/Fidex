@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -60,7 +61,10 @@ export default function ForgotPassword() {
       <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
         <div className="max-w-md w-full space-y-8">
           <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <div className="flex justify-center mb-6">
+            <Image src="/icon.svg" alt="Fidex Logo" width={120} height={40} priority />
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
             Forgot Password?
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">

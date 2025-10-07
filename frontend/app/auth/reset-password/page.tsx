@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -87,6 +88,9 @@ function ResetPasswordForm() {
         {/* Right side - Error Message */}
         <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
           <div className="max-w-md w-full space-y-8 text-center">
+          <div className="flex justify-center mb-6">
+            <Image src="/icon.svg" alt="Fidex Logo" width={120} height={40} priority />
+          </div>
           <div className="text-red-600 text-5xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900">Invalid Reset Link</h2>
           <p className="text-gray-600">
@@ -123,6 +127,9 @@ function ResetPasswordForm() {
         {/* Right side - Success Message */}
         <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
           <div className="max-w-md w-full space-y-8 text-center">
+          <div className="flex justify-center mb-6">
+            <Image src="/icon.svg" alt="Fidex Logo" width={120} height={40} priority />
+          </div>
           <div className="text-green-600 text-5xl mb-4">✓</div>
           <h2 className="text-2xl font-bold text-gray-900">Password Reset Successfully!</h2>
           <p className="text-gray-600">
@@ -153,7 +160,10 @@ function ResetPasswordForm() {
       <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
         <div className="max-w-md w-full space-y-8">
           <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <div className="flex justify-center mb-6">
+            <Image src="/icon.svg" alt="Fidex Logo" width={120} height={40} priority />
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
             Reset Password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">

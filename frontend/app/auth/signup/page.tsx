@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function SignUp() {
   const router = useRouter();
@@ -99,7 +100,10 @@ export default function SignUp() {
       <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
         <div className="max-w-md w-full space-y-8">
           <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <div className="flex justify-center mb-6">
+            <Image src="/icon.svg" alt="Fidex Logo" width={120} height={40} priority />
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -173,7 +177,7 @@ export default function SignUp() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="Choose a username (3-20 chars, letters, numbers, underscore)"
+                placeholder="Choose a username"
               />
               <p className="mt-1 text-xs text-gray-500">
                 3-20 characters, letters, numbers, and underscores only
