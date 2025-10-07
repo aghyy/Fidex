@@ -42,9 +42,24 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-2xl">
-        <div>
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Left side - Banner Image */}
+      <div className="hidden lg:flex lg:w-[65%] items-center justify-center pl-6 py-6">
+        <div 
+          className="w-full h-full rounded-3xl shadow-2xl"
+          style={{ 
+            backgroundImage: 'url(/banner.png)', 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+      </div>
+      
+      {/* Right side - Forgot Password Form */}
+      <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
+        <div className="max-w-md w-full space-y-8">
+          <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Forgot Password?
           </h2>
@@ -105,6 +120,7 @@ export default function ForgotPassword() {
             </Link>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

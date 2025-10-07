@@ -81,9 +81,24 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-100 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-2xl">
-        <div>
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Left side - Banner Image */}
+      <div className="hidden lg:flex lg:w-[65%] items-center justify-center pl-6 py-6">
+        <div 
+          className="w-full h-full rounded-3xl shadow-2xl"
+          style={{ 
+            backgroundImage: 'url(/banner.png)', 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+      </div>
+      
+      {/* Right side - Signup Form */}
+      <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
+        <div className="max-w-md w-full space-y-8">
+          <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
@@ -247,7 +262,7 @@ export default function SignUp() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
+              <span className="px-2 bg-gray-50 text-gray-500">
                 Or continue with
               </span>
             </div>
@@ -279,6 +294,7 @@ export default function SignUp() {
             Sign up with Google
           </button>
         </form>
+        </div>
       </div>
     </div>
   );

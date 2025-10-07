@@ -70,8 +70,23 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-        <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-2xl text-center">
+      <div className="min-h-screen flex bg-gray-50">
+        {/* Left side - Banner Image */}
+        <div className="hidden lg:flex lg:w-[65%] items-center justify-center pl-6 py-6">
+          <div 
+            className="w-full h-full rounded-3xl shadow-2xl"
+            style={{ 
+              backgroundImage: 'url(/banner.png)', 
+              backgroundSize: 'cover', 
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          />
+        </div>
+        
+        {/* Right side - Error Message */}
+        <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
+          <div className="max-w-md w-full space-y-8 text-center">
           <div className="text-red-600 text-5xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900">Invalid Reset Link</h2>
           <p className="text-gray-600">
@@ -83,6 +98,7 @@ function ResetPasswordForm() {
           >
             Request a new reset link →
           </Link>
+          </div>
         </div>
       </div>
     );
@@ -90,22 +106,53 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-        <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-2xl text-center">
+      <div className="min-h-screen flex bg-gray-50">
+        {/* Left side - Banner Image */}
+        <div className="hidden lg:flex lg:w-[65%] items-center justify-center pl-6 py-6">
+          <div 
+            className="w-full h-full rounded-3xl shadow-2xl"
+            style={{ 
+              backgroundImage: 'url(/banner.png)', 
+              backgroundSize: 'cover', 
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          />
+        </div>
+        
+        {/* Right side - Success Message */}
+        <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
+          <div className="max-w-md w-full space-y-8 text-center">
           <div className="text-green-600 text-5xl mb-4">✓</div>
           <h2 className="text-2xl font-bold text-gray-900">Password Reset Successfully!</h2>
           <p className="text-gray-600">
             Your password has been reset. Redirecting to sign in...
           </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-2xl">
-        <div>
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Left side - Banner Image */}
+      <div className="hidden lg:flex lg:w-[65%] items-center justify-center pl-6 py-6">
+        <div 
+          className="w-full h-full rounded-3xl shadow-2xl"
+          style={{ 
+            backgroundImage: 'url(/banner.png)', 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+      </div>
+      
+      {/* Right side - Reset Password Form */}
+      <div className="w-full lg:w-[35%] flex items-center justify-center px-6 py-12 bg-gray-50">
+        <div className="max-w-md w-full space-y-8">
+          <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Reset Password
           </h2>
@@ -171,6 +218,7 @@ function ResetPasswordForm() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
@@ -179,7 +227,7 @@ function ResetPasswordForm() {
 export default function ResetPassword() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-pulse text-xl text-gray-700">Loading...</div>
       </div>
     }>
