@@ -29,6 +29,11 @@ export default function EditProfile() {
   const [passwordError, setPasswordError] = useState("");
   
   const [isOAuthUser, setIsOAuthUser] = useState(false);
+  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -234,6 +239,38 @@ export default function EditProfile() {
     } catch (error) {
       setPasswordError("Something went wrong");
       setPasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setDeleteError("");
+
+    try {
+      const response = await fetch("/api/user/delete-account", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          password: deletePassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.error || "Failed to delete account");
+        setDeleteLoading(false);
+        return;
+      }
+
+      // Account deleted successfully - sign out and redirect
+      window.location.href = "/auth/signin?deleted=true";
+    } catch (error) {
+      setDeleteError("Something went wrong");
+      setDeleteLoading(false);
     }
   };
 
@@ -539,6 +576,104 @@ export default function EditProfile() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Danger Zone - Delete Account */}
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-red-200">
+            <div className="bg-gradient-to-r from-red-500 to-pink-600 px-8 py-6">
+              <h2 className="text-2xl font-bold text-white">
+                Danger Zone
+              </h2>
+              <p className="text-red-100 mt-1">Irreversible actions</p>
+            </div>
+
+            <div className="p-8">
+              <div className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <svg className="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-red-900 mb-2">Delete Account</h3>
+                    <p className="text-sm text-red-800 mb-4">
+                      Once you delete your account, there is no going back. This will permanently delete:
+                    </p>
+                    <ul className="text-sm text-red-700 space-y-1 mb-4 ml-4">
+                      <li>• Your profile information</li>
+                      <li>• All your passkeys</li>
+                      <li>• Your authentication sessions</li>
+                      <li>• All associated data</li>
+                    </ul>
+                    
+                    {!showDeleteConfirm ? (
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors font-medium"
+                      >
+                        Delete My Account
+                      </button>
+                    ) : (
+                      <div className="space-y-4 mt-4 p-4 bg-white rounded-lg border-2 border-red-300">
+                        <p className="text-sm font-semibold text-red-900">
+                          ⚠️ Are you absolutely sure?
+                        </p>
+                        
+                        {!isOAuthUser && (
+                          <div>
+                            <label htmlFor="deletePassword" className="block text-sm font-medium text-gray-700 mb-2">
+                              Enter your password to confirm
+                            </label>
+                            <input
+                              id="deletePassword"
+                              type="password"
+                              value={deletePassword}
+                              onChange={(e) => setDeletePassword(e.target.value)}
+                              placeholder="Your password"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            />
+                          </div>
+                        )}
+
+                        {isOAuthUser && (
+                          <p className="text-sm text-gray-600">
+                            Click "Yes, Delete My Account" below to confirm deletion.
+                          </p>
+                        )}
+
+                        {deleteError && (
+                          <div className="rounded-md bg-red-100 p-3">
+                            <p className="text-sm text-red-800">{deleteError}</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleDeleteAccount}
+                            disabled={deleteLoading || (!isOAuthUser && !deletePassword)}
+                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                          >
+                            {deleteLoading ? "Deleting..." : "Yes, Delete My Account"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDeleteConfirm(false);
+                              setDeletePassword("");
+                              setDeleteError("");
+                            }}
+                            disabled={deleteLoading}
+                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
