@@ -11,7 +11,9 @@ export default function EditProfile() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
 
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
   const [image, setImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -36,8 +38,6 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (session?.user) {
-      setName(session.user.name || "");
-      
       // Fetch user data including image from API (not from session)
       fetchUserProfile();
       
@@ -52,9 +52,14 @@ export default function EditProfile() {
         credentials: "include",
       });
       const data = await response.json();
-      if (data.user?.image) {
-        setImage(data.user.image);
-        setImagePreview(data.user.image);
+      if (data.user) {
+        setFirstName(data.user.firstName || "");
+        setLastName(data.user.lastName || "");
+        setUsername(data.user.username || "");
+        if (data.user.image) {
+          setImage(data.user.image);
+          setImagePreview(data.user.image);
+        }
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -114,6 +119,13 @@ export default function EditProfile() {
     }
   };
 
+  const handleRemoveImage = () => {
+    setImage("");
+    setImageFile(null);
+    setImagePreview("");
+    setError("");
+  };
+
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -138,7 +150,7 @@ export default function EditProfile() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ name, image: imageToSave }),
+        body: JSON.stringify({ firstName, lastName, username, image: imageToSave }),
       });
 
       const data = await response.json();
@@ -151,12 +163,14 @@ export default function EditProfile() {
 
       setMessage("Profile updated successfully!");
       
-      // Update session (only name, not image to avoid token overflow)
+      // Update session (firstName, lastName, username - not image to avoid token overflow)
       await update({
         ...session,
         user: {
           ...session?.user,
-          name: data.user.name,
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          username: data.user.username,
           // Don't include image in session - it's too large for JWT
         },
       });
@@ -258,79 +272,137 @@ export default function EditProfile() {
                 {isOAuthUser && (
                   <div className="rounded-md bg-blue-50 p-4 mb-4">
                     <p className="text-sm text-blue-800">
-                      ℹ️ You signed in with Google. Some profile information is managed by your Google account.
+                      ℹ️ You signed in with Google. Your name and profile picture are managed by your Google account, but you can change your username below.
                     </p>
                   </div>
                 )}
 
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Name
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
-                    placeholder="Your name"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      First Name
+                    </label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      disabled={isOAuthUser}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      placeholder="First name"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Last Name
+                    </label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      disabled={isOAuthUser}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      placeholder="Last name"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Profile Picture
+                  <label
+                    htmlFor="username"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Username
                   </label>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      {imagePreview ? (
-                        <img
-                          src={imagePreview}
-                          alt="Profile preview"
-                          className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
-                          onError={(e) => {
-                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || session.user.email || "User")}&background=667eea&color=fff&size=200`;
-                          }}
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
+                    placeholder="Username (3-20 chars, letters, numbers, underscore)"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    3-20 characters, letters, numbers, and underscores only
+                  </p>
+                </div>
+
+                {!isOAuthUser && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Profile Picture
+                    </label>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        {imagePreview ? (
+                          <img
+                            src={imagePreview}
+                            alt="Profile preview"
+                            className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center border-4 border-gray-200">
+                            <span className="text-3xl font-bold text-indigo-600">
+                              {firstName && lastName 
+                                ? `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+                                : firstName 
+                                  ? `${firstName.charAt(0)}`.toUpperCase()
+                                  : "?"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          id="image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
                         />
-                      ) : (
-                        <div className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center border-4 border-gray-200">
-                          <span className="text-3xl text-indigo-600">
-                            {name?.[0]?.toUpperCase() || "?"}
-                          </span>
+                        <div className="flex gap-2">
+                          <label
+                            htmlFor="image-upload"
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                          >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Choose Image
+                          </label>
+                          {(imagePreview || image) && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveImage}
+                              className="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            >
+                              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Remove
+                            </button>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <input
-                        id="image-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="image-upload"
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-                      >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Choose Image
-                      </label>
-                      <p className="text-xs text-gray-500 mt-2">
-                        PNG, JPG, GIF (automatically compressed to max 500KB)
-                      </p>
-                      {imageFile && (
-                        <p className="text-sm text-green-600 mt-2">
-                          ✓ {imageFile.name}
+                        <p className="text-xs text-gray-500 mt-2">
+                          PNG, JPG, GIF (automatically compressed to max 500KB)
                         </p>
-                      )}
+                        {imageFile && (
+                          <p className="text-sm text-green-600 mt-2">
+                            ✓ {imageFile.name}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

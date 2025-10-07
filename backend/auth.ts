@@ -14,36 +14,50 @@ const providers: any[] = [
   Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        emailOrUsername: { label: "Email or Username", type: "text" },
         password: { label: "Password", type: "password" },
         passkey: { label: "Passkey", type: "text" },
       },
       async authorize(credentials) {
         // Special case: passkey authentication (already verified)
-        if (credentials?.passkey === "verified" && credentials?.email) {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-          }) as { id: string; email: string; name: string | null; password: string | null } | null;
+        if (credentials?.passkey === "verified" && credentials?.emailOrUsername) {
+          // Try to find user by email or username
+          const emailOrUsername = credentials.emailOrUsername as string;
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { email: emailOrUsername },
+                { username: emailOrUsername },
+              ],
+            },
+          }) as { id: string; email: string; username: string | null; firstName: string | null; lastName: string | null; password: string | null } | null;
 
           if (user) {
             return {
               id: user.id,
               email: user.email,
-              name: user.name,
+              username: user.username,
+              firstName: user.firstName,
+              lastName: user.lastName,
             } as any;
           }
         }
 
         // Regular password authentication
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.emailOrUsername || !credentials?.password) {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
+        // Try to find user by email or username
+        const emailOrUsername = credentials.emailOrUsername as string;
+        const user = await prisma.user.findFirst({
           where: {
-            email: credentials.email as string,
+            OR: [
+              { email: emailOrUsername },
+              { username: emailOrUsername },
+            ],
           },
-        }) as { id: string; email: string; name: string | null; password: string | null } | null;
+        }) as { id: string; email: string; username: string | null; firstName: string | null; lastName: string | null; password: string | null } | null;
 
         if (!user || !user.password) {
           return null;
@@ -61,7 +75,9 @@ const providers: any[] = [
         return {
           id: user.id,
           email: user.email,
-          name: user.name,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
           // DO NOT return image - it causes headers overflow
           // image: user.image,
         } as any;
@@ -75,13 +91,102 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      profile(profile) {
+      async profile(profile) {
+        // Extract and sanitize name parts
+        const fullName = (profile.name || "").trim();
+        const nameParts = fullName.split(/\s+/).filter(part => part.length > 0);
+        
+        // Handle firstName with fallbacks
+        let firstName = nameParts[0] || "";
+        if (!firstName) {
+          // If no name at all, use part of email before @
+          const emailPrefix = profile.email.split("@")[0];
+          firstName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+        }
+        
+        // Handle lastName with fallbacks
+        let lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+        if (!lastName && firstName) {
+          // If only one name part, use "User" as last name to avoid confusion
+          lastName = "User";
+        }
+        
+        // Generate username: firstname + lastname, lowercase, alphanumeric only
+        let baseUsername = (firstName + lastName)
+          .toLowerCase()
+          .normalize("NFD") // Normalize Unicode to decompose accents
+          .replace(/[\u0300-\u036f]/g, "") // Remove diacritical marks
+          .replace(/[^a-z0-9]/g, ""); // Keep only letters and numbers
+        
+        // Fallback 1: If username is empty or too short, use email prefix
+        if (!baseUsername || baseUsername.length < 3) {
+          baseUsername = profile.email.split("@")[0]
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+        }
+        
+        // Fallback 2: If still too short or empty, use "user" + random numbers
+        if (!baseUsername || baseUsername.length < 3) {
+          baseUsername = `user${Math.floor(100000 + Math.random() * 900000)}`;
+        }
+        
+        // Ensure minimum length (3 chars) - pad with random numbers if needed
+        if (baseUsername.length < 3) {
+          baseUsername = baseUsername + Math.floor(100 + Math.random() * 900);
+        }
+        
+        // Truncate if too long (max 20 chars to leave room for random numbers)
+        if (baseUsername.length > 15) {
+          baseUsername = baseUsername.substring(0, 15);
+        }
+        
+        // Check uniqueness and add random numbers if needed
+        let username = baseUsername;
+        let isUnique = false;
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        while (!isUnique && attempts < maxAttempts) {
+          try {
+            const existingUser = await prisma.user.findUnique({
+              where: { username },
+            });
+            
+            if (!existingUser) {
+              isUnique = true;
+            } else {
+              // Add random 4-digit number to base username
+              const randomNum = Math.floor(1000 + Math.random() * 9000);
+              username = `${baseUsername}${randomNum}`;
+              attempts++;
+            }
+          } catch (error) {
+            console.error("Error checking username uniqueness:", error);
+            // If DB error, use fallback with timestamp to ensure uniqueness
+            username = `${baseUsername}${Date.now().toString().slice(-6)}`;
+            break;
+          }
+        }
+        
+        // Final safety check: if we couldn't find unique username after max attempts
+        if (!isUnique) {
+          username = `user${Date.now().toString().slice(-8)}`;
+          console.warn("Could not generate unique username, using timestamp fallback:", username);
+        }
+        
+        // Validate final username meets requirements
+        if (username.length < 3 || username.length > 20) {
+          // Emergency fallback
+          username = `user${Date.now().toString().slice(-8)}`;
+        }
+        
         return {
           id: profile.sub,
           email: profile.email,
-          name: profile.name,
-          // DO NOT include image - it causes headers overflow
-          // image: profile.picture,
+          firstName: firstName || "User",
+          lastName: lastName || "",
+          username,
+          image: profile.picture || null, // Include Google profile picture if available
         };
       },
     })
@@ -127,14 +232,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.name = user.name;
+        token.username = (user as any).username;
+        token.firstName = (user as any).firstName;
+        token.lastName = (user as any).lastName;
         // DO NOT include image in JWT - it's too large and causes header overflow
         // token.image = user.image; // REMOVED
       }
       
       // Handle session updates (when user updates their profile)
       if (trigger === "update" && updatedSession) {
-        token.name = updatedSession.user?.name;
+        token.username = updatedSession.user?.username;
+        token.firstName = updatedSession.user?.firstName;
+        token.lastName = updatedSession.user?.lastName;
         // Still don't include image in token
       }
       
@@ -144,7 +253,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
-        session.user.name = token.name as string;
+        (session.user as any).username = token.username as string;
+        (session.user as any).firstName = token.firstName as string;
+        (session.user as any).lastName = token.lastName as string;
         // DO NOT include image from token
         // Fetch image from database when needed instead
       }

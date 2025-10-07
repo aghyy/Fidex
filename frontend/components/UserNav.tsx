@@ -7,10 +7,11 @@ import { useEffect, useState } from "react";
 export default function UserNav() {
   const { data: session, status } = useSession();
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<any>(null);
   const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch profile image from API if user is logged in
+    // Fetch profile data from API if user is logged in
     if (session?.user) {
       setImageLoading(true);
       fetch("/api/user/profile", {
@@ -18,11 +19,14 @@ export default function UserNav() {
       })
         .then(res => res.json())
         .then(data => {
-          if (data.user?.image) {
-            setProfileImage(data.user.image);
+          if (data.user) {
+            setProfileData(data.user);
+            if (data.user.image) {
+              setProfileImage(data.user.image);
+            }
           }
         })
-        .catch(err => console.error("Failed to fetch profile image:", err))
+        .catch(err => console.error("Failed to fetch profile:", err))
         .finally(() => setImageLoading(false));
     }
   }, [session]);
@@ -36,8 +40,13 @@ export default function UserNav() {
   }
 
   if (session?.user) {
-    const userName = session.user.name || session.user.email || "User";
-    const userInitials = userName.charAt(0).toUpperCase();
+    const firstName = profileData?.firstName || "";
+    const lastName = profileData?.lastName || "";
+    const userName = firstName && lastName ? `${firstName} ${lastName}` : "User";
+    const userInitials = firstName && lastName 
+      ? `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+      : (session.user.email?.charAt(0) || "U").toUpperCase();
+    const username = profileData?.username || "user";
 
     return (
       <div className="flex items-center gap-4">
@@ -62,9 +71,9 @@ export default function UserNav() {
           )}
           <div className="text-white">
             <p className="text-sm font-medium">
-              {session.user.name || session.user.email}
+              {userName}
             </p>
-            <p className="text-xs opacity-75">{session.user.email}</p>
+            <p className="text-xs opacity-75">@{username}</p>
           </div>
         </div>
         <Link

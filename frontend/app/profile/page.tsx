@@ -33,7 +33,9 @@ export default function ProfilePage() {
             hasImage: !!profileData.user?.image,
             imageSize: profileData.user?.image?.length || 0,
             imageSizeKB: Math.round((profileData.user?.image?.length || 0) / 1024) + " KB",
-            name: profileData.user?.name,
+            firstName: profileData.user?.firstName,
+            lastName: profileData.user?.lastName,
+            username: profileData.user?.username,
             email: profileData.user?.email,
           });
           setProfileData(profileData.user);
@@ -80,7 +82,7 @@ export default function ProfilePage() {
                 {profileData?.image ? (
                   <img
                     src={profileData.image}
-                    alt={profileData.name || session.user.name || "User"}
+                    alt={`${profileData?.firstName} ${profileData?.lastName}` || "User"}
                     className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
                     onError={(e) => {
                       console.error("Image failed to load");
@@ -95,14 +97,21 @@ export default function ProfilePage() {
                   style={{ display: profileData?.image ? 'none' : 'flex' }}
                 >
                   <span className="text-4xl font-bold text-indigo-600">
-                    {(profileData?.name || session.user.name)?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase()}
+                    {profileData?.firstName && profileData?.lastName
+                      ? `${profileData.firstName.charAt(0)}${profileData.lastName.charAt(0)}`.toUpperCase()
+                      : profileData?.firstName
+                        ? `${profileData.firstName.charAt(0)}`.toUpperCase()
+                        : session.user.email?.charAt(0)?.toUpperCase() || '?'}
                   </span>
                 </div>
                 <div className="text-white">
                   <h1 className="text-3xl font-bold">
-                    {profileData?.name || session.user.name || "User"}
+                    {profileData?.firstName && profileData?.lastName 
+                      ? `${profileData.firstName} ${profileData.lastName}` 
+                      : "User"}
                   </h1>
-                  <p className="text-indigo-100 mt-2">{session.user.email}</p>
+                  <p className="text-indigo-100 mt-1">@{profileData?.username}</p>
+                  <p className="text-indigo-200 text-sm mt-1">{session.user.email}</p>
                 </div>
               </div>
               <div className="flex gap-3">

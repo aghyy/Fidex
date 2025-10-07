@@ -4,23 +4,45 @@ import { prisma } from "../../../../lib/prisma";
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name } = await request.json();
+    const { email, password, firstName, lastName, username } = await request.json();
 
-    if (!email || !password) {
+    // Validation
+    if (!email || !password || !firstName || !lastName || !username) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "All fields are required" },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Validate username format (3-20 chars, alphanumeric + underscores)
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      return NextResponse.json(
+        { error: "Username must be 3-20 characters and contain only letters, numbers, and underscores" },
+        { status: 400 }
+      );
+    }
+
+    // Check if email already exists
+    const existingEmail = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
+    if (existingEmail) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "Email already exists" },
+        { status: 400 }
+      );
+    }
+
+    // Check if username already exists
+    const existingUsername = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (existingUsername) {
+      return NextResponse.json(
+        { error: "Username already taken" },
         { status: 400 }
       );
     }
@@ -33,7 +55,9 @@ export async function POST(request: Request) {
       data: {
         email,
         password: hashedPassword,
-        name: name || null,
+        firstName,
+        lastName,
+        username,
       },
     });
 
@@ -42,7 +66,9 @@ export async function POST(request: Request) {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
         },
       },
       { status: 201 }

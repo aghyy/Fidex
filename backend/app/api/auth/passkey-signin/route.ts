@@ -28,7 +28,9 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
       },
     });
   } catch (error) {

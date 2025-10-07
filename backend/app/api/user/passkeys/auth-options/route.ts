@@ -8,18 +8,23 @@ import {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email } = body;
+    const { emailOrUsername } = body;
 
-    if (!email) {
+    if (!emailOrUsername) {
       return NextResponse.json(
-        { error: "Email is required" },
+        { error: "Email or username is required" },
         { status: 400 }
       );
     }
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
+    // Find user by email or username
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: emailOrUsername },
+          { username: emailOrUsername },
+        ],
+      },
       include: {
         authenticators: true,
       },
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
     if (!user || user.authenticators.length === 0) {
       // Don't reveal if user exists or has passkeys (security)
       return NextResponse.json(
-        { error: "No passkeys found for this email" },
+        { error: "No passkeys found for this email/username" },
         { status: 404 }
       );
     }

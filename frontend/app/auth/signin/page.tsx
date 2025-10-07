@@ -11,7 +11,7 @@ export default function SignIn() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
-  const [email, setEmail] = useState("");
+  const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,13 +24,13 @@ export default function SignIn() {
 
     try {
       const result = await signIn("credentials", {
-        email,
+        emailOrUsername,
         password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Invalid email/username or password");
         setLoading(false);
       } else {
         router.push(callbackUrl);
@@ -47,8 +47,8 @@ export default function SignIn() {
   };
 
   const handlePasskeySignIn = async () => {
-    if (!email) {
-      setError("Please enter your email first to sign in with passkey");
+    if (!emailOrUsername) {
+      setError("Please enter your email or username first to sign in with passkey");
       return;
     }
 
@@ -69,14 +69,14 @@ export default function SignIn() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ emailOrUsername }),
       });
 
       if (!optionsResponse.ok) {
         const errorData = await optionsResponse.json();
         // If no passkeys found, show a friendly message instead of error
         if (optionsResponse.status === 404 || errorData.error?.includes("No passkeys")) {
-          setError("No passkeys found for this email. Please register a passkey first or sign in with password.");
+          setError("No passkeys found for this account. Please register a passkey first or sign in with password.");
           setPasskeyLoading(false);
           return;
         }
@@ -126,10 +126,10 @@ export default function SignIn() {
 
         const { user } = await sessionResponse.json();
 
-        // Sign in with NextAuth credentials provider (passkey mode)
+        // Sign in with NextAuth credentials provider (passkey mode) - use username if available
         const result = await signIn("credentials", {
           redirect: false,
-          email: user.email,
+          emailOrUsername: user.username || user.email,
           passkey: "verified",
         });
 
@@ -174,21 +174,21 @@ export default function SignIn() {
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="emailOrUsername"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email address
+                Email or Username
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="emailOrUsername"
+                name="emailOrUsername"
+                type="text"
+                autoComplete="username"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={emailOrUsername}
+                onChange={(e) => setEmailOrUsername(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="Enter your email"
+                placeholder="Enter your email or username"
               />
             </div>
 
@@ -281,7 +281,7 @@ export default function SignIn() {
             <button
               type="button"
               onClick={handlePasskeySignIn}
-              disabled={passkeyLoading || !email}
+              disabled={passkeyLoading || !emailOrUsername}
               className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-indigo-300 rounded-lg text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,7 +290,7 @@ export default function SignIn() {
               {passkeyLoading ? "Authenticating..." : "Sign in with Passkey"}
             </button>
             <p className="text-xs text-gray-500 text-center -mt-1">
-              Enter your email above, then click to use your passkey
+              Enter your email or username above, then click to use your passkey
             </p>
           </div>
         </form>

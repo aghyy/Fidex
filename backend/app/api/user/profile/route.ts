@@ -14,7 +14,9 @@ export async function GET() {
       where: { id: session.user.id },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
+        username: true,
         email: true,
         image: true,
         password: true,
@@ -54,17 +56,44 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, image } = body;
+    const { firstName, lastName, username, image } = body;
+
+    // If username is being updated, check if it's already taken
+    if (username !== undefined && username !== (session.user as any).username) {
+      // Validate username format
+      const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+      if (!usernameRegex.test(username)) {
+        return NextResponse.json(
+          { error: "Username must be 3-20 characters and contain only letters, numbers, and underscores" },
+          { status: 400 }
+        );
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { username },
+      });
+
+      if (existingUser && existingUser.id !== session.user.id) {
+        return NextResponse.json(
+          { error: "Username already taken" },
+          { status: 400 }
+        );
+      }
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        ...(name !== undefined && { name }),
+        ...(firstName !== undefined && { firstName }),
+        ...(lastName !== undefined && { lastName }),
+        ...(username !== undefined && { username }),
         ...(image !== undefined && { image }),
       },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
+        username: true,
         email: true,
         image: true,
       },
