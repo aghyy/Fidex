@@ -1,0 +1,194 @@
+"use client";
+
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+export default function ProfilePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [backendUser, setBackendUser] = useState<any>(null);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin?callbackUrl=/profile");
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Fetch user profile data (includes latest image)
+        const profileResponse = await fetch("/api/user/profile", {
+          credentials: "include",
+        });
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          console.log("📸 Profile data fetched:", {
+            hasImage: !!profileData.user?.image,
+            imageSize: profileData.user?.image?.length || 0,
+            imageSizeKB: Math.round((profileData.user?.image?.length || 0) / 1024) + " KB",
+            name: profileData.user?.name,
+            email: profileData.user?.email,
+          });
+          setProfileData(profileData.user);
+          
+          // Also set as backend user for display (same data)
+          setBackendUser(profileData.user);
+        } else {
+          console.error("❌ Failed to fetch profile:", profileResponse.status);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session) {
+      fetchUserData();
+    }
+  }, [session]);
+
+  if (status === "loading" || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100">
+        <div className="animate-pulse text-xl text-gray-700">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-6"
+        >
+          ← Back to Home
+        </Link>
+
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-12">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                {profileData?.image ? (
+                  <img
+                    src={profileData.image}
+                    alt={profileData.name || session.user.name || "User"}
+                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                    onError={(e) => {
+                      console.error("Image failed to load");
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center"
+                  style={{ display: profileData?.image ? 'none' : 'flex' }}
+                >
+                  <span className="text-4xl font-bold text-indigo-600">
+                    {(profileData?.name || session.user.name)?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase()}
+                  </span>
+                </div>
+                <div className="text-white">
+                  <h1 className="text-3xl font-bold">
+                    {profileData?.name || session.user.name || "User"}
+                  </h1>
+                  <p className="text-indigo-100 mt-2">{session.user.email}</p>
+                </div>
+              </div>
+              <Link
+                href="/profile/edit"
+                className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium shadow-lg"
+              >
+                Edit Profile
+              </Link>
+            </div>
+          </div>
+
+          <div className="p-8 space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Profile Information
+              </h2>
+              <div className="grid gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-gray-600">
+                    User ID
+                  </label>
+                  <p className="text-gray-900 mt-1">{session.user.id}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-gray-600">
+                    Email
+                  </label>
+                  <p className="text-gray-900 mt-1">{session.user.email}</p>
+                </div>
+
+                {(profileData?.name || session.user.name) && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <label className="text-sm font-medium text-gray-600">
+                      Name
+                    </label>
+                    <p className="text-gray-900 mt-1">{profileData?.name || session.user.name}</p>
+                  </div>
+                )}
+
+                {profileData?.image && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <label className="text-sm font-medium text-gray-600">
+                      Profile Picture
+                    </label>
+                    <p className="text-gray-900 mt-1 text-xs">
+                      {profileData.image.length > 50 
+                        ? `Base64 image (${Math.round(profileData.image.length / 1024)} KB)` 
+                        : profileData.image}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {backendUser && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Backend Data
+                </h2>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-800 mb-2">
+                    ✓ Successfully authenticated with backend
+                  </p>
+                  <pre className="text-xs bg-white text-gray-900 p-3 rounded overflow-auto">
+                    {JSON.stringify(backendUser, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Session Details
+              </h3>
+              <pre className="bg-gray-50 text-gray-900 p-4 rounded-lg text-xs overflow-auto">
+                {JSON.stringify(session, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
