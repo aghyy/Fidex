@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import LoadingScreen from "../../components/LoadingScreen";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -14,7 +15,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin?callbackUrl=/profile");
+      router.push("/auth/signup?callbackUrl=/profile");
     }
   }, [status, router]);
 
@@ -54,12 +55,8 @@ export default function ProfilePage() {
     }
   }, [session]);
 
-  if (status === "loading" || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100">
-        <div className="animate-pulse text-xl text-gray-700">Loading...</div>
-      </div>
-    );
+  if (status === "loading" || status === "unauthenticated" || loading) {
+    return <LoadingScreen />;
   }
 
   if (!session) {

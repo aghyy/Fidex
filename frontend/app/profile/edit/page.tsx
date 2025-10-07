@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import imageCompression from "browser-image-compression";
+import LoadingScreen from "../../../components/LoadingScreen";
 
 export default function EditProfile() {
   const { data: session, status, update } = useSession();
@@ -29,7 +30,7 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin?callbackUrl=/profile/edit");
+      router.push("/auth/signup?callbackUrl=/profile/edit");
     }
   }, [status, router]);
 
@@ -223,11 +224,7 @@ export default function EditProfile() {
   };
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100">
-        <div className="animate-pulse text-xl text-gray-700">Loading...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!session) {
