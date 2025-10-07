@@ -9,6 +9,7 @@ export default function Home() {
   const [msg, setMsg] = useState("");
   const { data: session, status } = useSession();
   const router = useRouter();
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -17,7 +18,7 @@ export default function Home() {
   }, [status, router]);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/tests")
+    fetch(`${BACKEND_URL}/api/tests`)
       .then(res => res.json())
       .then(data => setMsg(data.message))
       .catch(err => console.error("Failed to fetch from backend:", err));
