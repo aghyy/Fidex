@@ -11,15 +11,20 @@ async function handler(req: NextRequest) {
     const headers = new Headers(req.headers);
     headers.delete("host");
 
+    // Forward incoming cookies to backend (required for session reads)
+    const incomingCookies = req.headers.get("cookie");
+    if (incomingCookies) headers.set("cookie", incomingCookies);
+
     const response = await fetch(backendUrl, {
       method: req.method,
       headers,
-      body: req.body,
+      body: req.method === "GET" || req.method === "HEAD" ? undefined : (req.body as any),
       // @ts-expect-error - duplex is required for streaming but not in types
       duplex: "half",
     });
 
-    const data = await response.text();
+    // Preserve raw body to avoid Safari "cannot decode raw data"
+    const data = await response.arrayBuffer();
 
     // Get ALL set-cookie headers (there can be multiple)
     const setCookies = response.headers.getSetCookie?.() || [];
