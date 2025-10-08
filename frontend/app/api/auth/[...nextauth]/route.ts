@@ -15,10 +15,13 @@ async function handler(req: NextRequest) {
     const incomingCookies = req.headers.get("cookie");
     if (incomingCookies) headers.set("cookie", incomingCookies);
 
+    const isBodyAllowed = req.method !== "GET" && req.method !== "HEAD";
+    const body: ReadableStream<Uint8Array> | null | undefined = isBodyAllowed ? req.body : undefined;
+
     const response = await fetch(backendUrl, {
       method: req.method,
       headers,
-      body: req.method === "GET" || req.method === "HEAD" ? undefined : (req.body as any),
+      body,
       // @ts-expect-error - duplex is required for streaming but not in types
       duplex: "half",
     });
