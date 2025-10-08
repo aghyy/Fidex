@@ -201,6 +201,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/signin`,
   },
+  cookies: {
+    sessionToken: {
+      name: `__Secure-authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+        domain: process.env.COOKIE_DOMAIN || undefined,
+      },
+    },
+  },
   providers,
   experimental: {
     enableWebAuthn: true,
