@@ -19,21 +19,31 @@ async function handler(req: NextRequest) {
       duplex: "half",
     });
 
-    const responseHeaders = new Headers(response.headers);
-    
-    // Forward cookies
-    const setCookie = response.headers.get("set-cookie");
-    if (setCookie) {
-      responseHeaders.set("set-cookie", setCookie);
-    }
-
     const data = await response.text();
 
-    return new NextResponse(data, {
+    // Get ALL set-cookie headers (there can be multiple)
+    const setCookies = response.headers.getSetCookie?.() || [];
+
+    // Create response headers, excluding set-cookie (we'll add them separately)
+    const responseHeaders = new Headers();
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() !== "set-cookie") {
+        responseHeaders.set(key, value);
+      }
+    });
+
+    const nextResponse = new NextResponse(data, {
       status: response.status,
       statusText: response.statusText,
       headers: responseHeaders,
     });
+
+    // Add all set-cookie headers to the response
+    setCookies.forEach((cookie) => {
+      nextResponse.headers.append("set-cookie", cookie);
+    });
+
+    return nextResponse;
   } catch (error) {
     console.error("Auth proxy error:", error);
     return NextResponse.json(
