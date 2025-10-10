@@ -1,11 +1,6 @@
 *.DS_Store
-node_modules
-.next
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.development
-.env.test
-.env.productiondb_dump.bak
+/app/node_modules
+/app/.next
+/app/.env
+/app/.env.local
+/app/package-lock.json
