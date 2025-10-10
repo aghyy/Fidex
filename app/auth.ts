@@ -14,6 +14,7 @@ type DbUser = {
   firstName: string | null;
   lastName: string | null;
   password: string | null;
+  emailVerified: Date | null;
 };
 
 type AuthorizedUser = {
@@ -70,6 +71,10 @@ const providers: Provider[] = [
         },
       })) as DbUser | null;
       if (!user || !user.password) return null;
+      if (!user.emailVerified) {
+        // Block login for unverified accounts
+        return null;
+      }
 
       const isPasswordValid = await bcrypt.compare(rawPass, user.password);
       if (!isPasswordValid) return null;

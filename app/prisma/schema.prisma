@@ -70,6 +70,17 @@ model PasswordResetToken {
   @@index([token])
 }
 
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
 model Authenticator {
   credentialID         String  @unique
   userId               String

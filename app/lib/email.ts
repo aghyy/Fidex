@@ -75,4 +75,70 @@ export async function sendPasswordResetEmail(email: string, token: string) {
   }
 }
 
+export async function sendVerificationEmail(email: string, token: string) {
+  const verifyLink = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: email,
+      subject: "Verify your email - Fidex",
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; border-radius: 10px 10px 0 0;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">Verify Your Email</h1>
+            </div>
+            
+            <div style="background: #ffffff; padding: 40px 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+              <p style="font-size: 16px; margin-bottom: 20px;">Hello,</p>
+              
+              <p style="font-size: 16px; margin-bottom: 20px;">
+                Thank you for creating an account with Fidex. Please confirm your email address by clicking the button below:
+              </p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${verifyLink}" 
+                   style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  Verify Email
+                </a>
+              </div>
+              
+              <p style="font-size: 14px; color: #666; margin-top: 30px;">
+                If you didn’t create this account, you can safely ignore this email.
+              </p>
+              
+              <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                This link will expire in 24 hours.
+              </p>
+              
+              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+              
+              <p style="font-size: 12px; color: #999;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                <a href="${verifyLink}" style="color: #667eea; word-break: break-all;">${verifyLink}</a>
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+              <p>© ${new Date().getFullYear()} Fidex. All rights reserved.</p>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+
+    console.log("✅ Verification email sent to:", email);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Failed to send verification email:", error);
+    return { success: false, error };
+  }
+}
+
 

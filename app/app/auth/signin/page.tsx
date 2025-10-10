@@ -31,7 +31,8 @@ function SignInForm() {
       });
 
       if (result?.error) {
-        setError("Invalid email/username or password");
+        // Show more helpful message if account is unverified
+        setError("Invalid credentials or email not verified. Check your inbox for a verification link.");
         setLoading(false);
       } else {
         router.push(callbackUrl);
