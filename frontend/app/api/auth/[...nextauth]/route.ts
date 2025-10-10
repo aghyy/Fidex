@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
 async function handler(req: NextRequest) {
@@ -24,13 +27,14 @@ async function handler(req: NextRequest) {
       body,
       // @ts-expect-error - duplex is required for streaming but not in types
       duplex: "half",
+      cache: "no-store",
     });
 
     // Preserve raw body to avoid Safari "cannot decode raw data"
     const data = await response.arrayBuffer();
 
     // Get ALL set-cookie headers (there can be multiple)
-    const setCookies = response.headers.getSetCookie?.() || [];
+    const setCookies = (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() || [];
 
     // Create response headers, excluding set-cookie (we'll add them separately)
     const responseHeaders = new Headers();

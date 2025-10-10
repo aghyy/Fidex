@@ -3,10 +3,28 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import WebAuthn from "next-auth/providers/webauthn";
+import type { Provider } from "next-auth/providers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./lib/prisma";
 
-const providers: any[] = [
+type DbUser = {
+  id: string;
+  email: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  password: string | null;
+};
+
+type AuthorizedUser = {
+  id: string;
+  email: string;
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+};
+
+const providers: Provider[] = [
   WebAuthn({
     // Enable passkey authentication
     enableConditionalUI: true,
@@ -18,19 +36,19 @@ const providers: any[] = [
         password: { label: "Password", type: "password" },
         passkey: { label: "Passkey", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<AuthorizedUser | null> {
         // Special case: passkey authentication (already verified)
         if (credentials?.passkey === "verified" && credentials?.emailOrUsername) {
           // Try to find user by email or username
           const emailOrUsername = credentials.emailOrUsername as string;
-          const user = await prisma.user.findFirst({
+          const user = (await prisma.user.findFirst({
             where: {
               OR: [
                 { email: emailOrUsername },
                 { username: emailOrUsername },
               ],
             },
-          }) as { id: string; email: string; username: string | null; firstName: string | null; lastName: string | null; password: string | null } | null;
+          })) as DbUser | null;
 
           if (user) {
             return {
@@ -39,7 +57,7 @@ const providers: any[] = [
               username: user.username,
               firstName: user.firstName,
               lastName: user.lastName,
-            } as any;
+            };
           }
         }
 
@@ -50,14 +68,14 @@ const providers: any[] = [
 
         // Try to find user by email or username
         const emailOrUsername = credentials.emailOrUsername as string;
-        const user = await prisma.user.findFirst({
+        const user = (await prisma.user.findFirst({
           where: {
             OR: [
               { email: emailOrUsername },
               { username: emailOrUsername },
             ],
           },
-        }) as { id: string; email: string; username: string | null; firstName: string | null; lastName: string | null; password: string | null } | null;
+        })) as DbUser | null;
 
         if (!user || !user.password) {
           return null;
@@ -80,7 +98,7 @@ const providers: any[] = [
           lastName: user.lastName,
           // DO NOT return image - it causes headers overflow
           // image: user.image,
-        } as any;
+        };
       },
     }),
 ];
@@ -94,7 +112,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       async profile(profile) {
         // Extract and sanitize name parts
         const fullName = (profile.name || "").trim();
-        const nameParts = fullName.split(/\s+/).filter(part => part.length > 0);
+        const nameParts = fullName.split(/\s+/).filter((part: string) => part.length > 0);
         
         // Handle firstName with fallbacks
         let firstName = nameParts[0] || "";
@@ -198,25 +216,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
   },
+  trustHost: true,
   pages: {
     signIn: `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/signin`,
   },
-  // Only set custom cookies when COOKIE_DOMAIN is configured (production)
-  // On localhost, use NextAuth defaults
-  ...(process.env.COOKIE_DOMAIN && {
-    cookies: {
-      sessionToken: {
-        name: `authjs.session-token`,
-        options: {
-          httpOnly: true,
-          sameSite: 'lax',
-          path: '/',
-          secure: true,
-          domain: process.env.COOKIE_DOMAIN,
-        },
-      },
-    },
-  }),
   providers,
   experimental: {
     enableWebAuthn: true,
@@ -246,11 +249,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async jwt({ token, user, trigger, session: updatedSession }) {
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
-        token.username = (user as any).username;
-        token.firstName = (user as any).firstName;
-        token.lastName = (user as any).lastName;
+        token.id = (user as { id: string }).id;
+        token.email = (user as { email: string }).email;
+        const u = user as Partial<{ username: string; firstName: string; lastName: string }>;
+        if (u.username) token.username = u.username;
+        if (u.firstName) token.firstName = u.firstName;
+        if (u.lastName) token.lastName = u.lastName;
         // DO NOT include image in JWT - it's too large and causes header overflow
         // token.image = user.image; // REMOVED
       }
@@ -267,11 +271,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        (session.user as any).username = token.username as string;
-        (session.user as any).firstName = token.firstName as string;
-        (session.user as any).lastName = token.lastName as string;
+        const su = session.user as Partial<{
+          id: string;
+          email: string;
+          username: string;
+          firstName: string;
+          lastName: string;
+        }>;
+        if (token.id) su.id = token.id as string;
+        if (token.email) su.email = token.email as string;
+        if (token.username) su.username = token.username as string;
+        if (token.firstName) su.firstName = token.firstName as string;
+        if (token.lastName) su.lastName = token.lastName as string;
         // DO NOT include image from token
         // Fetch image from database when needed instead
       }
