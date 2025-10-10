@@ -46,21 +46,28 @@ export async function POST(request: Request) {
     });
 
     // Create email verification token (24h)
-    await prisma.emailVerificationToken.deleteMany({ where: { email } });
-    const verifyToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto.createHash("sha256").update(verifyToken).digest("hex");
-    await prisma.emailVerificationToken.create({
-      data: {
-        email,
-        token: hashedToken,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-    });
+    let verifyToken: string | null = null;
+    try {
+      await prisma.emailVerificationToken.deleteMany({ where: { email } });
+      verifyToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto.createHash("sha256").update(verifyToken).digest("hex");
+      await prisma.emailVerificationToken.create({
+        data: {
+          email,
+          token: hashedToken,
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+    } catch (err) {
+      console.error("Failed to create email verification token:", err);
+    }
 
-    // Send verification email (non-blocking)
-    sendVerificationEmail(email, verifyToken).catch((e) => {
-      console.error("Failed to send verification email:", e);
-    });
+    // Send verification email (non-blocking) if we have a token
+    if (verifyToken) {
+      sendVerificationEmail(email, verifyToken).catch((e) => {
+        console.error("Failed to send verification email:", e);
+      });
+    }
 
     return NextResponse.json(
       { user: { id: user.id, email: user.email, username: user.username, firstName: user.firstName, lastName: user.lastName }, message: "Verification email sent" },

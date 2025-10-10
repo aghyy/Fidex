@@ -11,6 +11,8 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const checkEmail = searchParams.get("checkEmail");
+  const verified = searchParams.get("verified");
 
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -31,8 +33,13 @@ function SignInForm() {
       });
 
       if (result?.error) {
-        // Show more helpful message if account is unverified
-        setError("Invalid credentials or email not verified. Check your inbox for a verification link.");
+        if (result.error === "EMAIL_NOT_VERIFIED") {
+          setError("Please verify your email before signing in. Check your inbox for the verification link.");
+        } else if (result.error === "INVALID_CREDENTIALS" || result.error === "CredentialsSignin") {
+          setError("Invalid email/username or password");
+        } else {
+          setError(result.error || "Something went wrong");
+        }
         setLoading(false);
       } else {
         router.push(callbackUrl);
@@ -192,6 +199,17 @@ function SignInForm() {
             </Link>
           </p>
         </div>
+
+        {checkEmail && (
+          <div className="rounded-md bg-blue-50 p-4 mb-4">
+            <p className="text-sm text-blue-800">Account created. Please verify your email to sign in.</p>
+          </div>
+        )}
+        {verified && (
+          <div className="rounded-md bg-green-50 p-4 mb-4">
+            <p className="text-sm text-green-800">Email verified successfully. You can now sign in.</p>
+          </div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">

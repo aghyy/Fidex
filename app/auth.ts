@@ -70,10 +70,11 @@ const providers: Provider[] = [
           ],
         },
       })) as DbUser | null;
-      if (!user || !user.password) return null;
+      if (!user || !user.password) {
+        throw new Error("INVALID_CREDENTIALS");
+      }
       if (!user.emailVerified) {
-        // Block login for unverified accounts
-        return null;
+        throw new Error("EMAIL_NOT_VERIFIED");
       }
 
       const isPasswordValid = await bcrypt.compare(rawPass, user.password);
