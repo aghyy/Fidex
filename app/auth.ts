@@ -34,7 +34,9 @@ const providers: Provider[] = [
       passkey: { label: "Passkey", type: "text" },
     },
     async authorize(credentials): Promise<AuthorizedUser | null> {
-      const input = (credentials?.emailOrUsername || "").trim();
+      const rawUser = credentials?.emailOrUsername;
+      const rawPass = credentials?.password;
+      const input = typeof rawUser === "string" ? rawUser.trim() : "";
       const inputLower = input.toLowerCase();
 
       if (credentials?.passkey === "verified" && input) {
@@ -53,7 +55,7 @@ const providers: Provider[] = [
         }
       }
 
-      if (!input || !credentials?.password) {
+      if (!input || typeof rawPass !== "string" || rawPass.length === 0) {
         return null;
       }
 
@@ -69,7 +71,7 @@ const providers: Provider[] = [
       })) as DbUser | null;
       if (!user || !user.password) return null;
 
-      const isPasswordValid = await bcrypt.compare(credentials.password as string, user.password);
+      const isPasswordValid = await bcrypt.compare(rawPass, user.password);
       if (!isPasswordValid) return null;
 
       return { id: user.id, email: user.email, username: user.username, firstName: user.firstName, lastName: user.lastName };
