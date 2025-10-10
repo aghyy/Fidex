@@ -28,34 +28,27 @@ async function handler(req: NextRequest) {
       // @ts-expect-error - duplex is required for streaming but not in types
       duplex: "half",
       cache: "no-store",
+      redirect: "manual",
     });
+
+    // Handle redirects manually and pass through all headers (including Set-Cookie)
+    if (response.status >= 300 && response.status < 400) {
+      return new Response(null, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    }
 
     // Preserve raw body to avoid Safari "cannot decode raw data"
     const data = await response.arrayBuffer();
 
-    // Get ALL set-cookie headers (there can be multiple)
-    const setCookies = (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() || [];
-
-    // Create response headers, excluding set-cookie (we'll add them separately)
-    const responseHeaders = new Headers();
-    response.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== "set-cookie") {
-        responseHeaders.set(key, value);
-      }
-    });
-
-    const nextResponse = new NextResponse(data, {
+    // Pass through all headers unchanged to keep Set-Cookie intact
+    return new Response(data, {
       status: response.status,
       statusText: response.statusText,
-      headers: responseHeaders,
+      headers: response.headers,
     });
-
-    // Add all set-cookie headers to the response
-    setCookies.forEach((cookie) => {
-      nextResponse.headers.append("set-cookie", cookie);
-    });
-
-    return nextResponse;
   } catch (error) {
     console.error("Auth proxy error:", error);
     return NextResponse.json(
