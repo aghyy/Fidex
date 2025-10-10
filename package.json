@@ -1,9 +1,0 @@
-{
-  "name": "fidex",
-  "private": true,
-  "packageManager": "npm@10.0.0",
-  "workspaces": [
-    "frontend",
-    "backend"
-  ]
-}
