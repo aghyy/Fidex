@@ -160,7 +160,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   trustHost: true,
   pages: {
-    signIn: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/signin`,
+    signIn: "/auth/signin",
   },
   ...(process.env.COOKIE_DOMAIN && {
     cookies: {
@@ -179,13 +179,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,
   experimental: { enableWebAuthn: true },
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      const frontendUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-      if (url.startsWith("/")) return `${frontendUrl}${url}`;
-      if (url.startsWith(baseUrl)) return url.replace(baseUrl, frontendUrl);
-      if (url.startsWith(frontendUrl)) return url;
-      return frontendUrl;
-    },
     async jwt({ token, user, trigger, session: updatedSession }) {
       if (user) {
         token.id = (user as { id: string }).id;
