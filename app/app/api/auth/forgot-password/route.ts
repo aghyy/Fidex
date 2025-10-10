@@ -3,6 +3,8 @@ import { prisma } from "../../../../lib/prisma";
 import { sendPasswordResetEmail } from "../../../../lib/email";
 import crypto from "crypto";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

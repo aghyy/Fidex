@@ -4,6 +4,8 @@ import { prisma } from "../../../../lib/prisma";
 import { sendVerificationEmail } from "../../../../lib/email";
 import crypto from "crypto";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     const { email, password, firstName, lastName, username } = await request.json();
@@ -62,11 +64,9 @@ export async function POST(request: Request) {
       console.error("Failed to create email verification token:", err);
     }
 
-    // Send verification email (non-blocking) if we have a token
+    // Send verification email (await to ensure delivery in production)
     if (verifyToken) {
-      sendVerificationEmail(email, verifyToken).catch((e) => {
-        console.error("Failed to send verification email:", e);
-      });
+      await sendVerificationEmail(email, verifyToken);
     }
 
     return NextResponse.json(
