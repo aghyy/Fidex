@@ -13,6 +13,23 @@ function SignInForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/";
   const checkEmail = searchParams.get("checkEmail");
   const verified = searchParams.get("verified");
+  const oauthError = searchParams.get("error");
+
+  const oauthErrorMessage = (() => {
+    if (!oauthError) return "";
+    switch (oauthError) {
+      case "AuthAccountNotLinked":
+      case "OAuthAccountNotLinked":
+        return "An account with this email already exists. Sign in with your password first, then link Google in your profile.";
+      case "AccessDenied":
+        return "Access denied by the provider. Please try again or use another method.";
+      case "OAuthSignin":
+      case "OAuthCallback":
+        return "Could not sign in with Google. Please try again or use another method.";
+      default:
+        return "Sign-in failed. Please try again or use another method.";
+    }
+  })();
 
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -208,6 +225,11 @@ function SignInForm() {
         {verified && (
           <div className="rounded-md bg-green-50 p-4 mb-4">
             <p className="text-sm text-green-800">Email verified successfully. You can now sign in.</p>
+          </div>
+        )}
+        {oauthError && (
+          <div className="rounded-md bg-red-50 p-4 mb-4">
+            <p className="text-sm text-red-800">{oauthErrorMessage}</p>
           </div>
         )}
 
