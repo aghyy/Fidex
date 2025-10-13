@@ -1,0 +1,8 @@
+{
+  "label": "Lastenheft",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Das Lastenheft beschreibt die Projektidee und das 'Big Picture'. Es umfasst die Hauptfeatures der Anwendung, die typischen Kunden sowie eine erste grobe und detaillierte Darstellung der Anforderungen an das System. Es dient als Grundlage für die spätere Umsetzung und als Orientierung für alle Beteiligten."
+  }
+}

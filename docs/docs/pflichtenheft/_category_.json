@@ -1,0 +1,8 @@
+{
+  "label": "Pflichtenheft",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Dieses Pflichtenheft umfasst das Glossar, ein Mockup (Beschreibung des Aussehens und der Bedienung des Produkts), nicht funktionale Anforderungen sowie Informationen zu Deployment und Versionierung. Es dient dazu, die funktionalen und nicht funktionalen Anforderungen des Projekts zu dokumentieren und eine klare Übersicht über die Bedienung und technischen Details des Systems zu bieten."
+  }
+}
