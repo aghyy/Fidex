@@ -9,10 +9,10 @@ Hier ist eine Anleitung, wie das **Dashify**-Projekt eingerichtet und die einzel
 ## Projektstruktur
 
 ```bash
-Fidex/          # Ordner für alle Repositories
-├── backend       # Spring Boot Backend-Anwendung als eigenes Repo
-├── docs          # Dokumentation mit Docusaurus als eigenes Repo
-├── frontend      # Frontend-Anwendung mit Next.js als eigenes Repo
+Fidex/          # Root-Ordner
+├── backend       # Backend-Anwendung mit Next.js
+├── docs          # Dokumentation mit Docusaurus
+├── frontend      # Frontend-Anwendung mit Next.js
 ```
 
 ## Voraussetzungen
