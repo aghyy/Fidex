@@ -151,6 +151,11 @@ function MorphingDialogContent({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // If a Radix Select (or similar) is open, let it handle Escape first
+      if (document.body.dataset.radixSelectOpen === 'true' && event.key === 'Escape') {
+        // Do not close the morphing dialog
+        return;
+      }
       if (event.key === 'Escape') {
         setIsOpen(false);
       }

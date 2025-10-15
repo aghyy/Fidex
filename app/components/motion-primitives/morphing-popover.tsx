@@ -19,7 +19,7 @@ import {
 import useClickOutside from '@/components/motion-primitives/useClickOutside';
 import { cn } from '@/lib/utils';
 
-const TRANSITION = {
+const TRANSITION: Transition = {
   type: 'spring',
   bounce: 0.1,
   duration: 0.4,
@@ -178,8 +178,15 @@ function MorphingPopoverContent({
       'MorphingPopoverContent must be used within MorphingPopover'
     );
 
-  const ref = useRef<HTMLDivElement>(null);
-  useClickOutside(ref, context.close);
+  const ref = useRef<HTMLElement>(null);
+  useClickOutside(ref, (event) => {
+    // Ignore clicks originating from portals/overlays that belong to children (e.g., Radix Select portal)
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest('[data-keep-popover-open="true"]')) {
+      return;
+    }
+    context.close();
+  });
 
   useEffect(() => {
     if (!context.isOpen) return;

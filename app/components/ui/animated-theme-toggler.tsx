@@ -1,10 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Moon, Sun } from "lucide-react"
 import { flushSync } from "react-dom"
-
-import { cn } from "@/lib/utils"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Theme } from "@/types/theme"
 
 interface AnimatedThemeTogglerProps
   extends React.ComponentPropsWithoutRef<"button"> {
@@ -16,39 +15,35 @@ export const AnimatedThemeToggler = ({
   duration = 400,
   ...props
 }: AnimatedThemeTogglerProps) => {
-  const [isDark, setIsDark] = useState(false)
-  const buttonRef = useRef<HTMLButtonElement>(null)
+  const selectRef = useRef<HTMLButtonElement>(null)
+  const [theme, setTheme] = useState<Theme>("system")
+  const [isSelectOpen, setIsSelectOpen] = useState(false)
 
-  useEffect(() => {
-    const updateTheme = () => {
-      setIsDark(document.documentElement.classList.contains("dark"))
-    }
-
-    updateTheme()
-
-    const observer = new MutationObserver(updateTheme)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    })
-
-    return () => observer.disconnect()
+  const applyTheme = useCallback((t: Theme) => {
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+    const isDark = t === "dark" || (t === "system" && prefersDark)
+    document.documentElement.classList.toggle("dark", isDark)
   }, [])
 
-  const toggleTheme = useCallback(async () => {
-    if (!buttonRef.current) return
+  useEffect(() => {
+    const saved = (localStorage.getItem("theme") as Theme | null) ?? "system"
+    setTheme(saved)
+    applyTheme(saved)
+  }, [applyTheme])
+
+  const toggleTheme = useCallback(async (next: Theme) => {
+    if (!selectRef.current) return
 
     await document.startViewTransition(() => {
       flushSync(() => {
-        const newTheme = !isDark
-        setIsDark(newTheme)
-        document.documentElement.classList.toggle("dark")
-        localStorage.setItem("theme", newTheme ? "dark" : "light")
+        applyTheme(next)
+        localStorage.setItem("theme", next)
+        setTheme(next)
       })
     }).ready
 
     const { top, left, width, height } =
-      buttonRef.current.getBoundingClientRect()
+      selectRef.current.getBoundingClientRect()
     const x = left + width / 2
     const y = top + height / 2
     const maxRadius = Math.hypot(
@@ -69,17 +64,34 @@ export const AnimatedThemeToggler = ({
         pseudoElement: "::view-transition-new(root)",
       }
     )
-  }, [isDark, duration])
+  }, [duration, applyTheme])
+
+  function handleChange(value: Theme) {
+    toggleTheme(value)
+  }
 
   return (
-    <button
-      ref={buttonRef}
-      onClick={toggleTheme}
-      className={cn(className)}
-      {...props}
+    <Select
+      value={theme}
+      onValueChange={(v) => handleChange(v as Theme)}
+      open={isSelectOpen}
+      onOpenChange={(open) => {
+        setIsSelectOpen(open)
+        if (open) {
+          document.body.dataset.radixSelectOpen = 'true'
+        } else {
+          delete document.body.dataset.radixSelectOpen
+        }
+      }}
     >
-      {isDark ? <Sun /> : <Moon />}
-      <span className="sr-only">Toggle theme</span>
-    </button>
+      <SelectTrigger ref={selectRef} className={className} {...props}>
+        <SelectValue placeholder="Select a theme" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="light">Light</SelectItem>
+        <SelectItem value="dark">Dark</SelectItem>
+        <SelectItem value="system">System</SelectItem>
+      </SelectContent>
+    </Select>
   )
 }

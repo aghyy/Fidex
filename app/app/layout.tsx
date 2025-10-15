@@ -5,7 +5,7 @@ import SessionProvider from "../components/SessionProvider";
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import AppShell from "../components/sidebar/AppShell";
-import ThemeProvider from "../components/theme/ThemeProvider";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,9 +33,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
-          <ThemeProvider>
+          <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
             <AppShell>{children}</AppShell>
-          </ThemeProvider>
+          </NextThemesProvider>
         </SessionProvider>
         <Analytics />
         <SpeedInsights />
