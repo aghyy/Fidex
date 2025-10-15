@@ -27,6 +27,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // TODO: implement mobile sidebar... either manually open or use dock as sidebar (liquid glass?)
   // TODO: remove profile/edit/passkeys links & add actual routes (take budget flow for example)
   const links = [
     {
