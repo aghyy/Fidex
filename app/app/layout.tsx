@@ -4,8 +4,8 @@ import "./globals.css";
 import SessionProvider from "../components/SessionProvider";
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import AppShell from "../components/AppShell";
-import ThemeProvider from "../components/ThemeProvider";
+import AppShell from "../components/sidebar/AppShell";
+import ThemeProvider from "../components/theme/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

@@ -1,0 +1,1 @@
+export type BasicUser = { firstName?: string; lastName?: string; email?: string };
