@@ -51,6 +51,7 @@ export const AnimatedThemeToggler = ({
       Math.max(top, window.innerHeight - top)
     )
 
+    // TODO: not circular but splash effect
     document.documentElement.animate(
       {
         clipPath: [
@@ -70,6 +71,7 @@ export const AnimatedThemeToggler = ({
     toggleTheme(value)
   }
 
+  // TODO: fix don't close morphing dialog when click/close select
   return (
     <Select
       value={theme}

@@ -79,9 +79,9 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
           </MorphingDialogTrigger>
         </div>
 
+        {/* TODO: finish profile dialog & implement edit profile/passkeys */}
         <MorphingDialogContainer>
           <MorphingDialogContent className="w-[380px] max-w-[92vw] rounded-2xl bg-popover text-popover-foreground shadow-2xl border p-5">
-            <MorphingDialogClose />
             <div className="flex items-start gap-4">
               <Avatar className="h-12 w-12 border">
                 {!imageLoading && profileImage ? (
@@ -125,8 +125,8 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3">
-              {/* <ThemeToggle /> */}
               <AnimatedThemeToggler />
+              
               <button
                 onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                 className="flex items-center justify-center rounded-md px-3 py-2 text-sm gap-2 bg-destructive text-destructive-foreground"

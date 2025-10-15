@@ -27,6 +27,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // TODO: remove profile/edit/passkeys links & add actual routes (take budget flow for example)
   const links = [
     {
       label: "Dashboard",
