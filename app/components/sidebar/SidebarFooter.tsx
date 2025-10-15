@@ -83,6 +83,7 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
         <MorphingDialogContainer>
           <MorphingDialogContent className="w-[380px] max-w-[92vw] rounded-2xl bg-popover text-popover-foreground shadow-2xl border p-5">
             <div className="flex items-start gap-4">
+              {/* TODO: fix animation when sidebar is collapsing */}
               <Avatar className="h-12 w-12 border">
                 {!imageLoading && profileImage ? (
                   <AvatarImage src={profileImage} alt={userNameLabel} />
