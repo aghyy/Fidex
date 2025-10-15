@@ -8,7 +8,7 @@ export default function SidebarHeader() {
     <Link
       href="/"
       aria-label="Fidex"
-      className={`relative z-20 flex items-center gap-3 py-1 text-sm w-full justify-start`}
+      className={`relative flex items-center gap-3 py-1 text-sm w-full justify-start`}
       title="Fidex"
     >
       <Image src="/icon.svg" alt="Fidex" width={32} height={32} />

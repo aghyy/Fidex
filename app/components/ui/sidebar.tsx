@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React, { useState, createContext, useContext } from "react";
+import React, { useState, createContext, useContext, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import Link from "next/link";
@@ -85,6 +85,16 @@ export const DesktopSidebar = ({
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen, animate } = useSidebar();
+  useEffect(() => {
+    const handleDialogClosed = () => {
+      // Collapse sidebar when morphing dialog closes
+      setOpen(false);
+    };
+    window.addEventListener('morphing-dialog:closed', handleDialogClosed);
+    return () => {
+      window.removeEventListener('morphing-dialog:closed', handleDialogClosed);
+    };
+  }, [setOpen]);
   return (
     <>
       <motion.div
@@ -96,7 +106,14 @@ export const DesktopSidebar = ({
           width: animate ? (open ? "250px" : "65px") : "250px",
         }}
         onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
+        onMouseLeave={() => {
+          // Keep sidebar open if a morphing dialog is currently open
+          if (typeof document !== "undefined" && document.body.dataset.morphingDialogOpen === "true") {
+            setOpen(true);
+            return;
+          }
+          setOpen(false);
+        }}
         {...props}
       >
         {children}
