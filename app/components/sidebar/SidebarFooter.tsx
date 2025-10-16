@@ -1,7 +1,6 @@
 "use client";
 
 import { signOut, useSession } from "next-auth/react";
-import { useSidebar } from "../ui/sidebar";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { IconLogout } from "@tabler/icons-react";
 import { BasicUser } from "@/types/user";
@@ -15,11 +14,9 @@ import {
   MorphingDialogContent,
   MorphingDialogTitle,
   MorphingDialogSubtitle,
-  MorphingDialogClose,
 } from "../motion-primitives/morphing-dialog";
 
 export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser }) {
-  const { open } = useSidebar();
   const { data: session } = useSession();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<{ image?: string; firstName?: string; lastName?: string; username?: string } | null>(null);
@@ -38,11 +35,11 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
             }
           }
         })
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => setImageLoading(false));
     }
   }, [session]);
-  
+
   const firstName = profileData?.firstName || sessionUser?.firstName || "";
   const lastName = profileData?.lastName || sessionUser?.lastName || "";
   const email = sessionUser?.email || "";
@@ -66,16 +63,14 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
                 </AvatarFallback>
               )}
             </Avatar>
-            {open && (
-              <div className="flex min-w-0 flex-col leading-tight">
-                <span className="text-[13px] truncate" title={userNameLabel}>
-                  {userNameLabel}
-                </span>
-                <span className="text-[11px] text-muted-foreground truncate text-left" title={`@${username}`}> 
-                  @{username}
-                </span>
-              </div>
-            )}
+            <div className="flex min-w-0 flex-col leading-tight">
+              <span className="text-[13px] truncate" title={userNameLabel}>
+                {userNameLabel}
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate text-left" title={`@${username}`}>
+                @{username}
+              </span>
+            </div>
           </MorphingDialogTrigger>
         </div>
 
@@ -83,7 +78,6 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
         <MorphingDialogContainer>
           <MorphingDialogContent className="w-[380px] max-w-[92vw] rounded-2xl bg-popover text-popover-foreground shadow-2xl border p-5">
             <div className="flex items-start gap-4">
-              {/* TODO: fix animation when sidebar is collapsing */}
               <Avatar className="h-12 w-12 border">
                 {!imageLoading && profileImage ? (
                   <AvatarImage src={profileImage} alt={userNameLabel} />
@@ -127,7 +121,7 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
 
             <div className="mt-4 grid grid-cols-1 gap-3">
               <AnimatedThemeToggler />
-              
+
               <button
                 onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                 className="flex items-center justify-center rounded-md px-3 py-2 text-sm gap-2 bg-destructive text-destructive-foreground"
