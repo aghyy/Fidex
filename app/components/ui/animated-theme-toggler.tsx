@@ -69,7 +69,6 @@ export const AnimatedThemeToggler = ({
     toggleTheme(value)
   }
 
-  // TODO: fix don't close morphing dialog when click/close select
   return (
     <Select
       value={theme}
@@ -79,8 +78,6 @@ export const AnimatedThemeToggler = ({
         setIsSelectOpen(open)
         if (open) {
           document.body.dataset.radixSelectOpen = 'true'
-        } else {
-          delete document.body.dataset.radixSelectOpen
         }
       }}
     >

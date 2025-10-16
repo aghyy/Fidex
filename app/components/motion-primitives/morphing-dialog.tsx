@@ -154,6 +154,7 @@ function MorphingDialogContent({
       // If a Radix Select (or similar) is open, let it handle Escape first
       if (document.body.dataset.radixSelectOpen === 'true' && event.key === 'Escape') {
         // Do not close the morphing dialog
+        delete document.body.dataset.radixSelectOpen;
         return;
       }
       if (event.key === 'Escape') {
@@ -212,7 +213,9 @@ function MorphingDialogContent({
   }, [isOpen, triggerRef]);
 
   useClickOutside(containerRef, () => {
-    if (isOpen) {
+    if (document.body.dataset.radixSelectOpen === 'true') {
+      delete document.body.dataset.radixSelectOpen;
+    } else if (isOpen) {
       setIsOpen(false);
     }
   });
