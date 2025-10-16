@@ -42,8 +42,7 @@ export const AnimatedThemeToggler = ({
       })
     }).ready
 
-    const { top, left, width, height } =
-      selectRef.current.getBoundingClientRect()
+    const { top, left, width, height } = selectRef.current.getBoundingClientRect()
     const x = left + width / 2
     const y = top + height / 2
     const maxRadius = Math.hypot(
@@ -51,7 +50,6 @@ export const AnimatedThemeToggler = ({
       Math.max(top, window.innerHeight - top)
     )
 
-    // TODO: not circular but splash effect
     document.documentElement.animate(
       {
         clipPath: [
