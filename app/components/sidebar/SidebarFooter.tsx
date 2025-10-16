@@ -19,7 +19,7 @@ import {
 export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser }) {
   const { data: session } = useSession();
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<{ image?: string; firstName?: string; lastName?: string; username?: string } | null>(null);
+  const [profileData, setProfileData] = useState<BasicUser | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
