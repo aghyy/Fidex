@@ -50,7 +50,7 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
   const username = profileData?.username || "user";
 
   return (
-    <div className="mt-8 pt-4 flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <MorphingDialog>
         <div className="flex items-center justify-between gap-2">
           <MorphingDialogTrigger className="flex items-center gap-2 overflow-hidden rounded-md">
