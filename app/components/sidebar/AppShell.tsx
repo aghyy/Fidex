@@ -9,9 +9,9 @@ import {
 } from "../ui/sidebar";
 import {
   IconLayoutDashboard,
-  IconUser,
+  IconWallet,
+  IconReceipt,
   IconSettings,
-  IconKey,
 } from "@tabler/icons-react";
 import SidebarHeader from "./SidebarHeader";
 import SidebarFooter from "./SidebarFooter";
@@ -28,7 +28,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   // TODO: implement mobile sidebar... either manually open or use dock as sidebar (liquid glass?)
-  // TODO: remove profile/edit/passkeys links & add actual routes (take budget flow for example)
   const links = [
     {
       label: "Dashboard",
@@ -36,19 +35,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       icon: <IconLayoutDashboard className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
     },
     {
-      label: "Profile",
-      href: "/profile",
-      icon: <IconUser className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
+      label: "Budgets",
+      href: "/budgets",
+      icon: <IconWallet className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
+    },
+    {
+      label: "Transactions",
+      href: "/transactions",
+      icon: <IconReceipt className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
     },
     {
       label: "Settings",
-      href: "/profile/edit",
+      href: "/settings",
       icon: <IconSettings className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
-    },
-    {
-      label: "Passkeys",
-      href: "/profile/passkeys",
-      icon: <IconKey className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
     },
   ];
 
