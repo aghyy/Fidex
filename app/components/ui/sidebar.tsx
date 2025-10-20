@@ -101,14 +101,26 @@ export const DesktopSidebar = ({
       dialogJustClosedRef.current = true;
       setTimeout(() => {
         dialogJustClosedRef.current = false;
-      }, 100);
+      }, 300);
+    };
+    
+    // Capture any clicks while dialog is open to prevent sidebar from opening
+    const handleDocumentClick = () => {
+      if (document.body.dataset.morphingDialogOpen === "true") {
+        dialogJustClosedRef.current = true;
+        setTimeout(() => {
+          dialogJustClosedRef.current = false;
+        }, 300);
+      }
     };
     
     window.addEventListener('morphing-dialog:opened', handleDialogOpened);
     window.addEventListener('morphing-dialog:closed', handleDialogClosed);
+    document.addEventListener('click', handleDocumentClick, true); // Capture phase
     return () => {
       window.removeEventListener('morphing-dialog:opened', handleDialogOpened);
       window.removeEventListener('morphing-dialog:closed', handleDialogClosed);
+      document.removeEventListener('click', handleDocumentClick, true);
     };
   }, [setOpen, open]);
   
@@ -117,6 +129,7 @@ export const DesktopSidebar = ({
       <motion.div
         className={cn(
           "min-h-screen h-full px-4 py-4 hidden md:flex md:flex-col bg-background text-card-foreground w-[300px] shrink-0 relative",
+          !open && "cursor-pointer",
           className
         )}
         animate={{
