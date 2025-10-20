@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React, { useState, createContext, useContext, useEffect } from "react";
+import React, { useState, createContext, useContext, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import Link from "next/link";
@@ -85,38 +85,74 @@ export const DesktopSidebar = ({
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen, animate } = useSidebar();
+  const dialogJustClosedRef = useRef(false);
+  const sidebarStateBeforeDialogRef = useRef(false);
+  
   useEffect(() => {
-    const handleDialogClosed = () => {
-      // Collapse sidebar when morphing dialog closes
-      setOpen(false);
+    const handleDialogOpened = () => {
+      // Remember sidebar state when dialog opens
+      sidebarStateBeforeDialogRef.current = open;
     };
+    
+    const handleDialogClosed = () => {
+      // Restore sidebar to its previous state
+      setOpen(sidebarStateBeforeDialogRef.current);
+      // Prevent sidebar from opening immediately after dialog closes
+      dialogJustClosedRef.current = true;
+      setTimeout(() => {
+        dialogJustClosedRef.current = false;
+      }, 100);
+    };
+    
+    window.addEventListener('morphing-dialog:opened', handleDialogOpened);
     window.addEventListener('morphing-dialog:closed', handleDialogClosed);
     return () => {
+      window.removeEventListener('morphing-dialog:opened', handleDialogOpened);
       window.removeEventListener('morphing-dialog:closed', handleDialogClosed);
     };
-  }, [setOpen]);
+  }, [setOpen, open]);
+  
   return (
     <>
       <motion.div
         className={cn(
-          "min-h-screen h-full px-4 py-4 hidden md:flex md:flex-col bg-background text-card-foreground w-[300px] shrink-0",
+          "min-h-screen h-full px-4 py-4 hidden md:flex md:flex-col bg-background text-card-foreground w-[300px] shrink-0 relative",
           className
         )}
         animate={{
           width: animate ? (open ? "250px" : "65px") : "250px",
         }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => {
-          // Keep sidebar open if a morphing dialog is currently open
-          if (typeof document !== "undefined" && document.body.dataset.morphingDialogOpen === "true") {
-            setOpen(true);
-            return;
+        onClick={(e) => {
+          if (!open && !dialogJustClosedRef.current) {
+            // Don't open sidebar if a morphing dialog is currently open
+            if (document.body.dataset.morphingDialogOpen === "true") {
+              return;
+            }
+            
+            // Check if the click target is an interactive element
+            const target = e.target as HTMLElement;
+            const isInteractive = target.closest('a, button, [role="button"]');
+            
+            if (!isInteractive) {
+              setOpen(true);
+            }
           }
-          setOpen(false);
+          e.stopPropagation();
         }}
         {...props}
       >
-        {children}
+        <>
+          {/* Visual indicator lines when sidebar is collapsed */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-1 transition-opacity duration-200 cursor-pointer"
+            style={{ opacity: !open ? 0.4 : 0 }}
+          >
+            <div className="w-[2px] h-8 bg-muted-foreground rounded-full" />
+            <div className="w-[2px] h-8 bg-muted-foreground rounded-full" />
+            <div className="w-[2px] h-8 bg-muted-foreground rounded-full" />
+          </div>
+          {children}
+        </>
       </motion.div>
     </>
   );

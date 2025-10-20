@@ -19,6 +19,7 @@ import { BasicUser } from "@/types/user";
 import { useState } from "react";
 import { accounts } from "./accountsLinks";
 import { categories } from "./categoriesLinks";
+import { motion } from "framer-motion";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -61,8 +62,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarBody className="justify-between gap-4 h-full flex flex-col">
           <SidebarHeader />
 
-          <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto gap-4 min-h-0 no-scrollbar">
-            <div className="flex flex-col gap-2">
+          <div className={`flex flex-1 flex-col overflow-x-hidden overflow-y-auto gap-4 min-h-0 no-scrollbar ${sidebarOpen ? "mt-0" : "mt-2"} transition-all duration-300`}>
+            <div className={`flex flex-col transition-all duration-300 ${sidebarOpen ? "gap-0" : "gap-3"}`}>
               {links.map((l) => {
                 return (
                   <div key={l.href}>
@@ -74,27 +75,68 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
             {sidebarOpen && (
               <div>
-                <span className="text-sm font-medium">Accounts</span>
-                {accounts.map((a) => {
-                  return (
-                    <div key={a.href}>
-                      <SidebarLink link={a} />
-                    </div>
-                  );
-                })}
+                <span className="text-xs font-bold text-muted-foreground">Accounts</span>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: {
+                        staggerChildren: 0.02,
+                      },
+                    },
+                  }}
+                >
+                  {accounts.map((a) => {
+                    return (
+                      <motion.div
+                        key={a.href}
+                        variants={{
+                          hidden: { opacity: 0, x: -10 },
+                          visible: { opacity: 1, x: 0 },
+                        }}
+                      >
+                        <SidebarLink link={a} />
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
               </div>
             )}
 
             {sidebarOpen && (
               <div>
-                <span className="text-sm font-medium">Categories</span>
-                {categories.map((c) => {
-                  return (
-                    <div key={c.href}>
-                      <SidebarLink link={c} />
-                    </div>
-                  );
-                })}
+                <span className="text-xs font-bold text-muted-foreground">Categories</span>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: {
+                        staggerChildren: 0.02,
+                        delayChildren: accounts.length * 0.02,
+                      },
+                    },
+                  }}
+                >
+                  {categories.map((c) => {
+                    return (
+                      <motion.div
+                        key={c.href}
+                        variants={{
+                          hidden: { opacity: 0, x: -10 },
+                          visible: { opacity: 1, x: 0 },
+                        }}
+                      >
+                        <SidebarLink link={c} />
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
               </div>
             )}
           </div>
@@ -103,7 +145,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarBody>
       </Sidebar>
 
-      <main className="flex-1 min-w-0 my-2 mr-2 rounded-[1.2rem] bg-popover text-popover-foreground overflow-y-auto">
+      <main 
+        className="flex-1 min-w-0 my-2 mr-2 rounded-[1.2rem] bg-popover text-popover-foreground overflow-y-auto relative"
+        onClick={() => sidebarOpen && setSidebarOpen(false)}
+      >
         {children}
       </main>
     </div>
