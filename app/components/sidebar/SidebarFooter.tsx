@@ -15,12 +15,22 @@ import {
   MorphingDialogTitle,
   MorphingDialogSubtitle,
 } from "../motion-primitives/morphing-dialog";
+import { useSidebar } from "../ui/sidebar";
 
 export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser }) {
   const { data: session } = useSession();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<BasicUser | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
+  const firstName = profileData?.firstName || sessionUser?.firstName || "";
+  const lastName = profileData?.lastName || sessionUser?.lastName || "";
+  const email = sessionUser?.email || "";
+  const initials = firstName && lastName
+    ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+    : (email?.[0] || "U").toUpperCase();
+  const userNameLabel = firstName && lastName ? `${firstName} ${lastName}` : "User";
+  const username = profileData?.username || "user";
+  const { open } = useSidebar();
 
   useEffect(() => {
     if (session?.user) {
@@ -40,15 +50,6 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
     }
   }, [session]);
 
-  const firstName = profileData?.firstName || sessionUser?.firstName || "";
-  const lastName = profileData?.lastName || sessionUser?.lastName || "";
-  const email = sessionUser?.email || "";
-  const initials = firstName && lastName
-    ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-    : (email?.[0] || "U").toUpperCase();
-  const userNameLabel = firstName && lastName ? `${firstName} ${lastName}` : "User";
-  const username = profileData?.username || "user";
-
   return (
     <div className="flex flex-col gap-3">
       <MorphingDialog>
@@ -63,7 +64,7 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
                 </AvatarFallback>
               )}
             </Avatar>
-            <div className="flex min-w-0 flex-col leading-tight">
+            <div className={`flex min-w-0 flex-col leading-tight transition-opacity duration-200 ${!open && "opacity-0"}`}>
               <span className="text-[13px] truncate" title={userNameLabel}>
                 {userNameLabel}
               </span>

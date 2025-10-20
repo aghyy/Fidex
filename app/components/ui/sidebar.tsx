@@ -135,6 +135,13 @@ export const DesktopSidebar = ({
         animate={{
           width: animate ? (open ? "250px" : "65px") : "250px",
         }}
+        whileHover={{
+          width: animate ? (open ? "250px" : "75px") : "250px",
+        }}
+        transition={{
+          duration: 0.2,
+          ease: "easeInOut",
+        }}
         onClick={(e) => {
           if (!open && !dialogJustClosedRef.current) {
             // Don't open sidebar if a morphing dialog is currently open
