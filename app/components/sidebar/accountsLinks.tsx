@@ -3,6 +3,19 @@ import {
   IconCreditCard,
 } from "@tabler/icons-react";
 
+// TODO: allow user to create own accounts
+// TODO: allow user to delete accounts
+// TODO: allow user to edit accounts
+// TODO: allow user to reorder accounts
+// TODO: allow user to add accounts
+// TODO: allow user to remove accounts
+// TODO: allow user to rename accounts
+// TODO: allow user to change account type
+// TODO: allow user to change account currency
+// TODO: allow user to change account color
+// TODO: allow user to change account icon
+// TODO: allow user to change account balance
+
 export const accounts = [
   {
     label: "Checking",

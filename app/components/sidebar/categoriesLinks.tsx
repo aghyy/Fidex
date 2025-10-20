@@ -10,6 +10,17 @@ import {
   IconTax,
 } from "@tabler/icons-react";
 
+// TODO: allow user to create own categories
+// TODO: allow user to delete categories
+// TODO: allow user to edit categories
+// TODO: allow user to reorder categories
+// TODO: allow user to add categories
+// TODO: allow user to remove categories
+// TODO: allow user to rename categories
+// TODO: allow user to change category type
+// TODO: allow user to change category color
+// TODO: allow user to change category icon
+
 export const categories = [
   {
     label: "Food",

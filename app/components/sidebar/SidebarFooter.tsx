@@ -52,6 +52,9 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
 
   return (
     <div className="flex flex-col gap-3">
+      {/* TODO: progressive blur behind morphing dialog */}
+      {/* TODO: implement edit profile & passkeys in dialog instead of extra page */}
+      {/* TODO: responsive, drawer if mobile */}
       <MorphingDialog>
         <div className="flex items-center justify-between gap-2">
           <MorphingDialogTrigger className="flex items-center gap-2 overflow-hidden rounded-md">
@@ -75,7 +78,6 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
           </MorphingDialogTrigger>
         </div>
 
-        {/* TODO: finish profile dialog & implement edit profile/passkeys */}
         <MorphingDialogContainer>
           <MorphingDialogContent className="w-[380px] max-w-[92vw] rounded-2xl bg-popover text-popover-foreground shadow-2xl border p-5">
             <div className="flex items-start gap-4">
