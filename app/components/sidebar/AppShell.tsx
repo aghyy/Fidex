@@ -16,7 +16,7 @@ import {
 import SidebarHeader from "./SidebarHeader";
 import SidebarFooter from "./SidebarFooter";
 import { BasicUser } from "@/types/user";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { accounts } from "./accountsLinks";
 import { categories } from "./categoriesLinks";
 import { motion } from "framer-motion";
@@ -25,6 +25,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<BasicUser | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  useEffect(() => {
+    if (session?.user) {
+      setImageLoading(true);
+      fetch("/api/user/profile", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setProfileData(data.user);
+            if (data.user.image) {
+              setProfileImage(data.user.image as string);
+            }
+          }
+        })
+        .catch(() => { })
+        .finally(() => setImageLoading(false));
+    }
+  }, [session?.user?.id]);
 
   const isAuthRoute = pathname?.startsWith("/auth/") ?? false;
 
@@ -141,7 +162,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <SidebarFooter sessionUser={session?.user as BasicUser} />
+          <SidebarFooter 
+            sessionUser={session?.user as BasicUser}
+            profileImage={profileImage}
+            profileData={profileData}
+            imageLoading={imageLoading}
+          />
         </SidebarBody>
       </Sidebar>
 

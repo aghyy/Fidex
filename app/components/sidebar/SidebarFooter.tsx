@@ -1,11 +1,10 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { IconLogout } from "@tabler/icons-react";
 import { BasicUser } from "@/types/user";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   MorphingDialog,
@@ -17,11 +16,19 @@ import {
 } from "../motion-primitives/morphing-dialog";
 import { useSidebar } from "../ui/sidebar";
 
-export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser }) {
-  const { data: session } = useSession();
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<BasicUser | null>(null);
-  const [imageLoading, setImageLoading] = useState(true);
+interface SidebarFooterProps {
+  sessionUser?: BasicUser;
+  profileImage: string | null;
+  profileData: BasicUser | null;
+  imageLoading: boolean;
+}
+
+export default function SidebarFooter({ 
+  sessionUser, 
+  profileImage, 
+  profileData, 
+  imageLoading 
+}: SidebarFooterProps) {
   const firstName = profileData?.firstName || sessionUser?.firstName || "";
   const lastName = profileData?.lastName || sessionUser?.lastName || "";
   const email = sessionUser?.email || "";
@@ -31,24 +38,6 @@ export default function SidebarFooter({ sessionUser }: { sessionUser?: BasicUser
   const userNameLabel = firstName && lastName ? `${firstName} ${lastName}` : "User";
   const username = profileData?.username || "user";
   const { open } = useSidebar();
-
-  useEffect(() => {
-    if (session?.user) {
-      setImageLoading(true);
-      fetch("/api/user/profile", { credentials: "include" })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.user) {
-            setProfileData(data.user);
-            if (data.user.image) {
-              setProfileImage(data.user.image as string);
-            }
-          }
-        })
-        .catch(() => { })
-        .finally(() => setImageLoading(false));
-    }
-  }, [session]);
 
   return (
     <div className="flex flex-col gap-3">
