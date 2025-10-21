@@ -84,6 +84,11 @@ export default function SidebarFooter({
     };
   }, [isDialogOpen, profileImage, triggerInitials, triggerUserNameLabel, triggerUsername]);
 
+  // TODO: dont allow change username more than 3 times in 30 days but one can always change to old username for 14 days (new table for reserved usernames)
+  // TODO: allow change email but with verification email (new table for email verification tokens)
+  // TODO: move sign out to sidebar footer?
+  // TODO: manage passkeys & change password flex direction row?
+
   useEffect(() => {
     if (!sessionUser) return;
 
