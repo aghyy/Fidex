@@ -10,9 +10,8 @@ Hier ist eine Anleitung, wie das **Dashify**-Projekt eingerichtet und die einzel
 
 ```bash
 Fidex/          # Root-Ordner
-├── backend       # Backend-Anwendung mit Next.js
-├── docs          # Dokumentation mit Docusaurus
-├── frontend      # Frontend-Anwendung mit Next.js
+├── app         # Fullstack mit Next.js (Backend + Frontend)
+├── docs        # Dokumentation mit Docusaurus
 ```
 
 ## Voraussetzungen
