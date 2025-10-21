@@ -17,7 +17,6 @@ import {
 // TODO: allow user to add categories
 // TODO: allow user to remove categories
 // TODO: allow user to rename categories
-// TODO: allow user to change category type
 // TODO: allow user to change category color
 // TODO: allow user to change category icon
 
