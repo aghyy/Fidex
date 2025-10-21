@@ -88,6 +88,7 @@ export default function SidebarFooter({
   // TODO: allow change email but with verification email (new table for email verification tokens)
   // TODO: move sign out to sidebar footer?
   // TODO: manage passkeys & change password flex direction row?
+  // TODO: change theme like vercel? toggle with 3 options (liquid glass? animations? blur?)
 
   useEffect(() => {
     if (!sessionUser) return;
