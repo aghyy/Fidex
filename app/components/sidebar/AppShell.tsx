@@ -162,7 +162,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <SidebarFooter 
+          <SidebarFooter
             sessionUser={session?.user as BasicUser}
             profileImage={profileImage}
             profileData={profileData}
@@ -171,14 +171,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarBody>
       </Sidebar>
 
-      <main 
+      <main
         className="flex-1 min-w-0 my-2 mr-2 rounded-[1.2rem] bg-popover text-popover-foreground overflow-y-auto relative"
-        style={{ 
-          backgroundImage: "url('/m4.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-         }}
+        // style={{
+        //   backgroundImage: "url('/backgrounds/m4.png')",
+        //   backgroundSize: "cover",
+        //   backgroundPosition: "center",
+        //   backgroundRepeat: "no-repeat",
+        //  }}
         onClick={() => sidebarOpen && setSidebarOpen(false)}
       >
         {children}
