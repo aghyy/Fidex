@@ -4,6 +4,8 @@ import "./globals.css";
 import SessionProvider from "../components/SessionProvider";
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import AppShell from "../components/sidebar/AppShell";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,11 +28,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+            <AppShell>{children}</AppShell>
+          </NextThemesProvider>
+        </SessionProvider>
         <Analytics />
         <SpeedInsights />
       </body>
