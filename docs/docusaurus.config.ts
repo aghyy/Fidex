@@ -107,7 +107,7 @@ const config: Config = {
           items: [
             {
               label: 'Installation Guide',
-              to: '/docs/guidelines/entwicklerdoku/einrichtung',
+              to: '/docs/guidelines',
             },
           ],
         },
