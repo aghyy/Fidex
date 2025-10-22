@@ -89,7 +89,7 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'User Guide',
+          label: 'Installation Guide',
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
@@ -103,11 +103,11 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'User Guide',
+          title: 'Installation Guide',
           items: [
             {
-              label: 'User Guide',
-              to: '/docs/intro',
+              label: 'Installation Guide',
+              to: '/docs/guidelines/entwicklerdoku/einrichtung',
             },
           ],
         },
