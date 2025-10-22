@@ -55,11 +55,6 @@ export default function DeleteAccountDialog({ onBack, isOAuthUser }: DeleteAccou
     }
   };
 
-  const handleCancel = () => {
-    setDeletePassword("");
-    setDeleteError("");
-    onBack();
-  };
 
   return (
     <motion.div

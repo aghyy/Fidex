@@ -66,14 +66,6 @@ export default function PasswordDialog({ onBack }: PasswordDialogProps) {
     }
   };
 
-  const handleCancel = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setPasswordError("");
-    setPasswordMessage("");
-    onBack();
-  };
 
   return (
     <motion.div

@@ -125,7 +125,7 @@ function MorphingPopoverTrigger({
 
   if (asChild && isValidElement(children)) {
     const MotionComponent = motion.create(
-      children.type as React.ForwardRefExoticComponent<any>
+      children.type as React.ElementType
     );
     const childProps = children.props as Record<string, unknown>;
 
@@ -178,7 +178,7 @@ function MorphingPopoverContent({
       'MorphingPopoverContent must be used within MorphingPopover'
     );
 
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   useClickOutside(ref, (event) => {
     // Ignore clicks originating from portals/overlays that belong to children (e.g., Radix Select portal)
     const target = event.target as HTMLElement | null;
@@ -197,7 +197,7 @@ function MorphingPopoverContent({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [context.isOpen, context.close]);
+  }, [context]);
 
   return (
     <AnimatePresence>

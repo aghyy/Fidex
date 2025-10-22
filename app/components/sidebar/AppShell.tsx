@@ -45,7 +45,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         .catch(() => { })
         .finally(() => setImageLoading(false));
     }
-  }, [session?.user?.id]);
+  }, [session?.user]);
 
   const isAuthRoute = pathname?.startsWith("/auth/") ?? false;
 

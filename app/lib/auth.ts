@@ -1,5 +1,3 @@
-const API_URL = ""; // same-origin
-
 export async function registerUser(data: {
   email: string;
   password: string;
@@ -50,7 +48,7 @@ export async function getSession() {
     }
 
     return response.json();
-  } catch (error) {
+  } catch {
     return null;
   }
 }

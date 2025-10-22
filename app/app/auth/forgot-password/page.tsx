@@ -36,7 +36,7 @@ export default function ForgotPassword() {
       setMessage(data.message);
       setEmail("");
       setLoading(false);
-    } catch (error) {
+    } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
     }

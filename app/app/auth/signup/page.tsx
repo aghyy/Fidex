@@ -60,7 +60,7 @@ export default function SignUp() {
       // Do not auto sign in; require email verification first
       router.push("/auth/signin?checkEmail=1");
       router.refresh();
-    } catch (error) {
+    } catch {
       setError("Something went wrong");
       setLoading(false);
     }
