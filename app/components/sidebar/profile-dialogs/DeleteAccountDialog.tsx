@@ -126,13 +126,6 @@ export default function DeleteAccountDialog({ onBack, isOAuthUser }: DeleteAccou
           >
             {deleteLoading ? "Deleting..." : "Delete My Account"}
           </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium rounded-md border hover:bg-accent transition-colors"
-          >
-            Cancel
-          </button>
         </div>
       </form>
     </motion.div>
