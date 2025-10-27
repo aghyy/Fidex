@@ -94,9 +94,13 @@ User "1" -- "n" Document : has
 Category "1" -- "n" Transaction : contains
 ```
 
-### **Begründung des Datenmodells**
+### Begründung des Datenmodells
 
+Das gezeigte Datenmodell wurde basierend auf den Anforderungen der Anwendung entworfen, um die wichtigsten Funktionalitäten wie Benutzerverwaltung, Accountmanagement, Transaktionen, Dokumente und Kategorien zu unterstützen. 
 
+Hierbei dient dieses Modell als Grundlage, um die fachlichen Zusammenhänge zu verstehen und die Anforderungen klar definieren zu können. Dieses Modell stellt dar, welche Informationen benötigt werden, wie diese miteinander verknüpft sind und welche Daten durch die Anwendung verarbeitet werden sollen.
+
+Es gilt jedoch zu beachten, dass es sich hierbei noch nicht um das technische Datenbankschema handelt. Das fachliche Modell hilft zunächst dabei, alle relevanten Entitäten und ihre Beziehungen zu klären, bevor die eigentliche Implementierung in einer konkreten Datenbank erfolgt. Dadurch können spätere Anpassungen oder Optimierungen im technischen Design besser berücksichtigt werden.
 
 ## Datenbankmodell (ERD-Modell)
 
@@ -188,3 +192,10 @@ erDiagram
     User ||--|{ Document : "has"
     Category ||--|{ Transaction : "contains"
 ```
+
+### Begründung des Datenbankschemas
+
+
+
+## Zusammenfassung
+
