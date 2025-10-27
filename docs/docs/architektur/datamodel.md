@@ -50,6 +50,7 @@ classDiagram
         - Id: Text
         - UserId: Text
         - Name: Text
+        - AccountNumber: Text
         - Icon: Icon
         - Balance: Number
         - CreatedAt: Timestamp
@@ -59,6 +60,8 @@ classDiagram
     class Transaction {
         - Id: Text
         - UserId: Text
+        - OriginAccountId: Text
+        - TargetAccountId: Text
         - Amount: Number
         - Notes: Text
         - Interval: "Once" | "Daily" | "Weekly" | "Monthly" | "Quarterly" | "Yearly"
@@ -92,6 +95,8 @@ User "1" -- "n" Transaction : has
 User "1" -- "n" Category : has
 User "1" -- "n" Document : has
 Category "1" -- "n" Transaction : contains
+Account "1" -- "n" Transaction : records
+Transaction "1" --> "2" Account : contains
 ```
 
 ### Begründung des Datenmodells
@@ -194,6 +199,8 @@ erDiagram
     User ||--|{ Category : "has"
     User ||--|{ Document : "has"
     Category ||--|{ Transaction : "contains"
+    Account ||--o{ Transaction : records
+    Transaction }o--|| Account : contains
 ```
 
 ### Begründung des Datenbankschemas
