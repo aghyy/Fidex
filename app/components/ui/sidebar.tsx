@@ -1,9 +1,9 @@
 "use client";
 import { cn } from "@/lib/utils";
 import React, { useState, createContext, useContext, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import { motion } from "motion/react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface Links {
   label: string;
@@ -70,11 +70,12 @@ export const Sidebar = ({
   );
 };
 
-export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
+export const SidebarBody = (props: React.ComponentProps<typeof motion.div> & { links?: Links[] }) => {
+  const { links, ...restProps } = props;
   return (
     <>
-      <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as React.ComponentProps<"div">)} />
+      <DesktopSidebar {...restProps} />
+      <MobileDock links={links} />
     </>
   );
 };
@@ -178,49 +179,41 @@ export const DesktopSidebar = ({
   );
 };
 
-export const MobileSidebar = ({
+export const MobileDock = ({
   className,
   children,
-  ...props
-}: React.ComponentProps<"div">) => {
-  const { open, setOpen } = useSidebar();
+  links,
+}: {
+  className?: string;
+  children?: React.ReactNode;
+  links?: Links[];
+}) => {
   return (
     <>
-      <div
+      <motion.div
         className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-card text-card-foreground w-full border-b"
+          "fixed bottom-0 left-0 right-0 md:hidden z-50 bg-background/95 backdrop-blur-lg rounded-full m-4 shadow-lg",
+          className
         )}
-        {...props}
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        transition={{
+          duration: 0.3,
+          ease: "easeOut",
+        }}
       >
-        <div className="flex justify-end z-20 w-full">
-          <IconMenu2
-            className="text-neutral-800 dark:text-neutral-200"
-            onClick={() => setOpen(!open)}
-          />
+        <div className="flex items-center justify-between p-2 safe-area-pb">
+          {links?.map((link) => (
+            <SidebarLink
+              key={link.href}
+              link={link}
+              dockMode={true}
+              className="flex-1 min-w-0 max-w-[100px]"
+            />
+          ))}
         </div>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ x: "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeInOut",
-              }}
-              className={cn("fixed h-full w-full inset-0 bg-background p-10 z-[100] flex flex-col justify-between", className)}
-            >
-              <div
-                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200"
-                onClick={() => setOpen(!open)}
-              >
-                <IconX />
-              </div>
-              {children}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+        {children}
+      </motion.div>
     </>
   );
 };
@@ -228,12 +221,46 @@ export const MobileSidebar = ({
 export const SidebarLink = ({
   link,
   className,
+  dockMode = false,
   ...props
 }: {
   link: Links;
   className?: string;
+  dockMode?: boolean;
 }) => {
   const { open, animate } = useSidebar();
+  const pathname = usePathname();
+  const isActive = pathname === link.href;
+  
+  if (dockMode) {
+    return (
+      <Link
+        href={link.href}
+        className={cn(
+          "flex flex-col items-center justify-center gap-1 group/sidebar py-2 px-4 transition-all duration-200 rounded-full active:scale-95 min-h-[60px]",
+          isActive
+            ? "bg-primary/10 text-primary"
+            : "hover:bg-muted/50",
+          className
+        )}
+        title={link.label}
+        {...props}
+      >
+        <span className="text-xl">
+          {link.icon}
+        </span>
+        <span className={cn(
+          "text-xs transition-colors font-medium",
+          isActive
+            ? "text-primary"
+            : "text-muted-foreground group-hover/sidebar:text-foreground"
+        )}>
+          {link.label}
+        </span>
+      </Link>
+    );
+  }
+  
   return (
     <Link
       href={link.href}

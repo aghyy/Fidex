@@ -5,6 +5,8 @@ import { flushSync } from "react-dom"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Theme } from "@/types/theme"
 
+// TODO: in chrome when opening profile theme switches to lightmode and clears the theme in profile settings but if set to system then it works fine
+
 interface AnimatedThemeTogglerProps
   extends React.ComponentPropsWithoutRef<"button"> {
   duration?: number
