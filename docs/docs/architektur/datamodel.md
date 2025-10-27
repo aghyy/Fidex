@@ -150,6 +150,7 @@ erDiagram
         varchar(255) id PK
         varchar(255) userId FK
         varchar(255) name
+        varchar(255) accountNumber
         varchar(50) icon
         bigint balance
         timestamp(6) createdAt
@@ -159,6 +160,8 @@ erDiagram
     Transaction {
         varchar(255) id PK
         varchar(255) userId FK
+        varchar(255) originAccountId FK
+        varchat(255) targetAccountId FK
         bigint amount
         varchar(255) notes
         smallint interval
@@ -195,7 +198,18 @@ erDiagram
 
 ### Begründung des Datenbankschemas
 
+Das technische Datenbankschema wurde auf Basis des fachlichen Modells entworfen, um Modularität, Erweiterbarkeit und eine effiziente Datenverwaltung sicherzustellen. Es bildet die Grundlage für die Speicherung und Verarbeitung der Daten in der Anwendung und wurde mit folgenden Designentscheidungen umgesetzt:
 
+1. **Modularität und Erweiterbarkeit**  
+   Die Struktur des Schemas erlaubt eine einfache Anpassung und Erweiterung.
+
+2. **Entkopplung und Trennung von Verantwortlichkeiten**  
+   Die Tabellen sind klar voneinander getrennt und repräsentieren jeweils eine bestimmte Domäne (z. B. Benutzer, Dashboard, Accounts oder Transaktionen). Dadurch wird die Übersichtlichkeit erhöht, und redundante Daten werden vermieden.
+
+3. **Strukturierte Hierarchie und Verknüpfung**  
+   Das Schema zeigt eine klare Verknüpfung zwischen den verschiedenen Elementen. Zum Beispiel:
+   - Ein Benutzer (`User`) besitzt Dokumente (`Document`), die wiederum zu einer Kategorie (`Category`) gehören. 
+   - Ein Benutzer (`User`) hat Transaktionen (`Transaction`) ausgeführt und diese wiederum verweisen auf ein Konto (`Account`). 
 
 ## Zusammenfassung
 
