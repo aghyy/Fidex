@@ -297,8 +297,15 @@ export const MobileDock = ({
 
     const dragOffsetPx = isDragging ? (dragOffset / 100) * innerWidth : 0;
 
+    // Prevent the indicator from leaving the dock by more than 25% of its width
+    const minX = -0.2 * widthPx; // allow up to 20% outside on the left
+    const maxX = innerWidth - 0.8 * widthPx; // allow up to 20% outside on the right
+
+    const unclampedX = baseXpx + dragOffsetPx;
+    const clampedX = Math.max(minX, Math.min(maxX, unclampedX));
+
     return {
-      x: baseXpx + dragOffsetPx,
+      x: clampedX,
       widthPx,
     };
   };
@@ -314,7 +321,7 @@ export const MobileDock = ({
     <motion.div
       ref={containerRef}
       className={cn(
-        "fixed bottom-0 left-0 right-0 md:hidden z-50 bg-background/95 backdrop-blur-lg rounded-full m-4 shadow-lg",
+        "fixed bottom-0 left-0 right-0 md:hidden z-50 bg-background/95 backdrop-blur-lg rounded-full m-4 shadow-lg touch-pan-y overscroll-none select-none",
         isDragging && "bg-primary/5",
         className
       )}
@@ -340,7 +347,7 @@ export const MobileDock = ({
             key={`indicator-${currentIndex}`}
             ref={indicatorRef}
             className={cn(
-              "absolute bg-primary/20 rounded-full cursor-grab z-10",
+              "absolute bg-primary/20 rounded-full cursor-grab z-10 pointer-events-none",
               isDragging && "cursor-grabbing bg-primary/30"
             )}
             initial={false}

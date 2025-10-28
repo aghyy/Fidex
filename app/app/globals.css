@@ -82,6 +82,13 @@ html, body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .user-select-none {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: default;
+  }
 }
 
 ::view-transition-old(root), ::view-transition-new(root) {
