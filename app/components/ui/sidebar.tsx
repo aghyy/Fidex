@@ -194,8 +194,10 @@ export const MobileDock = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragStartX, setDragStartX] = useState(0);
+  const [dragVelocity, setDragVelocity] = useState(0); // px/s
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
+  const lastMoveRef = useRef<{ x: number; t: number } | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -225,6 +227,7 @@ export const MobileDock = ({
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     setDragStartX(clientX);
     setDragOffset(0);
+    lastMoveRef.current = { x: clientX, t: performance.now() };
   };
 
   const handleDragMove = (e: React.TouchEvent | React.MouseEvent) => {
@@ -239,6 +242,17 @@ export const MobileDock = ({
     const containerRect = containerRef.current.getBoundingClientRect();
     const dragDistance = clientX - dragStartX;
 
+    // Velocity tracking (px/s)
+    const now = performance.now();
+    const last = lastMoveRef.current;
+    if (last) {
+      const dt = Math.max(1, now - last.t);
+      const dx = clientX - last.x;
+      const v = Math.abs(dx) / dt * 1000; // px/s
+      setDragVelocity(v);
+    }
+    lastMoveRef.current = { x: clientX, t: now };
+
     // Calculate the offset as a percentage of container width
     const offsetPercentage = (dragDistance / containerRect.width) * 100;
     setDragOffset(offsetPercentage);
@@ -248,6 +262,7 @@ export const MobileDock = ({
     if (!isDragging || !links) return;
 
     setIsDragging(false);
+    setDragVelocity(0); // ensure we snap back to base size after release
 
     // Calculate which tab the drag ended closest to using CSS-based positioning
     const tabWidth = 100 / links.length;
@@ -267,10 +282,10 @@ export const MobileDock = ({
 
   // Calculate the current position of the indicator using CSS-based positioning
   const getIndicatorPosition = () => {
-    if (!links || links.length === 0) return { x: 0, widthPx: 0 };
+    if (!links || links.length === 0) return { x: 0, widthPx: 0, edgeProximity: 0 };
 
     const container = containerRef.current;
-    if (!container) return { x: 0, widthPx: 0 };
+    if (!container) return { x: 0, widthPx: 0, edgeProximity: 0 };
 
     const PADDING_X = 8; // matches p-2
     const rect = container.getBoundingClientRect();
@@ -297,16 +312,24 @@ export const MobileDock = ({
 
     const dragOffsetPx = isDragging ? (dragOffset / 100) * innerWidth : 0;
 
-    // Prevent the indicator from leaving the dock by more than 25% of its width
+    // Prevent the indicator from leaving the dock by more than 20% of its width
     const minX = -0.2 * widthPx; // allow up to 20% outside on the left
     const maxX = innerWidth - 0.8 * widthPx; // allow up to 20% outside on the right
 
     const unclampedX = baseXpx + dragOffsetPx;
     const clampedX = Math.max(minX, Math.min(maxX, unclampedX));
 
+    // Edge proximity (0..1): 1 when touching boundary, 0 when >= 20% width away
+    const distLeft = clampedX - minX;
+    const distRight = maxX - clampedX;
+    const nearest = Math.min(distLeft, distRight);
+    const edgeDenom = 0.2 * widthPx;
+    const edgeProximity = Math.max(0, Math.min(1, 1 - nearest / Math.max(1, edgeDenom)));
+
     return {
       x: clampedX,
       widthPx,
+      edgeProximity,
     };
   };
 
@@ -316,6 +339,28 @@ export const MobileDock = ({
   }
 
   const indicatorPosition = getIndicatorPosition();
+  const baseHeight = 56; // px (slightly slimmer by default)
+  const velNorm = Math.min(1, dragVelocity / 1200); // make velocity effect more noticeable
+
+  // Edge effect: subtle at edges (no extreme roundness)
+  // - width shrinks at edges down to 85% (min 0.85x)
+  // - height grows at edges up to 110% (max 1.10x)
+  const edgeWidthFactor = 1 - 0.15 * indicatorPosition.edgeProximity;
+  const edgeHeightFactor = 1 + 0.10 * indicatorPosition.edgeProximity;
+
+  // Velocity effect: fast drags become wider and flatter
+  // - width grows up to 1.25x at high velocity
+  // - height reduces down to 0.85x at high velocity
+  const velWidthFactor = 1 + 0.25 * velNorm;
+  const velHeightFactor = 1 - 0.15 * velNorm;
+
+  // Combine while dragging; when not dragging, snap to base
+  const targetWidth = isDragging
+    ? Math.max(0.7 * indicatorPosition.widthPx, indicatorPosition.widthPx * edgeWidthFactor * velWidthFactor)
+    : indicatorPosition.widthPx;
+  const targetHeight = isDragging
+    ? Math.max(40, baseHeight * edgeHeightFactor * velHeightFactor)
+    : baseHeight;
 
   return (
     <motion.div
@@ -353,17 +398,19 @@ export const MobileDock = ({
             initial={false}
             animate={{
               x: indicatorPosition.x,
+              y: -targetHeight / 2,
+              width: targetWidth,
+              height: targetHeight,
+              borderRadius: targetHeight / 2,
             }}
             transition={isDragging ? { duration: 0 } : {
               type: "spring",
-              stiffness: 300,
-              damping: 30,
-              mass: 1,
+              stiffness: 320,
+              damping: 28,
+              mass: 0.9,
             }}
             style={{
-              width: `${indicatorPosition.widthPx}px`,
-              height: '60px',
-              top: '8px',
+              top: '50%',
               left: '8px',
             }}
           />
