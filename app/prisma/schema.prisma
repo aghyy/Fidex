@@ -122,7 +122,7 @@ model Transaction {
   userId          String @unique
   originAccountId String
   targetAccountId String
-  amount          Bigint
+  amount          Bigint @db.BigInt
   notes           String
   interval        TransactionInterval @default(ONCE)
   type            TransactionType @default(EXPENSE)
