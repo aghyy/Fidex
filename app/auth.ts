@@ -6,6 +6,7 @@ import WebAuthn from "next-auth/providers/webauthn";
 import type { Provider } from "next-auth/providers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./lib/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 type DbUser = {
   id: string;
@@ -155,8 +156,13 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
+const prismaForAdapter = Object.create(prisma) as PrismaClient & { account: unknown };
+Object.defineProperty(prismaForAdapter, "account", {
+  get: () => (prisma as unknown as Record<string, unknown>)["oAuthAccount"],
+});
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prismaForAdapter),
   session: { strategy: "jwt" },
   trustHost: true,
   pages: {
