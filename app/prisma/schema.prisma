@@ -18,12 +18,12 @@ model User {
   image          String?
   password       String?
   updatedAt      DateTime        @default(now()) @updatedAt
-  accounts       Account[]
+  accounts       OAuthAccount[]
   sessions       Session[]
   authenticators Authenticator[]
 }
 
-model Account {
+model OAuthAccount {
   userId            String
   type              String
   provider          String
@@ -90,4 +90,50 @@ model Authenticator {
   @@id([userId, credentialID])
 }
 
+// Enums
 
+enum TransactionInterval {
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+model Transaction {
+  id              String @id @default(cuid())
+  userId          String @unique
+  originAccountId String
+  targetAccountId String
+  amount          BigInt
+  notes           String
+  interval        TransactionInterval @default(ONCE)
+  type            TransactionType @default(EXPENSE)
+  category        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  expires         DateTime
+}
+
+model Category {
+  id      String @id @default(cuid())
+  userId  String @unique
+  name    String @unique
+  color   String
+  icon    String
+}
+
+model Document {
+  id          String @id @default(cuid())
+  userId      String @unique
+  categoryId  String @unique
+  name        String @unique
+  content     String
+}
