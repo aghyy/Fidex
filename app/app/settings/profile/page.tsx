@@ -22,6 +22,7 @@ export default function ProfileSettingsPage() {
   const [imagePreview, setImagePreview] = useState("");
   const [isOAuthUser, setIsOAuthUser] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function ProfileSettingsPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
+    setProfileLoaded(false);
     fetch("/api/user/profile", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
@@ -50,7 +52,8 @@ export default function ProfileSettingsPage() {
           }
         }
       })
-      .catch(() => { });
+      .catch(() => { })
+      .finally(() => setProfileLoaded(true));
   }, [status]);
 
   const initials = useMemo(() => {
@@ -124,7 +127,7 @@ export default function ProfileSettingsPage() {
     }
   };
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading" || status === "unauthenticated" || !profileLoaded) {
     return <LoadingScreen />;
   }
 
