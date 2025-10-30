@@ -220,3 +220,4 @@ Das technische Datenbankschema wurde auf Basis des fachlichen Modells entworfen,
 
 ## Zusammenfassung
 
+Durch die klare Struktur und die Trennung der Entitäten gewährleistet das Datenbankschema eine hohe Modularität und Erweiterbarkeit. Die Standardisierung von Attributen wie Typen und Sichtbarkeiten sorgt für Konsistenz. Dieses Design ermöglicht eine skalierbare, wartbare Datenstruktur, die flexibel an zukünftige Anforderungen angepasst werden kann. 
