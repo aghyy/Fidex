@@ -14,11 +14,10 @@ interface Passkey {
 }
 
 interface PasskeysDialogProps {
-  onBack: () => void;
   isOAuthUser: boolean;
 }
 
-export default function PasskeysDialog({ onBack, isOAuthUser }: PasskeysDialogProps) {
+export default function PasskeysDialog({ isOAuthUser }: PasskeysDialogProps) {
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -181,18 +180,7 @@ export default function PasskeysDialog({ onBack, isOAuthUser }: PasskeysDialogPr
       exit={{ opacity: 0, x: -20 }}
       className="space-y-4"
     >
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          onClick={onBack}
-          className="p-1 hover:bg-accent rounded transition-colors"
-          aria-label="Back to profile"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h2 className="text-lg font-semibold">Manage Passkeys</h2>
-      </div>
+      <h2 className="text-lg font-semibold">Manage Passkeys</h2>
 
       {isOAuthUser && (
         <div className="rounded-md bg-yellow-50 dark:bg-yellow-950 p-3 border border-yellow-200 dark:border-yellow-900">
@@ -263,7 +251,6 @@ export default function PasskeysDialog({ onBack, isOAuthUser }: PasskeysDialogPr
                   value={passkeyName}
                   onChange={(e) => setPasskeyName(e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  autoFocus
                   placeholder="e.g., My iPhone, Work Laptop"
                   className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 />

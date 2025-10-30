@@ -20,7 +20,9 @@ export default function BudgetsPage() {
 
   return (
     <>
-      <h1>Budgets</h1>
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-bold mb-6">Budgets</h1>
+      </div>
     </>
   );
 }

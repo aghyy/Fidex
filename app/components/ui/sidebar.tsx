@@ -229,19 +229,42 @@ export const MobileDock = ({
     }
   }, [pathname]);
 
-  // Force re-render when pathname changes to ensure DOM is updated
-  // useEffect(() => {
-  //   if (isClient) {
-  //     // Small delay to ensure DOM is updated after navigation
-  //     const timer = setTimeout(() => {
-  //       // Force a re-render by updating a dummy state
-  //       setDragOffset(prev => prev);
-  //     }, 50);
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [pathname, isClient]);
+  const getActiveIndex = React.useCallback(() => {
+    if (!isClient || !links || links.length === 0) return 0;
+    const path = pathname || "/";
 
-  const currentIndex = isClient ? (links?.findIndex(link => link.href === pathname) ?? 0) : 0;
+    // Exact root only matches root
+    if (path === "/") {
+      const rootIdx = links.findIndex(l => l.href === "/");
+      return rootIdx >= 0 ? rootIdx : 0;
+    }
+
+    // Prefer the longest matching prefix (excluding root)
+    let bestIdx = -1;
+    let bestLen = -1;
+    links.forEach((l, idx) => {
+      if (l.href && l.href !== "/") {
+        if (path === l.href || path.startsWith(l.href + "/")) {
+          const len = l.href.length;
+          if (len > bestLen) {
+            bestLen = len;
+            bestIdx = idx;
+          }
+        }
+      }
+    });
+
+    if (bestIdx !== -1) return bestIdx;
+
+    // Fallback to exact match
+    const exactIdx = links.findIndex(l => l.href === path);
+    if (exactIdx !== -1) return exactIdx;
+
+    // Default to first tab
+    return 0;
+  }, [isClient, links, pathname]);
+
+  const currentIndex = getActiveIndex();
 
   const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
     // If we're running a click animation, ignore manual drag until finished
@@ -447,8 +470,8 @@ export const MobileDock = ({
   const animatedTransition = clickAnimatingTo !== null
     ? { type: "tween" as const, duration: Math.max(0.2, travelDurationMs / 1000 + 0.06), ease: "easeInOut" as const }
     : (isDragging
-        ? { duration: 0 }
-        : { type: "spring" as const, stiffness: 200, damping: 26, mass: 1 });
+      ? { duration: 0 }
+      : { type: "spring" as const, stiffness: 200, damping: 26, mass: 1 });
 
   const transitionForRender = mounted ? animatedTransition : { duration: 0 };
 
@@ -515,6 +538,19 @@ export const MobileDock = ({
               height: `${baseHeight}px`,
               transformOrigin: 'left center',
             }}
+            onAnimationComplete={() => {
+              if (travelTimeoutRef.current) {
+                window.clearTimeout(travelTimeoutRef.current);
+                travelTimeoutRef.current = null;
+              }
+              if (clickAnimatingTo !== null && travelHrefRef.current) {
+                const href = travelHrefRef.current;
+                travelHrefRef.current = null;
+                setClickAnimatingTo(null);
+                setTravelTarget(null);
+                router.push(href);
+              }
+            }}
           />
         )}
 
@@ -553,7 +589,11 @@ export const SidebarLink = ({
     setIsClient(true);
   }, []);
 
-  const isActive = isClient && pathname === link.href;
+  const isActive = isClient && (
+    link.href === "/"
+      ? pathname === "/"
+      : (pathname === link.href || pathname.startsWith(link.href + "/"))
+  );
 
   if (dockMode) {
     return (
