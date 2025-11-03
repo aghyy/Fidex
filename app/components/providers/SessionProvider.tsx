@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useSetAtom } from "jotai";
 import { profileAtom, profileLoadedAtom, type UserProfile } from "@/state/profile";
 import { themeAtom } from "@/state/theme";
+import { BasicUser } from "@/types/user";
 
 function ProfileBootstrapper() {
   const { status } = useSession();
@@ -33,7 +34,7 @@ function ProfileBootstrapper() {
           username: user.username || "",
           email: user.email || "",
           image: user.image || "",
-          isOAuthUser: Boolean((data?.user as any)?.isOAuthUser),
+          isOAuthUser: Boolean((data?.user as BasicUser)?.isOAuthUser),
           theme: (data?.user?.theme ? String(data.user.theme).toLowerCase() : undefined) as
             | "light" | "dark" | "system" | undefined,
         };
