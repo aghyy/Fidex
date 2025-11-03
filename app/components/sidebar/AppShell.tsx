@@ -18,7 +18,7 @@ import SidebarFooter from "./SidebarFooter";
 import { BasicUser } from "@/types/user";
 import { useState, useEffect } from "react";
 import { accounts } from "./accountsLinks";
-import { categories } from "./categoriesLinks";
+import DynamicCategories from "./DynamicCategories";
 import { motion } from "framer-motion";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -132,34 +132,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {sidebarOpen && (
                 <div>
                   <span className="text-xs font-bold text-muted-foreground">Categories</span>
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: {
-                        opacity: 1,
-                        transition: {
-                          staggerChildren: 0.02,
-                          delayChildren: accounts.length * 0.02,
-                        },
-                      },
-                    }}
-                  >
-                    {categories.map((c) => {
-                      return (
-                        <motion.div
-                          key={c.href}
-                          variants={{
-                            hidden: { opacity: 0, x: -10 },
-                            visible: { opacity: 1, x: 0 },
-                          }}
-                        >
-                          <SidebarLink link={c} />
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
+                  <DynamicCategories staggerOffset={accounts.length} />
                 </div>
               )}
             </div>

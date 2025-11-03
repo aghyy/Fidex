@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/skeleton";
+import CategoriesManager from "@/components/categories/CategoriesManager";
 
 export default function ManageCategoriesPage() {
   const { status } = useSession();
@@ -55,17 +56,7 @@ export default function ManageCategoriesPage() {
           <h1 className="text-2xl font-bold">Manage Categories</h1>
         </div>
 
-        <div className="space-y-6">
-          <section className="rounded-xl border bg-background p-4 sm:p-6">
-            <h2 className="text-lg font-semibold mb-2">Categories</h2>
-            <p className="text-sm text-muted-foreground">Coming soon: create, edit, and organize your categories into groups. Configure icons and colors.</p>
-          </section>
-
-          <section className="rounded-xl border bg-background p-4 sm:p-6">
-            <h2 className="text-lg font-semibold mb-2">Rules</h2>
-            <p className="text-sm text-muted-foreground">Coming soon: categorization rules for automatic transaction labeling.</p>
-          </section>
-        </div>
+        <CategoriesManager />
       </div>
     </>
   );
