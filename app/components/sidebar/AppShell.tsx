@@ -53,7 +53,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // TODO: implement mobile sidebar... either manually open or use dock as sidebar (liquid glass?)
   const links = [
     {
       label: "Dashboard",

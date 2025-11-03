@@ -6,8 +6,6 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { useAtom } from "jotai"
 import { themeAtom, type ThemeMode } from "@/state/theme"
 
-// TODO: in chrome when opening profile theme switches to lightmode and clears the theme in profile settings but if set to system then it works fine
-
 interface AnimatedThemeTogglerProps
   extends React.ComponentPropsWithoutRef<"button"> {
   duration?: number
