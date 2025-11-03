@@ -17,6 +17,7 @@ model User {
   emailVerified  DateTime?
   image          String?
   password       String?
+  theme          ThemePreference @default(SYSTEM)
   updatedAt      DateTime        @default(now()) @updatedAt
   accounts       OAuthAccount[]
   sessions       Session[]
@@ -91,6 +92,12 @@ model Authenticator {
 }
 
 // Enums
+
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
 
 enum TransactionInterval {
   ONCE

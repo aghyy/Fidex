@@ -118,6 +118,8 @@ export default function ProfileSettingsPage() {
         email: email,
         image: image || "",
         isOAuthUser,
+        theme: (data.user.theme ? String(data.user.theme).toLowerCase() : undefined) as
+          | "light" | "dark" | "system" | undefined,
       });
       setLoading(false);
     } catch {

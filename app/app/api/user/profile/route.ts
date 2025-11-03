@@ -19,6 +19,7 @@ export async function GET() {
         username: true,
         email: true,
         image: true,
+        theme: true,
         password: true,
         createdAt: true,
       },
@@ -50,7 +51,7 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const { firstName, lastName, username, image } = body;
+    const { firstName, lastName, username, image, theme } = body;
 
     const currentUsername = 'username' in session.user ? (session.user as { username?: string }).username : undefined;
     if (username !== undefined && username !== currentUsername) {
@@ -78,8 +79,11 @@ export async function PATCH(request: Request) {
         ...(lastName !== undefined && { lastName }),
         ...(username !== undefined && { username }),
         ...(image !== undefined && { image }),
+        ...(theme !== undefined && theme !== null && {
+          theme: theme === 'light' ? 'LIGHT' : theme === 'dark' ? 'DARK' : 'SYSTEM',
+        }),
       },
-      select: { id: true, firstName: true, lastName: true, username: true, email: true, image: true },
+      select: { id: true, firstName: true, lastName: true, username: true, email: true, image: true, theme: true },
     });
 
     return NextResponse.json({ user: updatedUser });

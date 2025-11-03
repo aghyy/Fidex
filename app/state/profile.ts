@@ -9,6 +9,7 @@ export type UserProfile = {
   email: string;
   image: string;
   isOAuthUser: boolean;
+  theme?: "light" | "dark" | "system";
 };
 
 export const profileLoadedAtom = atom(false);

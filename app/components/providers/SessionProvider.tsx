@@ -5,11 +5,13 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useSetAtom } from "jotai";
 import { profileAtom, profileLoadedAtom, type UserProfile } from "@/state/profile";
+import { themeAtom } from "@/state/theme";
 
 function ProfileBootstrapper() {
   const { status } = useSession();
   const setProfile = useSetAtom(profileAtom);
   const setLoaded = useSetAtom(profileLoadedAtom);
+  const setTheme = useSetAtom(themeAtom);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,8 +34,13 @@ function ProfileBootstrapper() {
           email: user.email || "",
           image: user.image || "",
           isOAuthUser: Boolean((data?.user as any)?.isOAuthUser),
+          theme: (data?.user?.theme ? String(data.user.theme).toLowerCase() : undefined) as
+            | "light" | "dark" | "system" | undefined,
         };
         setProfile(profile);
+        if (profile.theme) {
+          setTheme(profile.theme);
+        }
       } catch {
         setProfile(null);
       } finally {

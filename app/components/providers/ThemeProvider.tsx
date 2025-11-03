@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import { useAtom, useAtomValue } from "jotai";
 import { isDarkAtom, themeAtom } from "@/state/theme";
+import { useSession } from "next-auth/react";
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useAtom(themeAtom);
   const isDark = useAtomValue(isDarkAtom);
+  const { status } = useSession();
 
   // Hydrate mode from cookie on mount for persistence across refreshes
   useEffect(() => {
@@ -50,6 +52,18 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const secure = isHttps ? "; Secure" : "";
     document.cookie = `fidex-theme=${mode}; Path=/; Max-Age=${oneYear}; SameSite=Lax${secure}`;
   }, [mode]);
+
+  // Persist mode to DB for authenticated users
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    // Fire and forget; API already validates
+    fetch("/api/user/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ theme: mode }),
+    }).catch(() => {});
+  }, [mode, status]);
 
   return children as React.ReactElement;
 }
