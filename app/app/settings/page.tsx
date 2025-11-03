@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import LoadingScreen from "@/components/LoadingScreen";
+import Skeleton from "@/components/ui/skeleton";
 import Link from "next/link";
 import { IconUser, IconCategory, IconWallet, IconLogout } from "@tabler/icons-react";
 
@@ -18,7 +18,25 @@ export default function SettingsPage() {
   }, [status, router]);
 
   if (status === "loading" || status === "unauthenticated") {
-    return <LoadingScreen />;
+    return (
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <Skeleton className="h-7 w-40 mb-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border bg-background p-5">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-5 w-5 rounded mb-1" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-40 mb-2" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

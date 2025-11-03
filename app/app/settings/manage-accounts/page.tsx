@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import LoadingScreen from "@/components/LoadingScreen";
+import Skeleton from "@/components/ui/skeleton";
 
 export default function ManageAccountsPage() {
   const { status } = useSession();
@@ -16,7 +16,26 @@ export default function ManageAccountsPage() {
   }, [status, router]);
 
   if (status === "loading" || status === "unauthenticated") {
-    return <LoadingScreen />;
+    return (
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-7 w-56" />
+        </div>
+        <div className="space-y-6">
+          <div className="rounded-xl border bg-background p-6">
+            <Skeleton className="h-5 w-40 mb-3" />
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <div className="rounded-xl border bg-background p-6">
+            <Skeleton className="h-5 w-40 mb-3" />
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

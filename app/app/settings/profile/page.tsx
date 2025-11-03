@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import LoadingScreen from "@/components/LoadingScreen";
+import Skeleton from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import imageCompression from "browser-image-compression";
 import PasswordDialog from "@/components/sidebar/profile-dialogs/PasswordDialog";
@@ -128,7 +128,61 @@ export default function ProfileSettingsPage() {
   };
 
   if (status === "loading" || status === "unauthenticated" || !profileLoaded) {
-    return <LoadingScreen />;
+    return (
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-7 w-32" />
+        </div>
+
+        <section className="rounded-xl border bg-background p-4 sm:p-6">
+          <div className="space-y-5">
+            <div className="flex items-center md:justify-start justify-center gap-4">
+              <Skeleton className="h-20 w-20 rounded-full" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Skeleton className="h-3 w-24 mb-2" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+              <div>
+                <Skeleton className="h-3 w-24 mb-2" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            </div>
+            <div>
+              <Skeleton className="h-3 w-20 mb-2" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+            <div>
+              <Skeleton className="h-3 w-16 mb-2" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+            <div className="flex items-center justify-end">
+              <Skeleton className="h-9 w-28" />
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-6 space-y-4">
+          <div className="flex md:flex-row flex-col gap-4">
+            <div className="rounded-lg border p-4 flex-1">
+              <Skeleton className="h-5 w-40 mb-2" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+            <div className="rounded-lg border p-4 flex-1">
+              <Skeleton className="h-5 w-40 mb-2" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </div>
+          <div className="rounded-lg border p-4">
+            <Skeleton className="h-5 w-52 mb-2" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
