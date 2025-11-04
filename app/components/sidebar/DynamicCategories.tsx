@@ -15,7 +15,6 @@ import {
 } from "@tabler/icons-react";
 
 import { useCategories } from "@/state/categories";
-type Category = { id: string; name: string; color: string | null; icon: string | null };
 
 const iconMap: Record<string, (props: { className?: string }) => JSX.Element> = {
   IconQuestionMark: (p) => <IconQuestionMark {...p} />,
