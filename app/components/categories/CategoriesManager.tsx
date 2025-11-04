@@ -89,7 +89,7 @@ function determineTextColor(backgroundColor?: string | null) {
 export default function CategoriesManager() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [state, setState] = useState<FetchState>("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   // create dialog moved to page header; local create state removed
 

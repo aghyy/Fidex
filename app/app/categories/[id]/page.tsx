@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-export default function CategoryDetailPage({ params }: { params: { id: string } }) {
+export default function CategoryDetailPage(ctx: unknown) {
+  const { params } = ctx as { params: { id: string } };
   const { id } = params;
   return (
     <div className="px-4 py-6 sm:px-6 lg:px-8">
