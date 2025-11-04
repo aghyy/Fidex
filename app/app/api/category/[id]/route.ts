@@ -13,7 +13,8 @@ type CategoryDelegate = {
 
 const category = (prisma as unknown as { category: CategoryDelegate }).category;
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, ctx: unknown) {
+  const { params } = ctx as { params: { id: string } };
   const session = await auth();
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,7 +33,8 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, ctx: unknown) {
+  const { params } = ctx as { params: { id: string } };
   const session = await auth();
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -64,7 +66,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_: Request, ctx: unknown) {
+  const { params } = ctx as { params: { id: string } };
   const session = await auth();
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
