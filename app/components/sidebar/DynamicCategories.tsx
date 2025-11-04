@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { JSX, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { SidebarLink } from "../ui/sidebar";
 import {
@@ -38,16 +38,29 @@ export default function DynamicCategories({ staggerOffset = 0 }: { staggerOffset
 
   useEffect(() => {
     let active = true;
-    fetch("/api/category", { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (!active) return;
-        setCategories((d.categories as Category[]) ?? []);
-      })
-      .catch(() => {})
-      .finally(() => setLoaded(true));
+    const load = () => {
+      fetch("/api/category", { credentials: "include" })
+        .then((r) => r.json())
+        .then((d) => {
+          if (!active) return;
+          setCategories((d.categories as Category[]) ?? []);
+        })
+        .catch(() => {})
+        .finally(() => setLoaded(true));
+    };
+    load();
+    const onCreated = () => load();
+    const onDeleted = () => load();
+    try {
+      window.addEventListener("category:created", onCreated as EventListener);
+      window.addEventListener("category:deleted", onDeleted as EventListener);
+    } catch {}
     return () => {
       active = false;
+      try {
+        window.removeEventListener("category:created", onCreated as EventListener);
+        window.removeEventListener("category:deleted", onDeleted as EventListener);
+      } catch {}
     };
   }, []);
 

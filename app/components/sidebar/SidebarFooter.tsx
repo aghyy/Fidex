@@ -124,7 +124,7 @@ export default function SidebarFooter({
 
   return (
     <div className={`flex flex-col transition-all duration-200 gap-2`}>
-      <MorphingDialog>
+      <MorphingDialog lockSidebar>
         <div className="flex items-center justify-between gap-2">
           <MorphingDialogTrigger
             className="flex items-center gap-2 overflow-hidden rounded-md"
