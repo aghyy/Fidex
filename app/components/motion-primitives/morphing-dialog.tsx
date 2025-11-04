@@ -26,6 +26,7 @@ export type MorphingDialogContextType = {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   uniqueId: string;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
+  lockSidebar: boolean;
 };
 
 const MorphingDialogContext =
@@ -44,11 +45,13 @@ function useMorphingDialog() {
 export type MorphingDialogProviderProps = {
   children: React.ReactNode;
   transition?: Transition;
+  lockSidebar?: boolean;
 };
 
 function MorphingDialogProvider({
   children,
   transition,
+  lockSidebar = false,
 }: MorphingDialogProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const uniqueId = useId();
@@ -60,8 +63,9 @@ function MorphingDialogProvider({
       setIsOpen,
       uniqueId,
       triggerRef,
+      lockSidebar,
     }),
-    [isOpen, uniqueId]
+    [isOpen, uniqueId, lockSidebar]
   );
 
   return (
@@ -74,11 +78,12 @@ function MorphingDialogProvider({
 export type MorphingDialogProps = {
   children: React.ReactNode;
   transition?: Transition;
+  lockSidebar?: boolean;
 };
 
-function MorphingDialog({ children, transition }: MorphingDialogProps) {
+function MorphingDialog({ children, transition, lockSidebar }: MorphingDialogProps) {
   return (
-    <MorphingDialogProvider>
+    <MorphingDialogProvider lockSidebar={lockSidebar}>
       <MotionConfig transition={transition}>{children}</MotionConfig>
     </MorphingDialogProvider>
   );
@@ -142,7 +147,7 @@ function MorphingDialogContent({
   className,
   style,
 }: MorphingDialogContentProps) {
-  const { setIsOpen, isOpen, uniqueId, triggerRef } = useMorphingDialog();
+  const { setIsOpen, isOpen, uniqueId, triggerRef, lockSidebar } = useMorphingDialog();
   const containerRef = useRef<HTMLDivElement>(null!);
   const [firstFocusableElement, setFirstFocusableElement] =
     useState<HTMLElement | null>(null);
@@ -187,11 +192,12 @@ function MorphingDialogContent({
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add('overflow-hidden');
-      // Mark dialog as open globally so other components can react (e.g., keep sidebar open)
-      document.body.dataset.morphingDialogOpen = 'true';
-      try {
-        window.dispatchEvent(new Event('morphing-dialog:opened'));
-      } catch {}
+      if (lockSidebar) {
+        document.body.dataset.morphingDialogOpen = 'true';
+        try {
+          window.dispatchEvent(new Event('morphing-dialog:opened'));
+        } catch {}
+      }
       const focusableElements = containerRef.current?.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
@@ -204,13 +210,17 @@ function MorphingDialogContent({
       }
     } else {
       document.body.classList.remove('overflow-hidden');
-      delete document.body.dataset.morphingDialogOpen;
+      if (lockSidebar) {
+        delete document.body.dataset.morphingDialogOpen;
+      }
       triggerRef.current?.focus();
-      try {
-        window.dispatchEvent(new Event('morphing-dialog:closed'));
-      } catch {}
+      if (lockSidebar) {
+        try {
+          window.dispatchEvent(new Event('morphing-dialog:closed'));
+        } catch {}
+      }
     }
-  }, [isOpen, triggerRef]);
+  }, [isOpen, triggerRef, lockSidebar]);
 
   useClickOutside(containerRef, () => {
     if (document.body.dataset.radixSelectOpen === 'true') {
@@ -436,4 +446,5 @@ export {
   MorphingDialogSubtitle,
   MorphingDialogDescription,
   MorphingDialogImage,
+  useMorphingDialog,
 };

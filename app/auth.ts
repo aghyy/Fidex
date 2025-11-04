@@ -26,8 +26,11 @@ type AuthorizedUser = {
   lastName?: string | null;
 };
 
+const enableWebAuthn = process.env.AUTH_ENABLE_WEBAUTHN === "true";
+
 const providers: Provider[] = [
-  WebAuthn({ enableConditionalUI: true }),
+  // Only include WebAuthn when explicitly enabled to avoid experimental warnings
+  ...(enableWebAuthn ? [WebAuthn({ enableConditionalUI: true })] : []),
   Credentials({
     name: "Credentials",
     credentials: {
@@ -183,7 +186,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   }),
   providers,
-  experimental: { enableWebAuthn: true },
+  ...(enableWebAuthn ? { experimental: { enableWebAuthn: true } } : {}),
   callbacks: {
     async jwt({ token, user, trigger, session: updatedSession }) {
       if (user) {
