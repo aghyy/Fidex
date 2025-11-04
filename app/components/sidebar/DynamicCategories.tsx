@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useEffect, useMemo, useState } from "react";
+import { JSX, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SidebarLink } from "../ui/sidebar";
 import {
@@ -14,6 +14,7 @@ import {
   IconTax,
 } from "@tabler/icons-react";
 
+import { useCategories } from "@/state/categories";
 type Category = { id: string; name: string; color: string | null; icon: string | null };
 
 const iconMap: Record<string, (props: { className?: string }) => JSX.Element> = {
@@ -33,36 +34,7 @@ function resolveIcon(name?: string | null) {
 }
 
 export default function DynamicCategories({ staggerOffset = 0 }: { staggerOffset?: number }) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    const load = () => {
-      fetch("/api/category", { credentials: "include" })
-        .then((r) => r.json())
-        .then((d) => {
-          if (!active) return;
-          setCategories((d.categories as Category[]) ?? []);
-        })
-        .catch(() => {})
-        .finally(() => setLoaded(true));
-    };
-    load();
-    const onCreated = () => load();
-    const onDeleted = () => load();
-    try {
-      window.addEventListener("category:created", onCreated as EventListener);
-      window.addEventListener("category:deleted", onDeleted as EventListener);
-    } catch {}
-    return () => {
-      active = false;
-      try {
-        window.removeEventListener("category:created", onCreated as EventListener);
-        window.removeEventListener("category:deleted", onDeleted as EventListener);
-      } catch {}
-    };
-  }, []);
+  const categories = useCategories();
 
   const links = useMemo(
     () =>
@@ -74,15 +46,7 @@ export default function DynamicCategories({ staggerOffset = 0 }: { staggerOffset
     [categories]
   );
 
-  if (!loaded && links.length === 0) {
-    return (
-      <div className="space-y-1">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-6 rounded bg-muted/50" />
-        ))}
-      </div>
-    );
-  }
+  // Skeleton handled by parent if needed
 
   return (
     <motion.div

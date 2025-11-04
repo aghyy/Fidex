@@ -19,11 +19,13 @@ import { BasicUser } from "@/types/user";
 import { useState, useEffect } from "react";
 import { accounts } from "./accountsLinks";
 import DynamicCategories from "./DynamicCategories";
+import { useCategories, useCategoriesBootstrap } from "@/state/categories";
 import { motion } from "framer-motion";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const categoriesState = useCategories();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<BasicUser | null>(null);
@@ -46,6 +48,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         .finally(() => setImageLoading(false));
     }
   }, [session?.user]);
+
+  // Bootstrap categories global store when authenticated
+  useCategoriesBootstrap(Boolean(session?.user));
 
   const isAuthRoute = pathname?.startsWith("/auth/") ?? false;
 
@@ -132,7 +137,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {sidebarOpen && (
                 <div>
                   <span className="text-xs font-bold text-muted-foreground">Categories</span>
-                  <DynamicCategories staggerOffset={accounts.length} />
+                  <DynamicCategories staggerOffset={categoriesState.length} />
                 </div>
               )}
             </div>
