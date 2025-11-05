@@ -143,6 +143,7 @@ model Account {
   userId        String @unique
   name          String
   accountNumber String @unique
+  color         String
   icon          String
   balance       BigInt
   createdAt     DateTime @default(now())
