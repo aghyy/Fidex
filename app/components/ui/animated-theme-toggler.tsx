@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { flushSync } from "react-dom"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Theme } from "@/types/theme"
-
-// TODO: in chrome when opening profile theme switches to lightmode and clears the theme in profile settings but if set to system then it works fine
+import { useAtom } from "jotai"
+import { themeAtom, type ThemeMode } from "@/state/theme"
 
 interface AnimatedThemeTogglerProps
   extends React.ComponentPropsWithoutRef<"button"> {
@@ -18,28 +17,25 @@ export const AnimatedThemeToggler = ({
   ...props
 }: AnimatedThemeTogglerProps) => {
   const selectRef = useRef<HTMLButtonElement>(null)
-  const [theme, setTheme] = useState<Theme>("system")
+  const [theme, setTheme] = useAtom(themeAtom)
   const [isSelectOpen, setIsSelectOpen] = useState(false)
 
-  const applyTheme = useCallback((t: Theme) => {
+  const applyTheme = useCallback((t: ThemeMode) => {
     const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
     const isDark = t === "dark" || (t === "system" && prefersDark)
     document.documentElement.classList.toggle("dark", isDark)
   }, [])
 
   useEffect(() => {
-    const saved = (localStorage.getItem("theme") as Theme | null) ?? "system"
-    setTheme(saved)
-    applyTheme(saved)
-  }, [applyTheme])
+    applyTheme(theme)
+  }, [applyTheme, theme])
 
-  const toggleTheme = useCallback(async (next: Theme) => {
+  const toggleTheme = useCallback(async (next: ThemeMode) => {
     if (!selectRef.current) return
 
     await document.startViewTransition(() => {
       flushSync(() => {
         applyTheme(next)
-        localStorage.setItem("theme", next)
         setTheme(next)
       })
     }).ready
@@ -65,16 +61,16 @@ export const AnimatedThemeToggler = ({
         pseudoElement: "::view-transition-new(root)",
       }
     )
-  }, [duration, applyTheme])
+  }, [duration, applyTheme, setTheme])
 
-  function handleChange(value: Theme) {
+  function handleChange(value: ThemeMode) {
     toggleTheme(value)
   }
 
   return (
     <Select
       value={theme}
-      onValueChange={(v) => handleChange(v as Theme)}
+      onValueChange={(v) => handleChange(v as ThemeMode)}
       open={isSelectOpen}
       onOpenChange={(open) => {
         setIsSelectOpen(open)

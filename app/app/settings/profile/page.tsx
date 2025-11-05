@@ -10,19 +10,23 @@ import PasswordDialog from "@/components/sidebar/profile-dialogs/PasswordDialog"
 import DeleteAccountDialog from "@/components/sidebar/profile-dialogs/DeleteAccountDialog";
 import PasskeysDialog from "@/components/sidebar/profile-dialogs/PasskeysDialog";
 import { IconX } from "@tabler/icons-react";
+import { useAtom, useSetAtom } from "jotai";
+import { profileAtom, profileLoadedAtom } from "@/state/profile";
 
 export default function ProfileSettingsPage() {
   const { status, data: session, update } = useSession();
   const router = useRouter();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [image, setImage] = useState("");
-  const [imagePreview, setImagePreview] = useState("");
-  const [isOAuthUser, setIsOAuthUser] = useState(false);
+  const [profile] = useAtom(profileAtom);
+  const [profileLoaded] = useAtom(profileLoadedAtom);
+  const setProfile = useSetAtom(profileAtom);
+  const [firstName, setFirstName] = useState(profile?.firstName || "");
+  const [lastName, setLastName] = useState(profile?.lastName || "");
+  const [username, setUsername] = useState(profile?.username || "");
+  const [email, setEmail] = useState(profile?.email || "");
+  const [image, setImage] = useState(profile?.image || "");
+  const [imagePreview, setImagePreview] = useState(profile?.image || "");
+  const [isOAuthUser, setIsOAuthUser] = useState(Boolean(profile?.isOAuthUser));
   const [loading, setLoading] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -33,28 +37,15 @@ export default function ProfileSettingsPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    setProfileLoaded(false);
-    fetch("/api/user/profile", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setFirstName(data.user.firstName || "");
-          setLastName(data.user.lastName || "");
-          setUsername(data.user.username || "");
-          setEmail(data.user.email || "");
-          setIsOAuthUser(data.user.isOAuthUser || false);
-          if (data.user.image) {
-            setImage(data.user.image);
-            setImagePreview(data.user.image);
-          } else {
-            setImage("");
-            setImagePreview("");
-          }
-        }
-      })
-      .catch(() => { })
-      .finally(() => setProfileLoaded(true));
-  }, [status]);
+    if (!profile) return;
+    setFirstName(profile.firstName || "");
+    setLastName(profile.lastName || "");
+    setUsername(profile.username || "");
+    setEmail(profile.email || "");
+    setIsOAuthUser(Boolean(profile.isOAuthUser));
+    setImage(profile.image || "");
+    setImagePreview(profile.image || "");
+  }, [status, profile]);
 
   const initials = useMemo(() => {
     if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase();
@@ -119,6 +110,16 @@ export default function ProfileSettingsPage() {
         firstName: data.user.firstName,
         lastName: data.user.lastName,
         username: data.user.username,
+      });
+      setProfile({
+        firstName: data.user.firstName || "",
+        lastName: data.user.lastName || "",
+        username: data.user.username || "",
+        email: email,
+        image: image || "",
+        isOAuthUser,
+        theme: (data.user.theme ? String(data.user.theme).toLowerCase() : undefined) as
+          | "light" | "dark" | "system" | undefined,
       });
       setLoading(false);
     } catch {

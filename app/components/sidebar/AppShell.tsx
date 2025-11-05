@@ -18,12 +18,14 @@ import SidebarFooter from "./SidebarFooter";
 import { BasicUser } from "@/types/user";
 import { useState, useEffect } from "react";
 import { accounts } from "./accountsLinks";
-import { categories } from "./categoriesLinks";
+import DynamicCategories from "./DynamicCategories";
+import { useCategories, useCategoriesBootstrap } from "@/state/categories";
 import { motion } from "framer-motion";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const categoriesState = useCategories();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<BasicUser | null>(null);
@@ -47,13 +49,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [session?.user]);
 
+  // Bootstrap categories global store when authenticated
+  useCategoriesBootstrap(Boolean(session?.user));
+
   const isAuthRoute = pathname?.startsWith("/auth/") ?? false;
 
   if (isAuthRoute) {
     return <>{children}</>;
   }
 
-  // TODO: implement mobile sidebar... either manually open or use dock as sidebar (liquid glass?)
   const links = [
     {
       label: "Dashboard",
@@ -132,34 +136,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {sidebarOpen && (
                 <div>
                   <span className="text-xs font-bold text-muted-foreground">Categories</span>
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: {
-                        opacity: 1,
-                        transition: {
-                          staggerChildren: 0.02,
-                          delayChildren: accounts.length * 0.02,
-                        },
-                      },
-                    }}
-                  >
-                    {categories.map((c) => {
-                      return (
-                        <motion.div
-                          key={c.href}
-                          variants={{
-                            hidden: { opacity: 0, x: -10 },
-                            visible: { opacity: 1, x: 0 },
-                          }}
-                        >
-                          <SidebarLink link={c} />
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
+                  <DynamicCategories staggerOffset={categoriesState.length} />
                 </div>
               )}
             </div>

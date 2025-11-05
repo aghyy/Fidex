@@ -17,10 +17,12 @@ model User {
   emailVerified  DateTime?
   image          String?
   password       String?
+  theme          ThemePreference @default(SYSTEM)
   updatedAt      DateTime        @default(now()) @updatedAt
   accounts       OAuthAccount[]
   sessions       Session[]
   authenticators Authenticator[]
+  categories     Category[]
 }
 
 model OAuthAccount {
@@ -92,6 +94,12 @@ model Authenticator {
 
 // Enums
 
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
 enum TransactionInterval {
   ONCE
   DAILY
@@ -123,11 +131,16 @@ model Transaction {
 }
 
 model Category {
-  id      String @id @default(cuid())
-  userId  String @unique
-  name    String @unique
-  color   String
-  icon    String
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String?
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
 }
 
 model Document {
@@ -136,6 +149,8 @@ model Document {
   categoryId  String @unique
   name        String @unique
   content     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 }
 
 model Account {

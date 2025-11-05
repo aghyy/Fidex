@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import SessionProvider from "../components/SessionProvider";
+import SessionProvider from "../components/providers/SessionProvider";
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import AppShell from "../components/sidebar/AppShell";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import ThemeProvider from "../components/providers/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,9 +33,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
-          <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+          <ThemeProvider>
             <AppShell>{children}</AppShell>
-          </NextThemesProvider>
+          </ThemeProvider>
         </SessionProvider>
         <Analytics />
         <SpeedInsights />
