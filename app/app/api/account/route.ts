@@ -12,7 +12,7 @@ type AccountDelegate = {
     create: (args: {
       data: { userId: string; name: string; accountNumber: string; color?: string; icon?: string; balance?: number };
     }) => Promise<AccountRecord>;
-  };
+};
 
 const account = (prisma as unknown as { account: AccountDelegate }).account;
 
@@ -57,11 +57,13 @@ export async function POST(request: Request) {
         const data = {
             userId: session.user.id,
             name: String(name).trim(),
-            accountNumber: accountNumber && String(accountNumber).trim(),
+            accountNumber: String(accountNumber).trim(),
             color: color ? String(color).trim() : undefined,
             icon: icon ? String(icon).trim() : undefined,
             balance: balance ? Number(balance) : undefined,
         } as const;
+
+        console.log(data);
         
         const created = await account.create({ data });
         
