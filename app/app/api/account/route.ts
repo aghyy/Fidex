@@ -80,8 +80,6 @@ export async function POST(request: Request) {
             icon: icon ? String(icon).trim() : undefined,
             balance: balance ? Number(balance) : undefined,
         } as const;
-
-        console.log(data);
         
         const created = await account.create({ data });
         
