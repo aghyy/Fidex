@@ -117,7 +117,7 @@ enum TransactionType {
 
 model Transaction {
   id              String @id @default(cuid())
-  userId          String @unique
+  userId          String
   originAccountId String
   targetAccountId String
   amount          BigInt
@@ -145,7 +145,7 @@ model Category {
 
 model Document {
   id          String @id @default(cuid())
-  userId      String @unique
+  userId      String
   categoryId  String @unique
   name        String @unique
   content     String
@@ -155,7 +155,7 @@ model Document {
 
 model Account {
   id            String @id @default(cuid())
-  userId        String @unique
+  userId        String
   name          String
   accountNumber String @unique
   color         String
