@@ -13,7 +13,7 @@ export const loadAccountsAtom = atom(null, async (_get, set) => {
   try {
     const res = await fetch("/api/account", { credentials: "include" });
     const data = await res.json();
-    set(accountsAtom, (data.account as Account[]) ?? []);
+    set(accountsAtom, (data.accounts as Account[]) ?? []);
   } catch {
     set(accountsAtom, []);
   } finally {
