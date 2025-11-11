@@ -11,27 +11,9 @@ import {
   MorphingDialogClose,
 } from "@/components/motion-primitives/morphing-dialog";
 import Skeleton from "@/components/ui/skeleton";
-import {
-  IconQuestionMark,
-  IconBread,
-  IconBus,
-  IconMovie,
-  IconShoppingCart,
-  IconCashBanknote,
-  IconTransferIn,
-  IconTax,
-} from "@tabler/icons-react";
-
-type Account = {
-  id: string;
-  name: string;
-  accountNumber: string;
-  color: string | null;
-  icon: string | null;
-  balance: number;
-};
-
-type FetchState = "idle" | "loading" | "success" | "error";
+import { Account } from "@/types/accounts";
+import { FetchState } from "@/types/api";
+import { renderIconByName } from "@/utils/icons";
 
 const DEFAULT_COLORS = [
   "#ef4444",
@@ -54,39 +36,6 @@ const ICON_OPTIONS = [
   "IconTax",
   "IconQuestionMark",
 ];
-
-const iconMap: Record<string, (props: { className?: string }) => React.JSX.Element> = {
-  IconQuestionMark: (p) => <IconQuestionMark {...p} />,
-  IconBread: (p) => <IconBread {...p} />,
-  IconBus: (p) => <IconBus {...p} />,
-  IconMovie: (p) => <IconMovie {...p} />,
-  IconShoppingCart: (p) => <IconShoppingCart {...p} />,
-  IconCashBanknote: (p) => <IconCashBanknote {...p} />,
-  IconTransferIn: (p) => <IconTransferIn {...p} />,
-  IconTax: (p) => <IconTax {...p} />,
-};
-
-function renderIconByName(name?: string | null, backgroundColor?: string | null) {
-  const Comp = (name && iconMap[name]) || iconMap["IconQuestionMark"];
-  return <Comp className={`h-5 w-5 text-${determineTextColor(backgroundColor)}`} />;
-}
-
-function hexToRgb(hex: string) {
-  const [r, g, b] = hex.match(/[0-9A-Fa-f]{2}/g)?.map(c => parseInt(c, 16)) ?? [0, 0, 0];
-  return { r, g, b };
-}
-
-function isBrightSimple(r: number, g: number, b: number): boolean {
-  // Perceived brightness formula
-  const brightness = 0.299 * r + 0.587 * g + 0.114 * b; // range [0,255]
-  return brightness > 128; // Midpoint threshold; adjust if needed
-}
-
-function determineTextColor(backgroundColor?: string | null) {
-  if (!backgroundColor) return "white";
-  const { r, g, b } = hexToRgb(backgroundColor);
-  return isBrightSimple(r, g, b) ? "black" : "white";
-}
 
 export default function AccountsManager() {
   const [accounts, setAccounts] = useState<Account[]>([]);

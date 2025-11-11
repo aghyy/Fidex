@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
+import { AccountDelegate, AccountRecord } from "@/types/accounts";
 
 export const runtime = "nodejs";
-
-type AccountRecord = { id: string; name: string; accountNumber: string; color: string | null; icon: string | null; balance: number };
-type AccountDelegate = {
-    findUnique: (args: { where: { id: string; userId: string } }) => Promise<AccountRecord | null>;
-    update: (args: { where: { id: string; userId: string }; data: { name?: string; accountNumber?: string; color?: string; icon?: string; balance?: number } }) => Promise<AccountRecord>;
-    delete: (args: { where: { id: string; userId: string } }) => Promise<AccountRecord>;
-};
 
 const account = (prisma as unknown as { account: AccountDelegate }).account;
 

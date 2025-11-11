@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
+import { CategoryDelegate } from "@/types/categories";
 
 export const runtime = "nodejs";
-
-type CategoryRecord = { id: string; name: string; color: string | null; icon: string | null; userId: string };
-type CategoryDelegate = {
-  findFirst: (args: { where: { id?: string; userId?: string } }) => Promise<CategoryRecord | null>;
-  update: (args: { where: { id: string }; data: Partial<Pick<CategoryRecord, "name" | "color" | "icon">> }) => Promise<CategoryRecord>;
-  delete: (args: { where: { id: string } }) => Promise<CategoryRecord>;
-};
 
 const category = (prisma as unknown as { category: CategoryDelegate }).category;
 

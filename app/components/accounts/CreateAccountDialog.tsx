@@ -14,25 +14,8 @@ import {
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import { Plus } from "lucide-react";
-import {
-  IconQuestionMark,
-  IconBread,
-  IconBus,
-  IconMovie,
-  IconShoppingCart,
-  IconCashBanknote,
-  IconTransferIn,
-  IconTax,
-} from "@tabler/icons-react";
-
-type Account = {
-  id: string;
-  name: string;
-  accountNumber: string;
-  color: string | null;
-  icon: string | null;
-  balance: number;
-};
+import { Account } from "@/types/accounts";
+import { renderIconByName } from "@/utils/icons";
 
 const DEFAULT_COLORS = [
   "#ef4444",
@@ -55,22 +38,6 @@ const ICON_OPTIONS = [
   "IconTax",
   "IconQuestionMark",
 ];
-
-const iconMap: Record<string, (props: { className?: string }) => React.JSX.Element> = {
-  IconQuestionMark: (p) => <IconQuestionMark {...p} />,
-  IconBread: (p) => <IconBread {...p} />,
-  IconBus: (p) => <IconBus {...p} />,
-  IconMovie: (p) => <IconMovie {...p} />,
-  IconShoppingCart: (p) => <IconShoppingCart {...p} />,
-  IconCashBanknote: (p) => <IconCashBanknote {...p} />,
-  IconTransferIn: (p) => <IconTransferIn {...p} />,
-  IconTax: (p) => <IconTax {...p} />,
-};
-
-function renderIconByName(name?: string | null) {
-  const Comp = (name && iconMap[name]) || iconMap["IconQuestionMark"];
-  return <Comp className="h-5 w-5" />;
-}
 
 function FormContent() {
   const { setIsOpen } = useMorphingDialog();
