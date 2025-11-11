@@ -105,14 +105,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
               {sidebarOpen && (
                 <div>
-                  <span className="text-xs font-bold text-muted-foreground">Accounts</span>
+                  {accountsState.length > 0 && <span className="text-xs font-bold text-muted-foreground">Accounts</span>}
                   <DynamicAccounts staggerOffset={categoriesState.length} />
                 </div>
               )}
 
               {sidebarOpen && (
                 <div>
-                  <span className="text-xs font-bold text-muted-foreground">Categories</span>
+                  {categoriesState.length > 0 && <span className="text-xs font-bold text-muted-foreground">Categories</span>}
                   <DynamicCategories staggerOffset={categoriesState.length + accountsState.length} />
                 </div>
               )}
