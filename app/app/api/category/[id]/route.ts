@@ -7,15 +7,19 @@ export const runtime = "nodejs";
 
 const category = (prisma as unknown as { category: CategoryDelegate }).category;
 
-export async function GET(_: Request, ctx: unknown) {
-  const { params } = ctx as { params: { id: string } };
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+export async function GET(_: Request, context: RouteContext) {
+  const { id: categoryId } = await context.params;
   const session = await auth();
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const item = await category.findFirst({ where: { id: params.id, userId: session.user.id } });
+    const item = await category.findFirst({ where: { id: categoryId, userId: session.user.id } });
     if (!item) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -27,8 +31,8 @@ export async function GET(_: Request, ctx: unknown) {
   }
 }
 
-export async function PATCH(request: Request, ctx: unknown) {
-  const { params } = ctx as { params: { id: string } };
+export async function PATCH(request: Request, context: RouteContext) {
+  const { id: categoryId } = await context.params;
   const session = await auth();
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -42,12 +46,12 @@ export async function PATCH(request: Request, ctx: unknown) {
     if (typeof body?.icon === "string") data.icon = body.icon.trim();
 
     // Ensure ownership
-    const item = await category.findFirst({ where: { id: params.id, userId: session.user.id } });
+    const item = await category.findFirst({ where: { id: categoryId, userId: session.user.id } });
     if (!item) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const updated = await category.update({ where: { id: params.id }, data });
+    const updated = await category.update({ where: { id: categoryId }, data });
     const { id, name, color, icon } = updated;
     return NextResponse.json({ category: { id, name, color, icon } }, { status: 200 });
   } catch (error: unknown) {
@@ -60,8 +64,8 @@ export async function PATCH(request: Request, ctx: unknown) {
   }
 }
 
-export async function DELETE(_: Request, ctx: unknown) {
-  const { params } = ctx as { params: { id: string } };
+export async function DELETE(_: Request, context: RouteContext) {
+  const { id: categoryId } = await context.params;
   const session = await auth();
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -69,12 +73,12 @@ export async function DELETE(_: Request, ctx: unknown) {
 
   try {
     // Ensure ownership
-    const item = await category.findFirst({ where: { id: params.id, userId: session.user.id } });
+    const item = await category.findFirst({ where: { id: categoryId, userId: session.user.id } });
     if (!item) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    await category.delete({ where: { id: params.id } });
+    await category.delete({ where: { id: categoryId } });
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Delete category error:", error);

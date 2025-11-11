@@ -9,6 +9,7 @@ import {
   MorphingDialogTitle,
   MorphingDialogDescription,
   MorphingDialogClose,
+  useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import Skeleton from "@/components/ui/skeleton";
 import { Category } from "@/types/categories";
@@ -37,12 +38,26 @@ const ICON_OPTIONS = [
   "IconQuestionMark",
 ];
 
+const FALLBACK_COLOR = "#e5e7eb";
+
+type CategoryDraft = {
+  name: string;
+  color: string | null;
+  icon: string | null;
+};
+
+function toDraft(category: Category): CategoryDraft {
+  return {
+    name: category.name,
+    color: category.color ?? null,
+    icon: category.icon ?? null,
+  };
+}
+
 export default function CategoriesManager() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [state, setState] = useState<FetchState>("idle");
   const [, setError] = useState<string | null>(null);
-
-  // create dialog moved to page header; local create state removed
 
   const sortedCategories = useMemo(
     () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
@@ -82,13 +97,14 @@ export default function CategoriesManager() {
     };
   }, []);
 
-  // creation handled by CreateCategoryDialog in page header
-
   async function handleDelete(id: string) {
     setState("loading");
     setError(null);
     try {
-      const res = await fetch(`/api/category/${id}`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`/api/category/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Failed to delete");
       setCategories((prev) => prev.filter((c) => c.id !== id));
@@ -97,8 +113,10 @@ export default function CategoriesManager() {
       } catch {}
       setState("success");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete");
+      const message = e instanceof Error ? e.message : "Failed to delete";
+      setError(message);
       setState("error");
+      throw new Error(message);
     }
   }
 
@@ -118,15 +136,15 @@ export default function CategoriesManager() {
       setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
       setState("success");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to update");
+      const message = e instanceof Error ? e.message : "Failed to update";
+      setError(message);
       setState("error");
+      throw new Error(message);
     }
   }
 
   return (
     <div className="space-y-6">
-      {/* Create button moved to page header via CreateCategoryDialog */}
-
       {state === "loading" && categories.length === 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -144,107 +162,215 @@ export default function CategoriesManager() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedCategories.map((c) => (
-              <MorphingDialog key={c.id}>
-                <MorphingDialogTrigger>
-                  <div className="w-full text-left rounded-lg border p-3 hover:bg-accent/40 transition-colors relative">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 p-2 rounded-full border flex items-center justify-center" style={{ backgroundColor: c.color ?? "#e5e7eb" }}>
-                        {renderIconByName(c.icon, c.color)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate font-medium">{c.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">Click to edit</div>
-                      </div>
-                    </div>
-                  </div>
-                </MorphingDialogTrigger>
-                <MorphingDialogContainer>
-                  <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
-                    <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>
-                    <MorphingDialogDescription className="text-sm text-muted-foreground">Update name, color, or delete.</MorphingDialogDescription>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const item = categories.find((x) => x.id === c.id);
-                        if (!item) return;
-                        void handleUpdate(c.id, { name: item.name, color: item.color ?? undefined, icon: item.icon ?? undefined });
-                      }}
-                      className="mt-4 grid gap-4"
-                    >
-                      <div>
-                        <label className="text-sm text-muted-foreground">Name</label>
-                        <input
-                          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-                          value={c.name}
-                          onChange={(e) => setCategories((prev) => prev.map((x) => (x.id === c.id ? { ...x, name: e.target.value } : x)))}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-muted-foreground">Icon</label>
-                        <div className="mt-2 grid grid-cols-8 gap-2">
-                          {ICON_OPTIONS.map((icon) => (
-                            <button
-                              key={icon}
-                              type="button"
-                              onClick={() => setCategories((prev) => prev.map((x) => (x.id === c.id ? { ...x, icon } : x)))}
-                              className={`h-10 w-10 rounded-md border flex items-center justify-center ${c.icon === icon ? "ring-2 ring-primary" : ""}`}
-                              title={icon}
-                              aria-label={icon}
-                            >
-                              {renderIconByName(icon)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm text-muted-foreground">Color</label>
-                        <div className="mt-2 flex items-center gap-2 flex-wrap">
-                          <input
-                            type="color"
-                            className="h-9 w-12 rounded border"
-                            value={c.color ?? "#e5e7eb"}
-                            onChange={(e) => setCategories((prev) => prev.map((x) => (x.id === c.id ? { ...x, color: e.target.value } : x)))}
-                          />
-                          {DEFAULT_COLORS.map((col) => (
-                            <button
-                              key={col}
-                              type="button"
-                              onClick={() => setCategories((prev) => prev.map((x) => (x.id === c.id ? { ...x, color: col } : x)))}
-                              className={`h-6 w-6 rounded-full border ${c.color === col ? "ring-2 ring-primary" : ""}`}
-                              style={{ backgroundColor: col }}
-                              aria-label={`Pick ${col}`}
-                              title={col}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex justify-between mt-2">
-                        <MorphingDialogClose className="rounded-md border px-4 py-2 text-sm">Close</MorphingDialogClose>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => void handleDelete(c.id)}
-                            className="rounded-md border px-4 py-2 text-sm hover:bg-accent"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            type="submit"
-                            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-90"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    </form>
-                  </MorphingDialogContent>
-                </MorphingDialogContainer>
-              </MorphingDialog>
+          {sortedCategories.map((category) => (
+            <CategoryItem
+              key={category.id}
+              category={category}
+              onDelete={() => handleDelete(category.id)}
+              onSave={(updates) => handleUpdate(category.id, updates)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type CategoryItemProps = {
+  category: Category;
+  onSave: (updates: Partial<Pick<Category, "name" | "color" | "icon">>) => Promise<void>;
+  onDelete: () => Promise<void>;
+};
+
+function CategoryItem({ category, onSave, onDelete }: CategoryItemProps) {
+  return (
+    <MorphingDialog>
+      <CategoryDialogTrigger category={category} />
+      <MorphingDialogContainer>
+        <CategoryDialogContent category={category} onSave={onSave} onDelete={onDelete} />
+      </MorphingDialogContainer>
+    </MorphingDialog>
+  );
+}
+
+type CategoryDialogTriggerProps = {
+  category: Category;
+};
+
+function CategoryDialogTrigger({ category }: CategoryDialogTriggerProps) {
+  const { isOpen } = useMorphingDialog();
+
+  return (
+    <MorphingDialogTrigger
+      className={`transition-opacity duration-200 ${
+        isOpen ? "pointer-events-none opacity-0" : "opacity-100"
+      }`}
+    >
+      <div className="relative w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent/40">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-full border p-2"
+            style={{ backgroundColor: category.color ?? FALLBACK_COLOR }}
+          >
+            {renderIconByName(category.icon, category.color)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium">{category.name}</div>
+            <div className="truncate text-xs text-muted-foreground">Click to edit</div>
+          </div>
+        </div>
+      </div>
+    </MorphingDialogTrigger>
+  );
+}
+
+type CategoryDialogContentProps = {
+  category: Category;
+  onSave: (updates: Partial<Pick<Category, "name" | "color" | "icon">>) => Promise<void>;
+  onDelete: () => Promise<void>;
+};
+
+function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogContentProps) {
+  const { isOpen, setIsOpen } = useMorphingDialog();
+  const [draft, setDraft] = useState<CategoryDraft>(() => toDraft(category));
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(toDraft(category));
+      setFormError(null);
+    }
+  }, [category, isOpen]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!draft.name.trim()) {
+      setFormError("Name is required");
+      return;
+    }
+
+    setFormError(null);
+    setIsSaving(true);
+    try {
+      await onSave({
+        name: draft.name.trim(),
+        color: draft.color ?? undefined,
+        icon: draft.icon ?? undefined,
+      });
+      setIsOpen(false);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Failed to update category");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteClick = async () => {
+    setFormError(null);
+    setIsDeleting(true);
+    try {
+      await onDelete();
+      setIsOpen(false);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Failed to delete category");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
+      <MorphingDialogClose className="text-muted-foreground hover:text-foreground" />
+      <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>
+      <MorphingDialogDescription className="text-sm text-muted-foreground">
+        Update name, color, icon, or delete.
+      </MorphingDialogDescription>
+
+      <form onSubmit={handleSubmit} className="mt-4 grid gap-4">
+        <div>
+          <label className="text-sm text-muted-foreground" htmlFor={`category-name-${category.id}`}>
+            Name
+          </label>
+          <input
+            id={`category-name-${category.id}`}
+            className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+            value={draft.name}
+            onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+          />
+        </div>
+        <div>
+          <span className="text-sm text-muted-foreground">Icon</span>
+          <div className="mt-2 grid grid-cols-8 gap-2">
+            {ICON_OPTIONS.map((icon) => (
+              <button
+                key={icon}
+                type="button"
+                onClick={() => setDraft((prev) => ({ ...prev, icon }))}
+                className={`flex h-10 w-10 items-center justify-center rounded-md border ${
+                  draft.icon === icon ? "ring-2 ring-primary" : ""
+                }`}
+                title={icon}
+                aria-label={icon}
+              >
+                {renderIconByName(icon, draft.color ?? category.color ?? undefined)}
+              </button>
             ))}
           </div>
-        )}
-    </div>
+        </div>
+        <div>
+          <span className="text-sm text-muted-foreground">Color</span>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <input
+              type="color"
+              className="h-9 w-12 rounded border"
+              value={draft.color ?? FALLBACK_COLOR}
+              onChange={(e) => setDraft((prev) => ({ ...prev, color: e.target.value }))}
+            />
+            {DEFAULT_COLORS.map((col) => (
+              <button
+                key={col}
+                type="button"
+                onClick={() => setDraft((prev) => ({ ...prev, color: col }))}
+                className={`h-6 w-6 rounded-full border ${draft.color === col ? "ring-2 ring-primary" : ""}`}
+                style={{ backgroundColor: col }}
+                aria-label={`Pick ${col}`}
+                title={col}
+              />
+            ))}
+          </div>
+        </div>
+        {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
+        <div className="mt-2 flex justify-between">
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            className="rounded-md border px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
+            disabled={isDeleting || isSaving}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="rounded-md border px-4 py-2 text-sm disabled:opacity-50"
+              disabled={isSaving || isDeleting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-90 disabled:opacity-50"
+              disabled={isSaving || isDeleting || !draft.name.trim()}
+            >
+              {isSaving ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </MorphingDialogContent>
   );
 }
 
