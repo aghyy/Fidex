@@ -118,13 +118,13 @@ enum TransactionType {
 model Transaction {
   id              String @id @default(cuid())
   userId          String @unique
+  categoryId      String
   originAccountId String
   targetAccountId String
   amount          BigInt
   notes           String
   interval        TransactionInterval @default(ONCE)
   type            TransactionType @default(EXPENSE)
-  category        String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
   expires         DateTime
