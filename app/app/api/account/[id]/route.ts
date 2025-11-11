@@ -2,14 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
 import { AccountDelegate, AccountRecord } from "@/types/accounts";
+import { RouteContext } from "@/types/api";
 
 export const runtime = "nodejs";
 
 const account = (prisma as unknown as { account: AccountDelegate }).account;
-
-type RouteContext = {
-    params: Promise<{ id: string }>;
-};
 
 function normalizeAccount(record: AccountRecord) {
     const { id, name, accountNumber, color, icon, balance } = record as AccountRecord & {

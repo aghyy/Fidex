@@ -12,9 +12,10 @@ import {
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import Skeleton from "@/components/ui/skeleton";
-import { Account } from "@/types/accounts";
+import { Account, AccountDraft } from "@/types/accounts";
 import { FetchState } from "@/types/api";
 import { renderIconByName } from "@/utils/icons";
+import { toDraft } from "@/utils/accounts";
 
 const DEFAULT_COLORS = [
   "#ef4444",
@@ -39,20 +40,6 @@ const ICON_OPTIONS = [
 ];
 
 const FALLBACK_COLOR = "#e5e7eb";
-
-type AccountDraft = {
-  name: string;
-  color: string | null;
-  icon: string | null;
-};
-
-function toDraft(account: Account): AccountDraft {
-  return {
-    name: account.name,
-    color: account.color ?? null,
-    icon: account.icon ?? null,
-  };
-}
 
 export default function AccountsManager() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -89,11 +76,11 @@ export default function AccountsManager() {
     };
     try {
       window.addEventListener("account:created", handler as EventListener);
-    } catch {}
+    } catch { }
     return () => {
       try {
         window.removeEventListener("account:created", handler as EventListener);
-      } catch {}
+      } catch { }
     };
   }, []);
 
@@ -110,7 +97,7 @@ export default function AccountsManager() {
       setAccounts((prev) => prev.filter((c) => c.id !== id));
       try {
         window.dispatchEvent(new CustomEvent("account:deleted", { detail: { id } }));
-      } catch {}
+      } catch { }
       setState("success");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to delete";
@@ -124,7 +111,6 @@ export default function AccountsManager() {
     id: string,
     updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance">>
   ) {
-    setState("loading");
     setError(null);
     try {
       const res = await fetch(`/api/account/${id}`, {
@@ -207,9 +193,8 @@ function AccountDialogTrigger({ account }: AccountDialogTriggerProps) {
 
   return (
     <MorphingDialogTrigger
-      className={`transition-opacity duration-200 ${
-        isOpen ? "pointer-events-none opacity-0" : "opacity-100"
-      }`}
+      className={`transition-opacity duration-200 ${isOpen ? "pointer-events-none opacity-0" : "opacity-100"
+        }`}
     >
       <div className="relative w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent/40">
         <div className="flex items-center gap-3">
@@ -315,9 +300,8 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
                 key={icon}
                 type="button"
                 onClick={() => setDraft((prev) => ({ ...prev, icon }))}
-                className={`flex h-10 w-10 items-center justify-center rounded-md border ${
-                  draft.icon === icon ? "ring-2 ring-primary" : ""
-                }`}
+                className={`flex h-10 w-10 items-center justify-center rounded-md border ${draft.icon === icon ? "ring-2 ring-primary" : ""
+                  }`}
                 title={icon}
                 aria-label={icon}
               >

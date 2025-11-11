@@ -12,9 +12,10 @@ import {
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import Skeleton from "@/components/ui/skeleton";
-import { Category } from "@/types/categories";
+import { Category, CategoryDraft } from "@/types/categories";
 import { renderIconByName } from "@/utils/icons";
 import { FetchState } from "@/types/api";
+import { toDraft } from "@/utils/categories";
 
 const DEFAULT_COLORS = [
   "#ef4444",
@@ -39,20 +40,6 @@ const ICON_OPTIONS = [
 ];
 
 const FALLBACK_COLOR = "#e5e7eb";
-
-type CategoryDraft = {
-  name: string;
-  color: string | null;
-  icon: string | null;
-};
-
-function toDraft(category: Category): CategoryDraft {
-  return {
-    name: category.name,
-    color: category.color ?? null,
-    icon: category.icon ?? null,
-  };
-}
 
 export default function CategoriesManager() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -121,7 +108,6 @@ export default function CategoriesManager() {
   }
 
   async function handleUpdate(id: string, updates: Partial<Pick<Category, "name" | "color" | "icon">>) {
-    setState("loading");
     setError(null);
     try {
       const res = await fetch(`/api/category/${id}`, {

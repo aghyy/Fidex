@@ -87,7 +87,7 @@ function FormContent() {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="e.g. Privates Konto"
+          placeholder="e.g. Savings Account"
         />
       </div>
       <div>
@@ -96,7 +96,7 @@ function FormContent() {
           value={newAccountNumber}
           onChange={(e) => setNewAccountNumber(e.target.value)}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="e.g. 1234567890"
+          placeholder="e.g. 1234-5678-9012-3456"
         />
       </div>
       <div>
@@ -105,7 +105,7 @@ function FormContent() {
           value={newBalance}
           onChange={(e) => setNewBalance(Number(e.target.value))}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="e.g. 1000"
+          placeholder="e.g. 1000.00"
           type="number"
         />
       </div>

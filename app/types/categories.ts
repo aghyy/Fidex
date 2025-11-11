@@ -5,6 +5,12 @@ export type Category = {
   icon: string | null;
 };
 
+export type CategoryDraft = {
+  name: string;
+  color: string | null;
+  icon: string | null;
+};
+
 export type CategoryRecord = {
   id: string;
   name: string;

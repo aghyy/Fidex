@@ -7,6 +7,12 @@ export type Account = {
   balance: number;
 };
 
+export type AccountDraft = {
+  name: string;
+  color: string | null;
+  icon: string | null;
+};
+
 export type AccountRecord = {
   id: string;
   name: string;

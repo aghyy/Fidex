@@ -2,14 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
 import { CategoryDelegate } from "@/types/categories";
+import { RouteContext } from "@/types/api";
 
 export const runtime = "nodejs";
 
 const category = (prisma as unknown as { category: CategoryDelegate }).category;
-
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
 
 export async function GET(_: Request, context: RouteContext) {
   const { id: categoryId } = await context.params;
