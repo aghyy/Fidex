@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -16,24 +16,11 @@ import { FetchState } from "@/types/api";
 import { renderIconByName } from "@/utils/icons";
 import { toDraft, formatBalance } from "@/utils/accounts";
 import { IconPencil } from "@tabler/icons-react";
-import { ColorPickerPopover } from "@/components/ui/color-picker";
-import { rgbaArrayToHex } from "@/utils/colors";
-
-const DEFAULT_COLORS = [
-  "#f43f5e", // rose-500
-  "#f97316", // orange-500
-  "#f59e0b", // amber-500
-  "#84cc16", // lime-500
-  "#22c55e", // green-500
-  "#10b981", // emerald-500
-  "#14b8a6", // teal-500
-  "#06b6d4", // cyan-500
-  "#0ea5e9", // sky-500
-  "#3b82f6", // blue-500
-  "#8b5cf6", // violet-500
-  "#d946ef", // fuchsia-500
-  "#ec4899", // pink-500
-];
+import {
+  ColorSwatchPicker,
+  DEFAULT_COLOR_SWATCHES,
+  normalizeHexColor,
+} from "@/components/ui/color-swatch-picker";
 
 const ICON_OPTIONS = [
   "IconBread",
@@ -246,16 +233,6 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
   const [formError, setFormError] = useState<string | null>(null);
   const currentColor = draft.color ?? account.color ?? FALLBACK_COLOR;
 
-  const handlePickerChange = useCallback(
-    (value: unknown) => {
-      const hex = rgbaArrayToHex(value);
-      if (hex) {
-        setDraft((prev) => ({ ...prev, color: hex }));
-      }
-    },
-    [setDraft],
-  );
-
   useEffect(() => {
     if (isOpen) {
       setDraft(toDraft(account));
@@ -299,10 +276,7 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
     }
   };
 
-  const normalizedColor = (currentColor || FALLBACK_COLOR).toUpperCase();
-  const isPredefinedColor = DEFAULT_COLORS.some(
-    (col) => col.toUpperCase() === normalizedColor,
-  );
+  const normalizedColor = normalizeHexColor(currentColor, FALLBACK_COLOR);
 
   return (
     <MorphingDialogContent
@@ -347,32 +321,12 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
         </div>
         <div>
           <span className="text-sm text-muted-foreground">Color</span>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <ColorPickerPopover
-              value={normalizedColor}
-              onChange={handlePickerChange}
-              isActive={!isPredefinedColor}
-            />
-            {DEFAULT_COLORS.map((col) => {
-              const normalizedSwatch = col.toUpperCase();
-              const isActive = normalizedColor === normalizedSwatch;
-              return (
-                <button
-                  key={normalizedSwatch}
-                  type="button"
-                  onClick={() =>
-                    setDraft((prev) => ({ ...prev, color: normalizedSwatch }))
-                  }
-                  className={`h-6 w-6 rounded-full border ${
-                    isActive ? "ring-2 ring-primary" : ""
-                  }`}
-                  style={{ backgroundColor: normalizedSwatch }}
-                  aria-label={`Pick ${normalizedSwatch}`}
-                  title={normalizedSwatch}
-                />
-              );
-            })}
-          </div>
+          <ColorSwatchPicker
+            className="mt-2"
+            value={currentColor}
+            colors={DEFAULT_COLOR_SWATCHES}
+            onChange={(hex) => setDraft((prev) => ({ ...prev, color: hex }))}
+          />
         </div>
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         <div className="mt-2 flex justify-between">
