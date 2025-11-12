@@ -1,18 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
-
-type AccountRecord = { id: string; name: string; accountNumber: string; color: string | null; icon: string | null; balance: number };
-type AccountDelegate = {
-    findMany: (args: {
-      where: { userId: string };
-      orderBy?: { name: "asc" | "desc" };
-      select?: { id?: true; name?: true; accountNumber?: true; color?: true; icon?: true; balance?: true };
-    }) => Promise<AccountRecord[]>;
-    create: (args: {
-      data: { userId: string; name: string; accountNumber: string; color?: string; icon?: string; balance?: number };
-    }) => Promise<AccountRecord>;
-};
+import { AccountDelegate } from "@/types/accounts";
 
 const account = (prisma as unknown as { account: AccountDelegate }).account;
 

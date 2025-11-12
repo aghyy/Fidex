@@ -2,8 +2,7 @@
 
 import React from "react";
 import { atom, useAtomValue, useSetAtom } from "jotai";
-
-export type Category = { id: string; name: string; color: string | null; icon: string | null };
+import { Category } from "@/types/categories";
 
 export const categoriesAtom = atom<Category[]>([]);
 export const categoriesLoadedAtom = atom<boolean>(false);

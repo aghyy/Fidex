@@ -2,9 +2,7 @@
 
 import React from "react";
 import { atom, useAtomValue, useSetAtom } from "jotai";
-
-type Account = { id: string; name: string; accountNumber: string; color: string | null; icon: string | null; balance: number };
-
+import { Account } from "@/types/accounts";
 
 export const accountsAtom = atom<Account[]>([]);
 export const accountsLoadedAtom = atom<boolean>(false);
