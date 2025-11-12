@@ -145,21 +145,28 @@ model Category {
 
 model Document {
   id          String @id @default(cuid())
-  userId      String @unique
-  categoryId  String @unique
-  name        String @unique
+  userId      String
+  categoryId  String
+  name        String
   content     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, categoryId])
 }
 
 model Account {
   id            String @id @default(cuid())
-  userId        String @unique
+  userId        String
   name          String
-  accountNumber String @unique
+  accountNumber String
+  color         String
   icon          String
   balance       BigInt
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, accountNumber])
 }
