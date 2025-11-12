@@ -1,40 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
-import { TransactionInterval, TransactionType } from "@/types/transaction";
+import { TransactionDelegate } from "@/types/transaction"
 
-type TransactionRecord = {
-  id: string;
-  categoryId: string;
-  originAccountId: string;
-  targetAccountId: string;
-  amount: number;
-  notes: string;
-  interval: TransactionInterval;
-  type: TransactionType;
-};
-type TransactionDelegate = {
-  findMany: (args: {
-    where: { userId: string };
-    orderBy?: { name: "asc" | "desc" };
-    select?: { id?: true; userId?: true; categoryId?: true };
-  }) => Promise<TransactionRecord[]>;
-  create: (args: {
-    data: {
-      userId: string;
-      categoryId?: string;
-      originAccountId: string;
-      targetAccountId: string;
-      amount: number;
-      notes?: string;
-      interval: TransactionInterval;
-      type: TransactionType;
-    };
-  }) => Promise<TransactionRecord>;
-};
-
-const transaction = (prisma as unknown as { transaction: TransactionDelegate })
-  .transaction;
+const transaction = (prisma as unknown as { transaction: TransactionDelegate }).transaction;
 
 export const runtime = "nodejs";
 
@@ -61,37 +30,37 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-    const session = await auth();
-    if (!session || !session.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session || !session.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { categoryId, originAccountId, targetAccountId, amount, notes, interval, type } = await request.json();
+
+    if (!originAccountId || originAccountId.trim().length === 0 && type === "TRANSFER" || "EXPENSE") {
+      return NextResponse.json({ error: "Account of origin is required" }, { status: 400 });
     }
 
-    try {
-        const { categoryId, originAccountId, targetAccountId, amount, notes, interval, type } = await request.json();
-
-          if (!originAccountId || originAccountId.trim().length === 0 && type === "TRANSFER" || "EXPENSE") {
-            return NextResponse.json({ error: "Account of origin is required" }, { status: 400 });
-          }
-
-          if (!targetAccountId || targetAccountId.trim().length === 0 && type === "TRANSFER" || "INCOME") {
-            return NextResponse.json({ error: "Target Account is required" }, { status: 400 });
-          }
+    if (!targetAccountId || targetAccountId.trim().length === 0 && type === "TRANSFER" || "INCOME") {
+      return NextResponse.json({ error: "Target Account is required" }, { status: 400 });
+    }
     
-        const data = {
-          userId: session.user.id,
-          categoryId: categoryId ? String(categoryId).trim() : undefined,
-          originAccountId: String(originAccountId).trim(),
-          targetAccountId: String(targetAccountId).trim(),
-          amount: Number(amount),
-          notes: notes ? String(notes).trim() : undefined,
-          interval: interval,
-          type: type,
-        } as const;
+    const data = {
+      userId: session.user.id,
+      categoryId: categoryId ? String(categoryId).trim() : undefined,
+      originAccountId: String(originAccountId).trim(),
+      targetAccountId: String(targetAccountId).trim(),
+      amount: Number(amount),
+      notes: notes ? String(notes).trim() : undefined,
+      interval: interval,
+      type: type,
+    } as const;
     
-        const created = await transaction.create({ data });
+    const created = await transaction.create({ data });
     
-        return NextResponse.json({ transaction: created }, { status: 201 });
-      } catch (error: unknown) {
-        return NextResponse.json({ error: "Failed to create transaction" }, { status: 500 });
-      }
+    return NextResponse.json({ transaction: created }, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Failed to create transaction" }, { status: 500 });
+  }
 }
