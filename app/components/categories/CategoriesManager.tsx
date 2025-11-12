@@ -8,7 +8,6 @@ import {
   MorphingDialogContent,
   MorphingDialogTitle,
   MorphingDialogDescription,
-  MorphingDialogClose,
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import Skeleton from "@/components/ui/skeleton";
@@ -267,7 +266,6 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
       className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
       style={{ overflow: "visible" }}
     >
-      <MorphingDialogClose className="text-muted-foreground hover:text-foreground" />
       <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>
       <MorphingDialogDescription className="text-sm text-muted-foreground">
         Update name, color, icon, or delete.

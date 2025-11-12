@@ -8,7 +8,6 @@ import {
   MorphingDialogContent,
   MorphingDialogTitle,
   MorphingDialogDescription,
-  MorphingDialogClose,
 } from "@/components/motion-primitives/morphing-dialog";
 import {
   useMorphingDialog,
@@ -158,7 +157,6 @@ function FormContent() {
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-2">
-        <MorphingDialogClose className="rounded-md border px-4 py-2 text-sm">Cancel</MorphingDialogClose>
         <button
           type="submit"
           disabled={submitting || !newName.trim()}
