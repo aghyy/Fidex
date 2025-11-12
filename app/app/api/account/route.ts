@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
 import { AccountDelegate } from "@/types/accounts";
+import { Currency } from "@/types/currencies";
 
 const account = (prisma as unknown as { account: AccountDelegate }).account;
 
@@ -35,7 +36,7 @@ export async function GET() {
         const accounts = await account.findMany({
             where: { userId: session.user.id },
             orderBy: { name: "asc" },
-            select: { id: true, name: true, accountNumber: true, color: true, icon: true, balance: true },
+            select: { id: true, name: true, accountNumber: true, color: true, icon: true, balance: true, currency: true },
         });
         return NextResponse.json({ accounts: toJsonSafe(accounts) });
     } catch (error) {
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { name, accountNumber, color, icon, balance } = await request.json();
+        const { name, accountNumber, color, icon, balance, currency } = await request.json();
 
         if (!name || typeof name !== "string" || name.trim().length === 0) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
             color: color ? String(color).trim() : undefined,
             icon: icon ? String(icon).trim() : undefined,
             balance: balance ? Number(balance) : undefined,
+            currency: currency ? (currency as Currency) : undefined,
         } as const;
         
         const created = await account.create({ data });

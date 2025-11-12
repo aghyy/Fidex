@@ -8,6 +8,7 @@ import {
   createContext,
   useContext,
   isValidElement,
+  type MouseEvent as ReactMouseEvent,
 } from 'react';
 import {
   AnimatePresence,
@@ -110,10 +111,13 @@ export type MorphingPopoverTriggerProps = {
   className?: string;
 } & React.ComponentProps<typeof motion.button>;
 
+type TriggerClickHandler = (event: ReactMouseEvent<HTMLElement>) => void;
+
 function MorphingPopoverTrigger({
   children,
   className,
   asChild = false,
+  onClick,
   ...props
 }: MorphingPopoverTriggerProps) {
   const context = useContext(MorphingPopoverContext);
@@ -123,18 +127,33 @@ function MorphingPopoverTrigger({
     );
   }
 
+  const externalOnClick = onClick as TriggerClickHandler | undefined;
+
   if (asChild && isValidElement(children)) {
     const MotionComponent = motion.create(
       children.type as React.ElementType
     );
     const childProps = children.props as Record<string, unknown>;
+    const mergedClassName = cn(
+      typeof childProps.className === 'string' ? childProps.className : undefined,
+      className
+    );
+    const childOnClick = childProps.onClick as TriggerClickHandler | undefined;
 
     return (
       <MotionComponent
+        {...props}
         {...childProps}
-        onClick={context.open}
+        onClick={(event: ReactMouseEvent<HTMLElement>) => {
+          event.stopPropagation();
+          childOnClick?.(event);
+          externalOnClick?.(event);
+          if (!event.defaultPrevented) {
+            context.open();
+          }
+        }}
         layoutId={`popover-trigger-${context.uniqueId}`}
-        className={childProps.className}
+        className={mergedClassName}
         key={context.uniqueId}
         aria-expanded={context.isOpen}
         aria-controls={`popover-content-${context.uniqueId}`}
@@ -146,15 +165,22 @@ function MorphingPopoverTrigger({
     <motion.div
       key={context.uniqueId}
       layoutId={`popover-trigger-${context.uniqueId}`}
-      onClick={context.open}
     >
       <motion.button
         {...props}
+        type="button"
         layoutId={`popover-label-${context.uniqueId}`}
         key={context.uniqueId}
         className={className}
         aria-expanded={context.isOpen}
         aria-controls={`popover-content-${context.uniqueId}`}
+        onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+          event.stopPropagation();
+          externalOnClick?.(event as ReactMouseEvent<HTMLElement>);
+          if (!event.defaultPrevented) {
+            context.open();
+          }
+        }}
       >
         {children}
       </motion.button>

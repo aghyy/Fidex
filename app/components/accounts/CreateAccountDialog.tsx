@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -16,16 +16,24 @@ import {
 import { Plus } from "lucide-react";
 import { Account } from "@/types/accounts";
 import { renderIconByName } from "@/utils/icons";
+import { ColorPickerPopover } from "@/components/ui/color-picker";
+import { rgbaArrayToHex } from "@/utils/colors";
+import { Currency } from "@/types/currencies";
 
 const DEFAULT_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
+  "#f43f5e", // rose-500
+  "#f97316", // orange-500
+  "#f59e0b", // amber-500
+  "#84cc16", // lime-500
+  "#22c55e", // green-500
+  "#10b981", // emerald-500
+  "#14b8a6", // teal-500
+  "#06b6d4", // cyan-500
+  "#0ea5e9", // sky-500
+  "#3b82f6", // blue-500
+  "#8b5cf6", // violet-500
+  "#d946ef", // fuchsia-500
+  "#ec4899", // pink-500
 ];
 
 const ICON_OPTIONS = [
@@ -46,8 +54,24 @@ function FormContent() {
   const [newColor, setNewColor] = useState<string>(DEFAULT_COLORS[0]);
   const [newIcon, setNewIcon] = useState<string>("IconQuestionMark");
   const [newBalance, setNewBalance] = useState<number>(0);
+  const [newCurrency, setNewCurrency] = useState<Currency>();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const normalizedColor = (newColor || DEFAULT_COLORS[0]).toUpperCase();
+  const isPredefinedColor = DEFAULT_COLORS.some(
+    (c) => c.toUpperCase() === normalizedColor
+  );
+
+  const handlePickerChange = useCallback(
+    (value: unknown) => {
+      const hex = rgbaArrayToHex(value);
+      if (hex) {
+        setNewColor(hex);
+      }
+    },
+    [setNewColor]
+  );
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -59,14 +83,21 @@ function FormContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: newName.trim(), accountNumber: newAccountNumber, color: newColor, icon: newIcon || null, balance: newBalance }),
+        body: JSON.stringify({
+          name: newName.trim(),
+          accountNumber: newAccountNumber,
+          color: newColor,
+          icon: newIcon || null,
+          balance: newBalance,
+          currency: newCurrency
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create");
       const created = data.account as Account;
       try {
         window.dispatchEvent(new CustomEvent("account:created", { detail: created }));
-      } catch {}
+      } catch { }
       setNewName("");
       setNewIcon("IconQuestionMark");
       setNewColor(DEFAULT_COLORS[0]);
@@ -110,26 +141,47 @@ function FormContent() {
         />
       </div>
       <div>
-        <label className="text-sm text-muted-foreground">Color</label>
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
-          <input
-            type="color"
-            value={newColor}
-            onChange={(e) => setNewColor(e.target.value)}
-            className="h-9 w-12 rounded border"
-            aria-label="Category color"
-          />
-          {DEFAULT_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setNewColor(c)}
-              className="h-6 w-6 rounded-full border"
-              style={{ backgroundColor: c }}
-              aria-label={`Pick ${c}`}
-              title={c}
-            />
+        <label className="text-sm text-muted-foreground">Currency</label>
+        <select
+          value={newCurrency ?? ""}
+          onChange={(e) => setNewCurrency(e.target.value as Currency)}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+        >
+          <option value="" disabled>
+            Select currency
+          </option>
+          {(["USD", "EUR", "GBP", "CAD", "CNY", "INR", "JPY"] as Currency[]).map((currency) => (
+            <option key={currency} value={currency}>
+              {currency}
+            </option>
           ))}
+        </select>
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground">Color</label>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <ColorPickerPopover
+            value={normalizedColor}
+            onChange={handlePickerChange}
+            isActive={!isPredefinedColor}
+          />
+          {DEFAULT_COLORS.map((c) => {
+            const normalizedSwatch = c.toUpperCase();
+            const isActive = normalizedColor === normalizedSwatch;
+            return (
+              <button
+                key={normalizedSwatch}
+                type="button"
+                onClick={() => setNewColor(normalizedSwatch)}
+                className={`h-6 w-6 rounded-full border ${
+                  isActive ? "ring-2 ring-primary" : ""
+                }`}
+                style={{ backgroundColor: normalizedSwatch }}
+                aria-label={`Pick ${normalizedSwatch}`}
+                title={normalizedSwatch}
+              />
+            );
+          })}
         </div>
       </div>
       <div>
@@ -144,7 +196,7 @@ function FormContent() {
               title={icon}
               aria-label={icon}
             >
-              {renderIconByName(icon)}
+              {renderIconByName(icon, normalizedColor, true)}
             </button>
           ))}
         </div>
@@ -172,7 +224,10 @@ export default function CreateAccountDialog() {
         <Plus className="h-5 w-5" />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
-        <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
+        <MorphingDialogContent
+          className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
+          style={{ overflow: "visible" }}
+        >
           <MorphingDialogTitle className="text-xl">Create Account</MorphingDialogTitle>
           <MorphingDialogDescription className="text-sm text-muted-foreground">Name, account number, balance, color, and icon.</MorphingDialogDescription>
           <FormContent />

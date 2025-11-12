@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -16,16 +16,23 @@ import { Category, CategoryDraft } from "@/types/categories";
 import { renderIconByName } from "@/utils/icons";
 import { FetchState } from "@/types/api";
 import { toDraft } from "@/utils/categories";
+import { ColorPickerPopover } from "@/components/ui/color-picker";
+import { rgbaArrayToHex } from "@/utils/colors";
 
 const DEFAULT_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
+  "#f43f5e", // rose-500
+  "#f97316", // orange-500
+  "#f59e0b", // amber-500
+  "#84cc16", // lime-500
+  "#22c55e", // green-500
+  "#10b981", // emerald-500
+  "#14b8a6", // teal-500
+  "#06b6d4", // cyan-500
+  "#0ea5e9", // sky-500
+  "#3b82f6", // blue-500
+  "#8b5cf6", // violet-500
+  "#d946ef", // fuchsia-500
+  "#ec4899", // pink-500
 ];
 
 const ICON_OPTIONS = [
@@ -222,6 +229,21 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const currentColor = draft.color ?? category.color ?? FALLBACK_COLOR;
+  const normalizedColor = (currentColor || FALLBACK_COLOR).toUpperCase();
+  const isPredefinedColor = DEFAULT_COLORS.some(
+    (col) => col.toUpperCase() === normalizedColor,
+  );
+
+  const handlePickerChange = useCallback(
+    (value: unknown) => {
+      const hex = rgbaArrayToHex(value);
+      if (hex) {
+        setDraft((prev) => ({ ...prev, color: hex }));
+      }
+    },
+    [setDraft],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -267,7 +289,10 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
   };
 
   return (
-    <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
+    <MorphingDialogContent
+      className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
+      style={{ overflow: "visible" }}
+    >
       <MorphingDialogClose className="text-muted-foreground hover:text-foreground" />
       <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>
       <MorphingDialogDescription className="text-sm text-muted-foreground">
@@ -300,7 +325,7 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
                 title={icon}
                 aria-label={icon}
               >
-                {renderIconByName(icon, draft.color ?? category.color ?? undefined)}
+                {renderIconByName(icon, normalizedColor, true)}
               </button>
             ))}
           </div>
@@ -308,23 +333,30 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
         <div>
           <span className="text-sm text-muted-foreground">Color</span>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <input
-              type="color"
-              className="h-9 w-12 rounded border"
-              value={draft.color ?? FALLBACK_COLOR}
-              onChange={(e) => setDraft((prev) => ({ ...prev, color: e.target.value }))}
+            <ColorPickerPopover
+              value={normalizedColor}
+              onChange={handlePickerChange}
+              isActive={!isPredefinedColor}
             />
-            {DEFAULT_COLORS.map((col) => (
-              <button
-                key={col}
-                type="button"
-                onClick={() => setDraft((prev) => ({ ...prev, color: col }))}
-                className={`h-6 w-6 rounded-full border ${draft.color === col ? "ring-2 ring-primary" : ""}`}
-                style={{ backgroundColor: col }}
-                aria-label={`Pick ${col}`}
-                title={col}
-              />
-            ))}
+            {DEFAULT_COLORS.map((col) => {
+              const normalizedSwatch = col.toUpperCase();
+              const isActive = normalizedColor === normalizedSwatch;
+              return (
+                <button
+                  key={normalizedSwatch}
+                  type="button"
+                  onClick={() =>
+                    setDraft((prev) => ({ ...prev, color: normalizedSwatch }))
+                  }
+                  className={`h-6 w-6 rounded-full border ${
+                    isActive ? "ring-2 ring-primary" : ""
+                  }`}
+                  style={{ backgroundColor: normalizedSwatch }}
+                  aria-label={`Pick ${normalizedSwatch}`}
+                  title={normalizedSwatch}
+                />
+              );
+            })}
           </div>
         </div>
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}

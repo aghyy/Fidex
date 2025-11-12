@@ -3,13 +3,14 @@ import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
 import { AccountDelegate, AccountRecord } from "@/types/accounts";
 import { RouteContext } from "@/types/api";
+import { Currency } from "@/types/currencies";
 
 export const runtime = "nodejs";
 
 const account = (prisma as unknown as { account: AccountDelegate }).account;
 
 function normalizeAccount(record: AccountRecord) {
-    const { id, name, accountNumber, color, icon, balance } = record as AccountRecord & {
+    const { id, name, accountNumber, color, icon, balance, currency } = record as AccountRecord & {
         balance: number | bigint;
     };
     return {
@@ -19,6 +20,7 @@ function normalizeAccount(record: AccountRecord) {
         color,
         icon,
         balance: typeof balance === "bigint" ? Number(balance) : balance,
+        currency,
     };
 }
 
@@ -50,13 +52,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     try {
         const body = await request.json();
-        const data: Partial<{ name: string; accountNumber: string; color: string; icon: string; balance: number }> = {};
+        const data: Partial<{ name: string; accountNumber: string; color: string; icon: string; balance: number; currency: Currency }> = {};
 
         if (typeof body?.name === "string") data.name = body.name.trim();
         if (typeof body?.accountNumber === "string") data.accountNumber = body.accountNumber.trim();
         if (typeof body?.color === "string") data.color = body.color.trim();
         if (typeof body?.icon === "string") data.icon = body.icon.trim();
         if (typeof body?.balance === "number") data.balance = body.balance;
+        if (typeof body?.currency === "string") data.currency = body.currency;
 
         // Ensure ownership
         const item = await account.findUnique({ where: { id: accountId, userId: session.user.id } });

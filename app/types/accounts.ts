@@ -1,3 +1,5 @@
+import { Currency } from "./currencies";
+
 export type Account = {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ export type Account = {
   color: string | null;
   icon: string | null;
   balance: number;
+  currency: Currency;
 };
 
 export type AccountDraft = {
@@ -20,6 +23,7 @@ export type AccountRecord = {
   color: string | null;
   icon: string | null;
   balance: number;
+  currency: Currency;
 };
 
 export type AccountDelegate = {
@@ -33,6 +37,7 @@ export type AccountDelegate = {
       color?: true;
       icon?: true;
       balance?: true;
+      currency?: true;
     };
   }) => Promise<AccountRecord[]>;
 
@@ -44,6 +49,7 @@ export type AccountDelegate = {
       color?: string;
       icon?: string;
       balance?: number;
+      currency?: Currency;
     };
   }) => Promise<AccountRecord>;
 
@@ -59,6 +65,7 @@ export type AccountDelegate = {
       color?: string;
       icon?: string;
       balance?: number;
+      currency?: Currency;
     };
   }) => Promise<AccountRecord>;
 

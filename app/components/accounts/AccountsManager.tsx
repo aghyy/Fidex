@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -8,24 +8,31 @@ import {
   MorphingDialogContent,
   MorphingDialogTitle,
   MorphingDialogDescription,
-  MorphingDialogClose,
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import Skeleton from "@/components/ui/skeleton";
 import { Account, AccountDraft } from "@/types/accounts";
 import { FetchState } from "@/types/api";
 import { renderIconByName } from "@/utils/icons";
-import { toDraft } from "@/utils/accounts";
+import { toDraft, formatBalance } from "@/utils/accounts";
+import { IconPencil } from "@tabler/icons-react";
+import { ColorPickerPopover } from "@/components/ui/color-picker";
+import { rgbaArrayToHex } from "@/utils/colors";
 
 const DEFAULT_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
+  "#f43f5e", // rose-500
+  "#f97316", // orange-500
+  "#f59e0b", // amber-500
+  "#84cc16", // lime-500
+  "#22c55e", // green-500
+  "#10b981", // emerald-500
+  "#14b8a6", // teal-500
+  "#06b6d4", // cyan-500
+  "#0ea5e9", // sky-500
+  "#3b82f6", // blue-500
+  "#8b5cf6", // violet-500
+  "#d946ef", // fuchsia-500
+  "#ec4899", // pink-500
 ];
 
 const ICON_OPTIONS = [
@@ -109,7 +116,7 @@ export default function AccountsManager() {
 
   async function handleUpdate(
     id: string,
-    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance">>
+    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance" | "currency">>
   ) {
     setError(null);
     try {
@@ -168,7 +175,7 @@ export default function AccountsManager() {
 type AccountItemProps = {
   account: Account;
   onSave: (
-    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance">>
+    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance" | "currency">>
   ) => Promise<void>;
   onDelete: () => Promise<void>;
 };
@@ -199,15 +206,24 @@ function AccountDialogTrigger({ account }: AccountDialogTriggerProps) {
       <div className="relative w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent/40">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-8 w-8 items-center justify-center rounded-full border p-2"
+            className="flex h-9 w-9 items-center justify-center rounded-full border p-2 m-2"
             style={{ backgroundColor: account.color ?? FALLBACK_COLOR }}
           >
-            {renderIconByName(account.icon, account.color)}
+            {renderIconByName(account.icon, account.color, true)}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate font-medium">{account.name}</div>
-            <div className="truncate text-xs text-muted-foreground">Click to edit</div>
+            <div className="mb-2">
+              <div className="truncate font-medium">{account.name}</div>
+              {account.accountNumber ? <div className="truncate text-xs text-muted-foreground">{account.accountNumber}</div> : null}
+            </div>
+            <div
+              className="truncate font-bold text-muted-foreground"
+              style={{ color: account.balance > 0 ? "#00cd39" : "ff1c1f" }}
+            >
+              {formatBalance(account.balance, account.currency)}
+            </div>
           </div>
+          <IconPencil className="h-4 w-4 text-muted-foreground m-2" />
         </div>
       </div>
     </MorphingDialogTrigger>
@@ -217,7 +233,7 @@ function AccountDialogTrigger({ account }: AccountDialogTriggerProps) {
 type AccountDialogContentProps = {
   account: Account;
   onSave: (
-    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance">>
+    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance" | "currency">>
   ) => Promise<void>;
   onDelete: () => Promise<void>;
 };
@@ -228,6 +244,17 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const currentColor = draft.color ?? account.color ?? FALLBACK_COLOR;
+
+  const handlePickerChange = useCallback(
+    (value: unknown) => {
+      const hex = rgbaArrayToHex(value);
+      if (hex) {
+        setDraft((prev) => ({ ...prev, color: hex }));
+      }
+    },
+    [setDraft],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -272,9 +299,16 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
     }
   };
 
+  const normalizedColor = (currentColor || FALLBACK_COLOR).toUpperCase();
+  const isPredefinedColor = DEFAULT_COLORS.some(
+    (col) => col.toUpperCase() === normalizedColor,
+  );
+
   return (
-    <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
-      <MorphingDialogClose className="text-muted-foreground hover:text-foreground" />
+    <MorphingDialogContent
+      className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
+      style={{ overflow: "visible" }}
+    >
       <MorphingDialogTitle className="text-xl">Edit Account</MorphingDialogTitle>
       <MorphingDialogDescription className="text-sm text-muted-foreground">
         Update name, color, icon, or delete.
@@ -300,12 +334,13 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
                 key={icon}
                 type="button"
                 onClick={() => setDraft((prev) => ({ ...prev, icon }))}
-                className={`flex h-10 w-10 items-center justify-center rounded-md border ${draft.icon === icon ? "ring-2 ring-primary" : ""
-                  }`}
+                className={`flex h-10 w-10 items-center justify-center rounded-md border ${
+                  draft.icon === icon ? "ring-2 ring-primary" : ""
+                }`}
                 title={icon}
                 aria-label={icon}
               >
-                {renderIconByName(icon, draft.color ?? account.color ?? undefined)}
+                {renderIconByName(icon, normalizedColor, true)}
               </button>
             ))}
           </div>
@@ -313,23 +348,30 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
         <div>
           <span className="text-sm text-muted-foreground">Color</span>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <input
-              type="color"
-              className="h-9 w-12 rounded border"
-              value={draft.color ?? FALLBACK_COLOR}
-              onChange={(e) => setDraft((prev) => ({ ...prev, color: e.target.value }))}
+            <ColorPickerPopover
+              value={normalizedColor}
+              onChange={handlePickerChange}
+              isActive={!isPredefinedColor}
             />
-            {DEFAULT_COLORS.map((col) => (
-              <button
-                key={col}
-                type="button"
-                onClick={() => setDraft((prev) => ({ ...prev, color: col }))}
-                className={`h-6 w-6 rounded-full border ${draft.color === col ? "ring-2 ring-primary" : ""}`}
-                style={{ backgroundColor: col }}
-                aria-label={`Pick ${col}`}
-                title={col}
-              />
-            ))}
+            {DEFAULT_COLORS.map((col) => {
+              const normalizedSwatch = col.toUpperCase();
+              const isActive = normalizedColor === normalizedSwatch;
+              return (
+                <button
+                  key={normalizedSwatch}
+                  type="button"
+                  onClick={() =>
+                    setDraft((prev) => ({ ...prev, color: normalizedSwatch }))
+                  }
+                  className={`h-6 w-6 rounded-full border ${
+                    isActive ? "ring-2 ring-primary" : ""
+                  }`}
+                  style={{ backgroundColor: normalizedSwatch }}
+                  aria-label={`Pick ${normalizedSwatch}`}
+                  title={normalizedSwatch}
+                />
+              );
+            })}
           </div>
         </div>
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
