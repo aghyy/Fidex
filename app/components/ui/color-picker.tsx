@@ -418,8 +418,8 @@ export const ColorPickerPopover = ({
 	const resolvedColor =
 		typeof value === "string" && value.trim().length > 0 ? value : SAFE_FALLBACK;
 	const textColor = determineTextColor(resolvedColor);
-	const backgroundColor = resolvedColor;
-	const foregroundColor = textColor;
+	const backgroundColor = isActive ? resolvedColor : undefined;
+	const foregroundColor = isActive ? textColor : undefined;
 
 	return (
 		<MorphingPopover className="h-6 w-6">

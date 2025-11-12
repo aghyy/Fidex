@@ -37,6 +37,16 @@ type MorphingPopoverContextValue = {
 const MorphingPopoverContext =
   createContext<MorphingPopoverContextValue | null>(null);
 
+export function useMorphingPopover() {
+  const context = useContext(MorphingPopoverContext);
+  if (!context) {
+    throw new Error(
+      "useMorphingPopover must be used within MorphingPopover"
+    );
+  }
+  return context;
+}
+
 function usePopoverLogic({
   defaultOpen = false,
   open: controlledOpen,
@@ -238,7 +248,7 @@ function MorphingPopoverContent({
             role='dialog'
             aria-modal='true'
             className={cn(
-              'absolute overflow-hidden rounded-md border border-zinc-950/10 bg-white p-2 text-zinc-950 shadow-md dark:border-zinc-50/10 dark:bg-zinc-700 dark:text-zinc-50',
+              'absolute overflow-hidden rounded-xl border border-muted bg-background text-foreground p-2 shadow-md',
               className
             )}
             initial='initial'

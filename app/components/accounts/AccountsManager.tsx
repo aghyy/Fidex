@@ -21,6 +21,7 @@ import {
   DEFAULT_COLOR_SWATCHES,
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
+import { IconPicker } from "@/components/ui/icon-picker";
 
 const ICON_OPTIONS = [
   "IconBread",
@@ -193,7 +194,7 @@ function AccountDialogTrigger({ account }: AccountDialogTriggerProps) {
       <div className="relative w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent/40">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-full border p-2 m-2"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border p-2 m-2"
             style={{ backgroundColor: account.color ?? FALLBACK_COLOR }}
           >
             {renderIconByName(account.icon, account.color, true)}
@@ -293,32 +294,24 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
           <label className="text-sm text-muted-foreground" htmlFor={`account-name-${account.id}`}>
             Name
           </label>
-          <input
-            id={`account-name-${account.id}`}
-            className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-            value={draft.name}
-            onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
-          />
-        </div>
-        <div>
-          <span className="text-sm text-muted-foreground">Icon</span>
-          <div className="mt-2 grid grid-cols-8 gap-2">
-            {ICON_OPTIONS.map((icon) => (
-              <button
-                key={icon}
-                type="button"
-                onClick={() => setDraft((prev) => ({ ...prev, icon }))}
-                className={`flex h-10 w-10 items-center justify-center rounded-md border ${
-                  draft.icon === icon ? "ring-2 ring-primary" : ""
-                }`}
-                title={icon}
-                aria-label={icon}
-              >
-                {renderIconByName(icon, normalizedColor)}
-              </button>
-            ))}
+          <div className="mt-1 flex items-center gap-3">
+            <IconPicker
+              icons={ICON_OPTIONS}
+              value={draft.icon}
+              backgroundColor={normalizedColor}
+              onChange={(icon) => setDraft((prev) => ({ ...prev, icon }))}
+            />
+            <input
+              id={`account-name-${account.id}`}
+              className="flex-1 rounded-md h-10 border bg-background px-3 py-2"
+              value={draft.name}
+              onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+              autoComplete="off"
+              type="text"
+            />
           </div>
         </div>
+
         <div>
           <span className="text-sm text-muted-foreground">Color</span>
           <ColorSwatchPicker

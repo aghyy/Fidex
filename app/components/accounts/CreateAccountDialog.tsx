@@ -14,12 +14,12 @@ import {
 } from "@/components/motion-primitives/morphing-dialog";
 import { Plus } from "lucide-react";
 import { Account } from "@/types/accounts";
-import { renderIconByName } from "@/utils/icons";
 import {
   ColorSwatchPicker,
   DEFAULT_COLOR_SWATCHES,
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
+import { IconPicker } from "@/components/ui/icon-picker";
 import { Currency } from "@/types/currencies";
 
 const ICON_OPTIONS = [
@@ -86,17 +86,32 @@ function FormContent() {
   return (
     <form onSubmit={handleCreate} className="mt-4 grid gap-4">
       <div>
-        <label className="text-sm text-muted-foreground">Name</label>
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="e.g. Savings Account"
-        />
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-name">
+          Name
+        </label>
+        <div className="mt-1 flex items-center gap-3">
+          <IconPicker
+            icons={ICON_OPTIONS}
+            value={newIcon}
+            backgroundColor={normalizedColor}
+            onChange={setNewIcon}
+          />
+          <input
+            id="new-account-name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1 rounded-md border bg-background px-3 py-2"
+            placeholder="e.g. Savings Account"
+            autoComplete="off"
+          />
+        </div>
       </div>
       <div>
-        <label className="text-sm text-muted-foreground">Account Number</label>
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-number">
+          Account Number
+        </label>
         <input
+          id="new-account-number"
           value={newAccountNumber}
           onChange={(e) => setNewAccountNumber(e.target.value)}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"
@@ -104,8 +119,11 @@ function FormContent() {
         />
       </div>
       <div>
-        <label className="text-sm text-muted-foreground">Balance</label>
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-balance">
+          Balance
+        </label>
         <input
+          id="new-account-balance"
           value={newBalance}
           onChange={(e) => setNewBalance(Number(e.target.value))}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"
@@ -114,8 +132,11 @@ function FormContent() {
         />
       </div>
       <div>
-        <label className="text-sm text-muted-foreground">Currency</label>
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-currency">
+          Currency
+        </label>
         <select
+          id="new-account-currency"
           value={newCurrency ?? ""}
           onChange={(e) => setNewCurrency(e.target.value as Currency)}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"
@@ -138,23 +159,6 @@ function FormContent() {
           colors={DEFAULT_COLOR_SWATCHES}
           onChange={setNewColor}
         />
-      </div>
-      <div>
-        <label className="text-sm text-muted-foreground">Icon</label>
-        <div className="mt-2 grid grid-cols-8 gap-2">
-          {ICON_OPTIONS.map((icon) => (
-            <button
-              key={icon}
-              type="button"
-              onClick={() => setNewIcon(icon)}
-              className={`h-10 w-10 rounded-md border flex items-center justify-center ${newIcon === icon ? "ring-2 ring-primary" : ""}`}
-              title={icon}
-              aria-label={icon}
-            >
-              {renderIconByName(icon, normalizedColor, true)}
-            </button>
-          ))}
-        </div>
       </div>
       <div className="flex justify-end gap-2 mt-2">
         <button

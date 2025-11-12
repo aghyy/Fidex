@@ -20,6 +20,7 @@ import {
   DEFAULT_COLOR_SWATCHES,
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
+import { IconPicker } from "@/components/ui/icon-picker";
 
 const ICON_OPTIONS = [
   "IconBread",
@@ -276,32 +277,24 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
           <label className="text-sm text-muted-foreground" htmlFor={`category-name-${category.id}`}>
             Name
           </label>
-          <input
-            id={`category-name-${category.id}`}
-            className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-            value={draft.name}
-            onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
-          />
-        </div>
-        <div>
-          <span className="text-sm text-muted-foreground">Icon</span>
-          <div className="mt-2 grid grid-cols-8 gap-2">
-            {ICON_OPTIONS.map((icon) => (
-              <button
-                key={icon}
-                type="button"
-                onClick={() => setDraft((prev) => ({ ...prev, icon }))}
-                className={`flex h-10 w-10 items-center justify-center rounded-md border ${
-                  draft.icon === icon ? "ring-2 ring-primary" : ""
-                }`}
-                title={icon}
-                aria-label={icon}
-              >
-                {renderIconByName(icon, normalizedColor, true)}
-              </button>
-            ))}
+          <div className="mt-1 flex items-center gap-3">
+            <IconPicker
+              icons={ICON_OPTIONS}
+              value={draft.icon}
+              backgroundColor={normalizedColor}
+              onChange={(icon) => setDraft((prev) => ({ ...prev, icon }))}
+            />
+            <input
+              id={`category-name-${category.id}`}
+              className="flex-1 rounded-md border bg-background px-3 py-2"
+              value={draft.name}
+              onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+              autoComplete="off"
+              type="text"
+            />
           </div>
         </div>
+
         <div>
           <span className="text-sm text-muted-foreground">Color</span>
           <ColorSwatchPicker

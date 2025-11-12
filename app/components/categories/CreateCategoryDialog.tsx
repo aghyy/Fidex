@@ -14,12 +14,12 @@ import {
 } from "@/components/motion-primitives/morphing-dialog";
 import { Plus } from "lucide-react";
 import { Category } from "@/types/categories";
-import { renderIconByName } from "@/utils/icons";
 import {
   ColorSwatchPicker,
   DEFAULT_COLOR_SWATCHES,
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
+import { IconPicker } from "@/components/ui/icon-picker";
 
 const ICON_OPTIONS = [
   "IconBread",
@@ -75,13 +75,25 @@ function FormContent() {
   return (
     <form onSubmit={handleCreate} className="mt-4 grid gap-4">
       <div>
-        <label className="text-sm text-muted-foreground">Name</label>
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="e.g. Groceries"
-        />
+        <label className="text-sm text-muted-foreground" htmlFor="new-category-name">
+          Name
+        </label>
+        <div className="mt-1 flex items-center gap-3">
+          <IconPicker
+            icons={ICON_OPTIONS}
+            value={newIcon}
+            backgroundColor={normalizedColor}
+            onChange={setNewIcon}
+          />
+          <input
+            id="new-category-name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1 rounded-md border bg-background px-3 py-2"
+            placeholder="e.g. Groceries"
+            autoComplete="off"
+          />
+        </div>
       </div>
       <div>
         <label className="text-sm text-muted-foreground">Color</label>
@@ -91,23 +103,6 @@ function FormContent() {
           colors={DEFAULT_COLOR_SWATCHES}
           onChange={setNewColor}
         />
-      </div>
-      <div>
-        <label className="text-sm text-muted-foreground">Icon</label>
-        <div className="mt-2 grid grid-cols-8 gap-2">
-          {ICON_OPTIONS.map((icon) => (
-            <button
-              key={icon}
-              type="button"
-              onClick={() => setNewIcon(icon)}
-              className={`h-10 w-10 rounded-md border flex items-center justify-center ${newIcon === icon ? "ring-2 ring-primary" : ""}`}
-              title={icon}
-              aria-label={icon}
-            >
-              {renderIconByName(icon, normalizedColor, true)}
-            </button>
-          ))}
-        </div>
       </div>
       <div className="flex justify-end gap-2 mt-2">
         <button
