@@ -169,7 +169,7 @@ export const ColorPickerSelection = ({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const { hue, setSaturation, setLightness } = useColorPicker();
+	const { hue, saturation, lightness, setSaturation, setLightness } = useColorPicker();
 
 	const handlePointerMove = useCallback(
 		(event: PointerEvent) => {
@@ -209,6 +209,14 @@ export const ColorPickerSelection = ({
 		};
 	}, [isDragging, handlePointerMove]);
 
+	useEffect(() => {
+		if (!containerRef.current) return;
+		const x = Math.max(0, Math.min(1, saturation / 100));
+		const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
+		const y = topLightness > 0 ? Math.max(0, Math.min(1, 1 - lightness / topLightness)) : 0;
+		setPosition({ x, y });
+	}, [saturation, lightness]);
+
 	return (
 		<div
 			ref={containerRef}
@@ -231,8 +239,8 @@ export const ColorPickerSelection = ({
 			<div
 				className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute h-4 w-4 rounded-full border-2 border-white"
 				style={{
-					left: `${position.x * 100}%`,
-					top: `${position.y * 100}%`,
+					left: `${Math.max(0, Math.min(100, position.x * 100))}%`,
+					top: `${Math.max(0, Math.min(100, position.y * 100))}%`,
 					boxShadow: "0 0 0 1px rgba(0,0,0,0.5)",
 				}}
 			/>
@@ -260,7 +268,7 @@ export const ColorPickerHue = ({
 			<Track className="relative my-0.5 h-3 w-full grow rounded-full bg-[linear-gradient(90deg,#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000)]">
 				<Range className="absolute h-full" />
 			</Track>
-			<Thumb className="block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
+			<Thumb className="block h-4 w-4 rounded-full border-2 border-white shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
 		</Root>
 	);
 };
@@ -396,6 +404,7 @@ export type ColorPickerPopoverProps = {
 	isActive?: boolean;
 	triggerClassName?: string;
 	contentClassName?: string;
+	showAlphaSlider?: boolean;
 };
 
 export const ColorPickerPopover = ({
@@ -404,12 +413,13 @@ export const ColorPickerPopover = ({
 	isActive = false,
 	triggerClassName,
 	contentClassName,
+	showAlphaSlider = true,
 }: ColorPickerPopoverProps) => {
 	const resolvedColor =
 		typeof value === "string" && value.trim().length > 0 ? value : SAFE_FALLBACK;
 	const textColor = determineTextColor(resolvedColor);
-	const backgroundColor = isActive ? resolvedColor : undefined;
-	const foregroundColor = isActive ? textColor : undefined;
+	const backgroundColor = resolvedColor;
+	const foregroundColor = textColor;
 
 	return (
 		<MorphingPopover className="h-6 w-6">
@@ -436,7 +446,7 @@ export const ColorPickerPopover = ({
 					<ColorPicker value={resolvedColor} onChange={onChange} className="gap-3">
 						<ColorPickerSelection className="rounded-lg border" />
 						<ColorPickerHue className="rounded-full" />
-						<ColorPickerAlpha className="rounded-full" />
+						{showAlphaSlider ? <ColorPickerAlpha className="rounded-full" /> : null}
 					</ColorPicker>
 				</div>
 			</MorphingPopoverContent>

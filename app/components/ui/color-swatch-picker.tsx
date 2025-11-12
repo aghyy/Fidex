@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ColorPickerPopover } from "@/components/ui/color-picker";
 import { rgbaArrayToHex } from "@/utils/colors";
@@ -33,6 +33,7 @@ type ColorSwatchPickerProps = {
   onChange: (color: string) => void;
   className?: string;
   colors?: readonly string[];
+  showAlphaSlider?: boolean;
 };
 
 export function ColorSwatchPicker({
@@ -40,28 +41,52 @@ export function ColorSwatchPicker({
   onChange,
   className,
   colors = DEFAULT_COLOR_SWATCHES,
+  showAlphaSlider = false,
 }: ColorSwatchPickerProps) {
   const palette = useMemo(() => colors.map((color) => normalizeHexColor(color)), [colors]);
   const normalizedValue = normalizeHexColor(value, palette[0]);
   const isPreset = palette.includes(normalizedValue);
+  const latestOnChange = useRef(onChange);
+  const [customColor, setCustomColor] = useState(() =>
+    isPreset ? palette[0] : normalizedValue,
+  );
+
+  useEffect(() => {
+    latestOnChange.current = onChange;
+  }, [onChange]);
+
+  const emitChange = useCallback((hex: string) => {
+    latestOnChange.current(hex);
+  }, []);
 
   const handlePopoverChange = useCallback(
     (input: unknown) => {
       const hex = rgbaArrayToHex(input);
       if (hex) {
-        onChange(normalizeHexColor(hex, palette[0]));
+        const normalized = normalizeHexColor(hex, palette[0]);
+        setCustomColor(normalized);
+        emitChange(normalized);
       }
     },
-    [onChange, palette],
+    [emitChange, palette],
   );
+
+  useEffect(() => {
+    if (!isPreset) {
+      setCustomColor(normalizedValue);
+    }
+  }, [isPreset, normalizedValue]);
+
+  const popoverValue = isPreset ? customColor : normalizedValue;
 
   return (
     <div className={cn("w-full max-w-full", className)}>
       <div className="flex min-w-max flex-nowrap items-center gap-2 pb-1 pr-1">
         <ColorPickerPopover
-          value={normalizedValue}
+          value={popoverValue}
           onChange={handlePopoverChange}
           isActive={!isPreset}
+          showAlphaSlider={showAlphaSlider}
         />
         {palette.map((hex) => {
           const isActive = normalizedValue === hex;
@@ -69,7 +94,7 @@ export function ColorSwatchPicker({
             <button
               key={hex}
               type="button"
-              onClick={() => onChange(hex)}
+              onClick={() => emitChange(hex)}
               className={cn(
                 "h-6 w-6 shrink-0 rounded-full border transition-shadow",
                 isActive ? "ring-2 ring-primary" : "",

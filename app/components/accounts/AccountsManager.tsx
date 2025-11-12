@@ -314,7 +314,7 @@ function AccountDialogContent({ account, onSave, onDelete }: AccountDialogConten
                 title={icon}
                 aria-label={icon}
               >
-                {renderIconByName(icon, normalizedColor, true)}
+                {renderIconByName(icon, normalizedColor)}
               </button>
             ))}
           </div>
