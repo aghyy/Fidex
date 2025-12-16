@@ -4,3 +4,4 @@
 /app/.env
 /app/.env.local
 /app/package-lock.json
+/.cursor
