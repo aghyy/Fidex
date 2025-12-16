@@ -15,6 +15,9 @@ import {
 	type ComponentProps,
 	createContext,
 	type HTMLAttributes,
+	type ChangeEventHandler,
+	type FocusEventHandler,
+	type KeyboardEventHandler,
 	useCallback,
 	useContext,
 	useEffect,
@@ -343,6 +346,74 @@ export const ColorPickerEyeDropper = ({
 	);
 };
 
+export type ColorPickerHexInputProps = ComponentProps<typeof Input>;
+
+export const ColorPickerHexInput = ({ className, onBlur, onKeyDown, onChange, ...props }: ColorPickerHexInputProps) => {
+  const { hue, saturation, lightness, setHue, setSaturation, setLightness } = useColorPicker();
+  const currentHex = useMemo(
+    () => Color.hsl(hue, saturation, lightness).hex().toUpperCase(),
+    [hue, saturation, lightness],
+  );
+  const [draft, setDraft] = useState(currentHex);
+
+  useEffect(() => {
+    setDraft(currentHex);
+  }, [currentHex]);
+
+  const commit = useCallback(
+    (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        setDraft(currentHex);
+        return;
+      }
+      const normalized = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+      try {
+        const color = Color(normalized);
+        const [h, s, l] = color.hsl().array();
+        setHue(Number.isFinite(h) ? h : 0);
+        setSaturation(Number.isFinite(s) ? s : 0);
+        setLightness(Number.isFinite(l) ? l : 0);
+      } catch {
+        setDraft(currentHex);
+      }
+    },
+    [currentHex, setHue, setLightness, setSaturation],
+  );
+
+  const handleBlur: FocusEventHandler<HTMLInputElement> = (event) => {
+    commit(event.target.value);
+    onBlur?.(event);
+  };
+
+  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commit((event.target as HTMLInputElement).value);
+    }
+    onKeyDown?.(event);
+  };
+
+  const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const value = event.target.value;
+    const normalized = value.startsWith("#") || value === "" ? value : `#${value}`;
+    setDraft(normalized.toUpperCase());
+    onChange?.(event);
+  };
+
+  return (
+    <Input
+      value={draft}
+      onBlur={handleBlur}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      className={cn("uppercase", className)}
+      placeholder="#FFFFFF"
+      {...props}
+    />
+  );
+};
+
 export type ColorPickerOutputProps = ComponentProps<typeof SelectTrigger>;
 
 const formats = ["hex", "rgb", "css", "hsl"];
@@ -442,13 +513,17 @@ export const ColorPickerPopover = ({
 					contentClassName,
 				)}
 			>
-				<div className="space-y-3" data-keep-popover-open="true">
-					<ColorPicker value={resolvedColor} onChange={onChange} className="gap-3">
-						<ColorPickerSelection className="rounded-lg border" />
-						<ColorPickerHue className="rounded-full" />
-						{showAlphaSlider ? <ColorPickerAlpha className="rounded-full" /> : null}
-					</ColorPicker>
+				<ColorPicker value={resolvedColor} onChange={onChange} className="gap-3">
+			<div className="space-y-3" data-keep-popover-open="true">
+				<ColorPickerSelection className="rounded-lg border" />
+				<ColorPickerHue className="rounded-full" />
+				{showAlphaSlider ? <ColorPickerAlpha className="rounded-full" /> : null}
+				<div className="flex items-center gap-2">
+					<ColorPickerHexInput className="flex-1" />
+					<ColorPickerEyeDropper className="border" />
 				</div>
+			</div>
+		</ColorPicker>
 			</MorphingPopoverContent>
 		</MorphingPopover>
 	);
