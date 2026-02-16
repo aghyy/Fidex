@@ -130,14 +130,16 @@ Fidex uses **NextAuth v5 (Auth.js)** for secure authentication:
 
 ```
 fidex/
-├── backend/          # Next.js backend with API routes
-│   ├── app/api/     # API endpoints
-│   ├── prisma/      # Database schema
-│   └── auth.ts      # NextAuth configuration
-├── frontend/         # Next.js frontend
-│   ├── app/         # Pages and routes
-│   └── components/  # React components
-└── docs/            # Docusaurus documentation
+├── .vscode/          # Editor and workspace settings
+├── app/              # Next.js fullstack application (frontend & backend)
+│   ├── app/          # App Router routes and layouts
+│   ├── components/   # Shared React UI components
+│   ├── lib/          # Utilities and helpers
+│   ├── prisma/       # Database schema and migrations
+│   ├── public/       # Static assets
+│   ├── state/        # Application state management
+│   └── types/        # Shared TypeScript types
+└── docs/             # Docusaurus documentation
 ```
 
 ---
