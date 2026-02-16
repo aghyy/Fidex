@@ -20,7 +20,6 @@ import {
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
 import { IconPicker } from "@/components/ui/icon-picker";
-import { Currency } from "@/types/currencies";
 
 const ICON_OPTIONS = [
   "IconBread",
@@ -40,7 +39,6 @@ function FormContent() {
   const [newColor, setNewColor] = useState<string>(DEFAULT_COLOR_SWATCHES[0]);
   const [newIcon, setNewIcon] = useState<string>("IconQuestionMark");
   const [newBalance, setNewBalance] = useState<number>(0);
-  const [newCurrency, setNewCurrency] = useState<Currency>();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +60,7 @@ function FormContent() {
           color: newColor,
           icon: newIcon || null,
           balance: newBalance,
-          currency: newCurrency
+          currency: "EUR",
         }),
       });
       const data = await res.json();
@@ -131,26 +129,7 @@ function FormContent() {
           type="number"
         />
       </div>
-      <div>
-        <label className="text-sm text-muted-foreground" htmlFor="new-account-currency">
-          Currency
-        </label>
-        <select
-          id="new-account-currency"
-          value={newCurrency ?? ""}
-          onChange={(e) => setNewCurrency(e.target.value as Currency)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-        >
-          <option value="" disabled>
-            Select currency
-          </option>
-          {(["USD", "EUR", "GBP", "CAD", "CNY", "INR", "JPY"] as Currency[]).map((currency) => (
-            <option key={currency} value={currency}>
-              {currency}
-            </option>
-          ))}
-        </select>
-      </div>
+      <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
       <div>
         <label className="text-sm text-muted-foreground">Color</label>
         <ColorSwatchPicker

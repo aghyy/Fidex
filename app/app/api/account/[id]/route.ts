@@ -58,8 +58,11 @@ export async function PATCH(request: Request, context: RouteContext) {
         if (typeof body?.accountNumber === "string") data.accountNumber = body.accountNumber.trim();
         if (typeof body?.color === "string") data.color = body.color.trim();
         if (typeof body?.icon === "string") data.icon = body.icon.trim();
-        if (typeof body?.balance === "number") data.balance = body.balance;
-        if (typeof body?.currency === "string") data.currency = body.currency;
+        if (typeof body?.balance === "number") data.balance = Math.round(body.balance);
+        if (typeof body?.currency === "string" && body.currency !== "EUR") {
+            return NextResponse.json({ error: "Currently only EUR is available" }, { status: 400 });
+        }
+        data.currency = "EUR";
 
         // Ensure ownership
         const item = await account.findUnique({ where: { id: accountId, userId: session.user.id } });

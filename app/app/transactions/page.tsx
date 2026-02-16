@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/skeleton";
+import TransactionsManager from "@/components/transactions/TransactionsManager";
+import TransactionFAB from "@/components/transactions/TransactionFAB";
 
 export default function TransactionsPage() {
   const { status } = useSession();
@@ -37,7 +39,10 @@ export default function TransactionsPage() {
     <>
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-bold mb-6">Transactions</h1>
+        <p className="mb-4 text-sm text-muted-foreground">Currently only EUR is available.</p>
+        <TransactionsManager />
       </div>
+      <TransactionFAB />
     </>
   );
 }

@@ -39,7 +39,7 @@ export default function DynamicCategories({ staggerOffset = 0 }: { staggerOffset
     () =>
       categories.map((c) => ({
         label: c.name,
-        href: `/categories/${encodeURIComponent(c.name.toLowerCase())}`,
+        href: `/categories/${encodeURIComponent(c.id)}`,
         icon: resolveIcon(c.icon),
       })),
     [categories]

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { name, accountNumber, color, icon, balance, currency } = await request.json();
+        const { name, accountNumber, color, icon, balance } = await request.json();
 
         if (!name || typeof name !== "string" || name.trim().length === 0) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -68,8 +68,8 @@ export async function POST(request: Request) {
             accountNumber: String(accountNumber).trim(),
             color: color ? String(color).trim() : undefined,
             icon: icon ? String(icon).trim() : undefined,
-            balance: balance ? Number(balance) : undefined,
-            currency: currency ? (currency as Currency) : undefined,
+            balance: balance !== undefined && balance !== null ? Math.round(Number(balance)) : undefined,
+            currency: "EUR" as Currency,
         } as const;
         
         const created = await account.create({ data });

@@ -31,7 +31,7 @@ export default function DynamicAccounts({ staggerOffset = 0 }: { staggerOffset?:
     () =>
       accounts.map((a) => ({
         label: a.name,
-        href: `/accounts/${encodeURIComponent(a.name.toLowerCase())}`,
+        href: `/accounts/${encodeURIComponent(a.id)}`,
         icon: resolveIcon(a.icon),
       })),
     [accounts]
