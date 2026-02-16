@@ -11,10 +11,11 @@ import {
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import Skeleton from "@/components/ui/skeleton";
-import { Category, CategoryDraft } from "@/types/categories";
-import { renderIconByName } from "@/utils/icons";
+import { Account, AccountDraft } from "@/types/accounts";
 import { FetchState } from "@/types/api";
-import { toDraft } from "@/utils/categories";
+import { renderIconByName } from "@/utils/icons";
+import { toDraft, formatBalance } from "@/utils/accounts";
+import { IconPencil } from "@tabler/icons-react";
 import {
   ColorSwatchPicker,
   DEFAULT_COLOR_SWATCHES,
@@ -35,24 +36,24 @@ const ICON_OPTIONS = [
 
 const FALLBACK_COLOR = "#e5e7eb";
 
-export default function CategoriesManager() {
-  const [categories, setCategories] = useState<Category[]>([]);
+export default function AccountsManager() {
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [state, setState] = useState<FetchState>("idle");
   const [, setError] = useState<string | null>(null);
 
-  const sortedCategories = useMemo(
-    () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
-    [categories]
+  const sortedAccounts = useMemo(
+    () => [...accounts].sort((a, b) => a.name.localeCompare(b.name)),
+    [accounts]
   );
 
-  async function loadCategories() {
+  async function loadAccounts() {
     setState("loading");
     setError(null);
     try {
-      const res = await fetch("/api/category", { credentials: "include" });
+      const res = await fetch("/api/account", { credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed to load");
-      const data = (await res.json()) as { categories: Category[] };
-      setCategories(data.categories ?? []);
+      const data = (await res.json()) as { accounts: Account[] };
+      setAccounts(data.accounts ?? []);
       setState("success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -61,20 +62,20 @@ export default function CategoriesManager() {
   }
 
   useEffect(() => {
-    void loadCategories();
+    void loadAccounts();
     const handler = (e: Event) => {
-      const ce = e as CustomEvent<Category>;
+      const ce = e as CustomEvent<Account>;
       if (ce.detail) {
-        setCategories((prev) => [...prev, ce.detail]);
+        setAccounts((prev) => [...prev, ce.detail]);
       }
     };
     try {
-      window.addEventListener("category:created", handler as EventListener);
-    } catch {}
+      window.addEventListener("account:created", handler as EventListener);
+    } catch { }
     return () => {
       try {
-        window.removeEventListener("category:created", handler as EventListener);
-      } catch {}
+        window.removeEventListener("account:created", handler as EventListener);
+      } catch { }
     };
   }, []);
 
@@ -82,16 +83,16 @@ export default function CategoriesManager() {
     setState("loading");
     setError(null);
     try {
-      const res = await fetch(`/api/category/${id}`, {
+      const res = await fetch(`/api/account/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Failed to delete");
-      setCategories((prev) => prev.filter((c) => c.id !== id));
+      setAccounts((prev) => prev.filter((c) => c.id !== id));
       try {
-        window.dispatchEvent(new CustomEvent("category:deleted", { detail: { id } }));
-      } catch {}
+        window.dispatchEvent(new CustomEvent("account:deleted", { detail: { id } }));
+      } catch { }
       setState("success");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to delete";
@@ -101,10 +102,13 @@ export default function CategoriesManager() {
     }
   }
 
-  async function handleUpdate(id: string, updates: Partial<Pick<Category, "name" | "color" | "icon">>) {
+  async function handleUpdate(
+    id: string,
+    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance" | "currency">>
+  ) {
     setError(null);
     try {
-      const res = await fetch(`/api/category/${id}`, {
+      const res = await fetch(`/api/account/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -112,8 +116,8 @@ export default function CategoriesManager() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to update");
-      const updated = data.category as Category;
-      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      const updated = data.account as Account;
+      setAccounts((prev) => prev.map((c) => (c.id === id ? updated : c)));
       setState("success");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to update";
@@ -125,7 +129,7 @@ export default function CategoriesManager() {
 
   return (
     <div className="space-y-6">
-      {state === "loading" && categories.length === 0 ? (
+      {state === "loading" && accounts.length === 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="rounded-lg border p-3">
@@ -142,12 +146,12 @@ export default function CategoriesManager() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedCategories.map((category) => (
-            <CategoryItem
-              key={category.id}
-              category={category}
-              onDelete={() => handleDelete(category.id)}
-              onSave={(updates) => handleUpdate(category.id, updates)}
+          {sortedAccounts.map((account) => (
+            <AccountItem
+              key={account.id}
+              account={account}
+              onDelete={() => handleDelete(account.id)}
+              onSave={(updates) => handleUpdate(account.id, updates)}
             />
           ))}
         </div>
@@ -156,75 +160,86 @@ export default function CategoriesManager() {
   );
 }
 
-type CategoryItemProps = {
-  category: Category;
-  onSave: (updates: Partial<Pick<Category, "name" | "color" | "icon">>) => Promise<void>;
+type AccountItemProps = {
+  account: Account;
+  onSave: (
+    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance" | "currency">>
+  ) => Promise<void>;
   onDelete: () => Promise<void>;
 };
 
-function CategoryItem({ category, onSave, onDelete }: CategoryItemProps) {
+function AccountItem({ account, onSave, onDelete }: AccountItemProps) {
   return (
     <MorphingDialog>
-      <CategoryDialogTrigger category={category} />
+      <AccountDialogTrigger account={account} />
       <MorphingDialogContainer>
-        <CategoryDialogContent category={category} onSave={onSave} onDelete={onDelete} />
+        <AccountDialogContent account={account} onSave={onSave} onDelete={onDelete} />
       </MorphingDialogContainer>
     </MorphingDialog>
   );
 }
 
-type CategoryDialogTriggerProps = {
-  category: Category;
+type AccountDialogTriggerProps = {
+  account: Account;
 };
 
-function CategoryDialogTrigger({ category }: CategoryDialogTriggerProps) {
+function AccountDialogTrigger({ account }: AccountDialogTriggerProps) {
   const { isOpen } = useMorphingDialog();
 
   return (
     <MorphingDialogTrigger
-      className={`transition-opacity duration-200 ${
-        isOpen ? "pointer-events-none opacity-0" : "opacity-100"
-      }`}
+      className={`transition-opacity duration-200 ${isOpen ? "pointer-events-none opacity-0" : "opacity-100"
+        }`}
     >
       <div className="relative w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent/40">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-8 w-8 items-center justify-center rounded-full border p-2"
-            style={{ backgroundColor: category.color ?? FALLBACK_COLOR }}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border p-2 m-2"
+            style={{ backgroundColor: account.color ?? FALLBACK_COLOR }}
           >
-            {renderIconByName(category.icon, category.color)}
+            {renderIconByName(account.icon, account.color, true)}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate font-medium">{category.name}</div>
-            <div className="truncate text-xs text-muted-foreground">Click to edit</div>
+            <div className="mb-2">
+              <div className="truncate font-medium">{account.name}</div>
+              {account.accountNumber ? <div className="truncate text-xs text-muted-foreground">{account.accountNumber}</div> : null}
+            </div>
+            <div
+              className="truncate font-bold text-muted-foreground"
+              style={{ color: account.balance > 0 ? "#00cd39" : "ff1c1f" }}
+            >
+              {formatBalance(account.balance, account.currency)}
+            </div>
           </div>
+          <IconPencil className="h-4 w-4 text-muted-foreground m-2" />
         </div>
       </div>
     </MorphingDialogTrigger>
   );
 }
 
-type CategoryDialogContentProps = {
-  category: Category;
-  onSave: (updates: Partial<Pick<Category, "name" | "color" | "icon">>) => Promise<void>;
+type AccountDialogContentProps = {
+  account: Account;
+  onSave: (
+    updates: Partial<Pick<Account, "name" | "accountNumber" | "color" | "icon" | "balance" | "currency">>
+  ) => Promise<void>;
   onDelete: () => Promise<void>;
 };
 
-function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogContentProps) {
+function AccountDialogContent({ account, onSave, onDelete }: AccountDialogContentProps) {
   const { isOpen, setIsOpen } = useMorphingDialog();
-  const [draft, setDraft] = useState<CategoryDraft>(() => toDraft(category));
+  const [draft, setDraft] = useState<AccountDraft>(() => toDraft(account));
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const currentColor = draft.color ?? category.color ?? FALLBACK_COLOR;
-  const normalizedColor = normalizeHexColor(currentColor, FALLBACK_COLOR);
+  const currentColor = draft.color ?? account.color ?? FALLBACK_COLOR;
 
   useEffect(() => {
     if (isOpen) {
-      setDraft(toDraft(category));
+      setDraft(toDraft(account));
       setFormError(null);
     }
-  }, [category, isOpen]);
+  }, [account, isOpen]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -243,7 +258,7 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
       });
       setIsOpen(false);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Failed to update category");
+      setFormError(error instanceof Error ? error.message : "Failed to update account");
     } finally {
       setIsSaving(false);
     }
@@ -256,25 +271,27 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
       await onDelete();
       setIsOpen(false);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Failed to delete category");
+      setFormError(error instanceof Error ? error.message : "Failed to delete account");
     } finally {
       setIsDeleting(false);
     }
   };
+
+  const normalizedColor = normalizeHexColor(currentColor, FALLBACK_COLOR);
 
   return (
     <MorphingDialogContent
       className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
       style={{ overflow: "visible" }}
     >
-      <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>
+      <MorphingDialogTitle className="text-xl">Edit Account</MorphingDialogTitle>
       <MorphingDialogDescription className="text-sm text-muted-foreground">
         Update name, color, icon, or delete.
       </MorphingDialogDescription>
 
       <form onSubmit={handleSubmit} className="mt-4 grid gap-4">
         <div>
-          <label className="text-sm text-muted-foreground" htmlFor={`category-name-${category.id}`}>
+          <label className="text-sm text-muted-foreground" htmlFor={`account-name-${account.id}`}>
             Name
           </label>
           <div className="mt-1 flex items-center gap-3">
@@ -285,8 +302,8 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
               onChange={(icon) => setDraft((prev) => ({ ...prev, icon }))}
             />
             <input
-              id={`category-name-${category.id}`}
-              className="flex-1 rounded-md border bg-background px-3 py-2"
+              id={`account-name-${account.id}`}
+              className="flex-1 rounded-md h-10 border bg-background px-3 py-2"
               value={draft.name}
               onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
               autoComplete="off"

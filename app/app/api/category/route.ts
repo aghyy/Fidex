@@ -1,18 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
-
-type CategoryRecord = { id: string; name: string; color: string | null; icon: string | null };
-type CategoryDelegate = {
-  findMany: (args: {
-    where: { userId: string };
-    orderBy?: { name: "asc" | "desc" };
-    select?: { id?: true; name?: true; color?: true; icon?: true };
-  }) => Promise<CategoryRecord[]>;
-  create: (args: {
-    data: { userId: string; name: string; color?: string; icon?: string };
-  }) => Promise<CategoryRecord>;
-};
+import { CategoryDelegate } from "@/types/categories";
 
 const category = (prisma as unknown as { category: CategoryDelegate }).category;
 

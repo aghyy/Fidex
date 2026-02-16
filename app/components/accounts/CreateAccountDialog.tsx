@@ -13,13 +13,14 @@ import {
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import { Plus } from "lucide-react";
-import { Category } from "@/types/categories";
+import { Account } from "@/types/accounts";
 import {
   ColorSwatchPicker,
   DEFAULT_COLOR_SWATCHES,
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
 import { IconPicker } from "@/components/ui/icon-picker";
+import { Currency } from "@/types/currencies";
 
 const ICON_OPTIONS = [
   "IconBread",
@@ -35,8 +36,11 @@ const ICON_OPTIONS = [
 function FormContent() {
   const { setIsOpen } = useMorphingDialog();
   const [newName, setNewName] = useState("");
+  const [newAccountNumber, setNewAccountNumber] = useState("");
   const [newColor, setNewColor] = useState<string>(DEFAULT_COLOR_SWATCHES[0]);
   const [newIcon, setNewIcon] = useState<string>("IconQuestionMark");
+  const [newBalance, setNewBalance] = useState<number>(0);
+  const [newCurrency, setNewCurrency] = useState<Currency>();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,18 +52,25 @@ function FormContent() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/category", {
+      const res = await fetch("/api/account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon || null }),
+        body: JSON.stringify({
+          name: newName.trim(),
+          accountNumber: newAccountNumber,
+          color: newColor,
+          icon: newIcon || null,
+          balance: newBalance,
+          currency: newCurrency
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create");
-      const created = data.category as Category;
+      const created = data.account as Account;
       try {
-        window.dispatchEvent(new CustomEvent("category:created", { detail: created }));
-      } catch {}
+        window.dispatchEvent(new CustomEvent("account:created", { detail: created }));
+      } catch { }
       setNewName("");
       setNewIcon("IconQuestionMark");
       setNewColor(DEFAULT_COLOR_SWATCHES[0]);
@@ -75,7 +86,7 @@ function FormContent() {
   return (
     <form onSubmit={handleCreate} className="mt-4 grid gap-4">
       <div>
-        <label className="text-sm text-muted-foreground" htmlFor="new-category-name">
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-name">
           Name
         </label>
         <div className="mt-1 flex items-center gap-3">
@@ -86,14 +97,59 @@ function FormContent() {
             onChange={setNewIcon}
           />
           <input
-            id="new-category-name"
+            id="new-account-name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="flex-1 rounded-md border bg-background px-3 py-2"
-            placeholder="e.g. Groceries"
+            placeholder="e.g. Savings Account"
             autoComplete="off"
           />
         </div>
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-number">
+          Account Number
+        </label>
+        <input
+          id="new-account-number"
+          value={newAccountNumber}
+          onChange={(e) => setNewAccountNumber(e.target.value)}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+          placeholder="e.g. 1234-5678-9012-3456"
+        />
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-balance">
+          Balance
+        </label>
+        <input
+          id="new-account-balance"
+          value={newBalance}
+          onChange={(e) => setNewBalance(Number(e.target.value))}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+          placeholder="e.g. 1000.00"
+          type="number"
+        />
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor="new-account-currency">
+          Currency
+        </label>
+        <select
+          id="new-account-currency"
+          value={newCurrency ?? ""}
+          onChange={(e) => setNewCurrency(e.target.value as Currency)}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+        >
+          <option value="" disabled>
+            Select currency
+          </option>
+          {(["USD", "EUR", "GBP", "CAD", "CNY", "INR", "JPY"] as Currency[]).map((currency) => (
+            <option key={currency} value={currency}>
+              {currency}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label className="text-sm text-muted-foreground">Color</label>
@@ -118,7 +174,7 @@ function FormContent() {
   );
 }
 
-export default function CreateCategoryDialog() {
+export default function CreateAccountDialog() {
 
   return (
     <MorphingDialog>
@@ -130,8 +186,8 @@ export default function CreateCategoryDialog() {
           className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
           style={{ overflow: "visible" }}
         >
-          <MorphingDialogTitle className="text-xl">Create Category</MorphingDialogTitle>
-          <MorphingDialogDescription className="text-sm text-muted-foreground">Name, color, and icon.</MorphingDialogDescription>
+          <MorphingDialogTitle className="text-xl">Create Account</MorphingDialogTitle>
+          <MorphingDialogDescription className="text-sm text-muted-foreground">Name, account number, balance, color, and icon.</MorphingDialogDescription>
           <FormContent />
         </MorphingDialogContent>
       </MorphingDialogContainer>

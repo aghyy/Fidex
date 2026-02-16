@@ -17,15 +17,16 @@ import SidebarHeader from "./SidebarHeader";
 import SidebarFooter from "./SidebarFooter";
 import { BasicUser } from "@/types/user";
 import { useState, useEffect } from "react";
-import { accounts } from "./accountsLinks";
 import DynamicCategories from "./DynamicCategories";
 import { useCategories, useCategoriesBootstrap } from "@/state/categories";
-import { motion } from "framer-motion";
+import DynamicAccounts from "./DynamicAccounts";
+import { useAccountsBootstrap, useAccounts } from "@/state/accounts";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const categoriesState = useCategories();
+  const accountsState = useAccounts();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<BasicUser | null>(null);
@@ -51,6 +52,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // Bootstrap categories global store when authenticated
   useCategoriesBootstrap(Boolean(session?.user));
+  // Bootstrap accounts global store when authenticated
+  useAccountsBootstrap(Boolean(session?.user));
 
   const isAuthRoute = pathname?.startsWith("/auth/") ?? false;
 
@@ -102,41 +105,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
               {sidebarOpen && (
                 <div>
-                  <span className="text-xs font-bold text-muted-foreground">Accounts</span>
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: {
-                        opacity: 1,
-                        transition: {
-                          staggerChildren: 0.02,
-                        },
-                      },
-                    }}
-                  >
-                    {accounts.map((a) => {
-                      return (
-                        <motion.div
-                          key={a.href}
-                          variants={{
-                            hidden: { opacity: 0, x: -10 },
-                            visible: { opacity: 1, x: 0 },
-                          }}
-                        >
-                          <SidebarLink link={a} />
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
+                  {accountsState.length > 0 && <span className="text-xs font-bold text-muted-foreground">Accounts</span>}
+                  <DynamicAccounts staggerOffset={categoriesState.length} />
                 </div>
               )}
 
               {sidebarOpen && (
                 <div>
-                  <span className="text-xs font-bold text-muted-foreground">Categories</span>
-                  <DynamicCategories staggerOffset={categoriesState.length} />
+                  {categoriesState.length > 0 && <span className="text-xs font-bold text-muted-foreground">Categories</span>}
+                  <DynamicCategories staggerOffset={categoriesState.length + accountsState.length} />
                 </div>
               )}
             </div>

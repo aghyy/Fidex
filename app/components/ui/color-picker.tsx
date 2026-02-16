@@ -1,0 +1,668 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { Range, Root, Thumb, Track } from "@radix-ui/react-slider";
+import Color from "color";
+import { PipetteIcon, PlusIcon } from "lucide-react";
+import {
+	type ComponentProps,
+	createContext,
+	type HTMLAttributes,
+	type ChangeEventHandler,
+	type FocusEventHandler,
+	type KeyboardEventHandler,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import {
+	MorphingPopover,
+	MorphingPopoverContent,
+	MorphingPopoverTrigger,
+} from "@/components/motion-primitives/morphing-popover";
+import { determineTextColor } from "@/utils/colors";
+
+interface ColorPickerContextValue {
+	hue: number;
+	saturation: number;
+	lightness: number;
+	alpha: number;
+	mode: string;
+	setHue: (hue: number) => void;
+	setSaturation: (saturation: number) => void;
+	setLightness: (lightness: number) => void;
+	setAlpha: (alpha: number) => void;
+	setMode: (mode: string) => void;
+}
+
+const ColorPickerContext = createContext<ColorPickerContextValue | undefined>(
+	undefined,
+);
+
+export const useColorPicker = () => {
+	const context = useContext(ColorPickerContext);
+
+	if (!context) {
+		throw new Error(
+			"useColorPicker must be used within a ColorPickerProvider",
+		);
+	}
+
+	return context;
+};
+
+export type ColorPickerProps = HTMLAttributes<HTMLDivElement> & {
+	value?: Parameters<typeof Color>[0];
+	defaultValue?: Parameters<typeof Color>[0];
+	onChange?: (value: Parameters<typeof Color.rgb>[0]) => void;
+};
+
+const SAFE_FALLBACK = "#000000";
+
+const toSafeColor = (input?: Parameters<typeof Color>[0]) => {
+	try {
+		return Color(input ?? SAFE_FALLBACK);
+	} catch {
+		return Color(SAFE_FALLBACK);
+	}
+};
+
+type ColorInstance = ReturnType<typeof Color>;
+
+const normalizeHue = (candidate: ColorInstance, fallback: ColorInstance) => {
+	const value = candidate.hue();
+	return Number.isFinite(value) ? value : fallback.hue() || 0;
+};
+
+export const ColorPicker = ({
+	value,
+	defaultValue = SAFE_FALLBACK,
+	onChange,
+	className,
+	children,
+	...props
+}: ColorPickerProps) => {
+	const defaultColor = useMemo(
+		() => toSafeColor(defaultValue),
+		[defaultValue],
+	);
+	const initialColor = useMemo(
+		() => (value ? toSafeColor(value) : defaultColor),
+		[value, defaultColor],
+	);
+
+	const [hue, setHue] = useState(() => normalizeHue(initialColor, defaultColor));
+	const [saturation, setSaturation] = useState(
+		() => initialColor.saturationl() || defaultColor.saturationl() || 100,
+	);
+	const [lightness, setLightness] = useState(
+		() => initialColor.lightness() || defaultColor.lightness() || 50,
+	);
+	const [alpha, setAlpha] = useState(
+		() => (initialColor.alpha() || defaultColor.alpha() || 1) * 100,
+	);
+	const [mode, setMode] = useState("hex");
+
+	// Update color when controlled value changes
+	useEffect(() => {
+		if (value === undefined) {
+			return;
+		}
+
+		const color = toSafeColor(value);
+		setHue(normalizeHue(color, defaultColor));
+		setSaturation(color.saturationl() || defaultColor.saturationl() || 100);
+		setLightness(color.lightness() || defaultColor.lightness() || 50);
+		setAlpha((color.alpha() || 1) * 100);
+	}, [value, defaultColor]);
+
+	// Notify parent of changes
+	useEffect(() => {
+		if (onChange) {
+			const color = Color.hsl(hue, saturation, lightness).alpha(
+				alpha / 100,
+			);
+			const rgba = color.rgb().array();
+
+			onChange([rgba[0], rgba[1], rgba[2], alpha / 100]);
+		}
+	}, [hue, saturation, lightness, alpha, onChange]);
+
+	return (
+		<ColorPickerContext.Provider
+			value={{
+				hue,
+				saturation,
+				lightness,
+				alpha,
+				mode,
+				setHue,
+				setSaturation,
+				setLightness,
+				setAlpha,
+				setMode,
+			}}
+		>
+			<div
+				className={cn("grid w-full gap-4", className)}
+				{...props}
+			>
+				{children}
+			</div>
+		</ColorPickerContext.Provider>
+	);
+};
+
+export type ColorPickerSelectionProps = HTMLAttributes<HTMLDivElement>;
+
+export const ColorPickerSelection = ({
+	className,
+	...props
+}: ColorPickerSelectionProps) => {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [isDragging, setIsDragging] = useState(false);
+	const [position, setPosition] = useState({ x: 0, y: 0 });
+	const { hue, saturation, lightness, setSaturation, setLightness } = useColorPicker();
+
+	const handlePointerMove = useCallback(
+		(event: PointerEvent) => {
+			if (!isDragging || !containerRef.current) {
+				return;
+			}
+			const rect = containerRef.current.getBoundingClientRect();
+			const x = Math.max(
+				0,
+				Math.min(1, (event.clientX - rect.left) / rect.width),
+			);
+			const y = Math.max(
+				0,
+				Math.min(1, (event.clientY - rect.top) / rect.height),
+			);
+			setPosition({ x, y });
+			setSaturation(x * 100);
+			const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
+			const lightness = topLightness * (1 - y);
+
+			setLightness(lightness);
+		},
+		[isDragging, setSaturation, setLightness],
+	);
+
+	useEffect(() => {
+		const handlePointerUp = () => setIsDragging(false);
+
+		if (isDragging) {
+			window.addEventListener("pointermove", handlePointerMove);
+			window.addEventListener("pointerup", handlePointerUp);
+		}
+
+		return () => {
+			window.removeEventListener("pointermove", handlePointerMove);
+			window.removeEventListener("pointerup", handlePointerUp);
+		};
+	}, [isDragging, handlePointerMove]);
+
+	useEffect(() => {
+		if (!containerRef.current) return;
+		const x = Math.max(0, Math.min(1, saturation / 100));
+		const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
+		const y = topLightness > 0 ? Math.max(0, Math.min(1, 1 - lightness / topLightness)) : 0;
+		setPosition({ x, y });
+	}, [saturation, lightness]);
+
+	return (
+		<div
+			ref={containerRef}
+			className={cn(
+				"relative aspect-[4/3] w-full cursor-crosshair rounded",
+				className,
+			)}
+			style={{
+				background: `linear-gradient(0deg, rgba(0,0,0,1), rgba(0,0,0,0)),
+                     linear-gradient(90deg, rgba(255,255,255,1), rgba(255,255,255,0)),
+                     hsl(${hue}, 100%, 50%)`,
+			}}
+			onPointerDown={(e) => {
+				e.preventDefault();
+				setIsDragging(true);
+				handlePointerMove(e.nativeEvent);
+			}}
+			{...props}
+		>
+			<div
+				className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute h-4 w-4 rounded-full border-2 border-white"
+				style={{
+					left: `${Math.max(0, Math.min(100, position.x * 100))}%`,
+					top: `${Math.max(0, Math.min(100, position.y * 100))}%`,
+					boxShadow: "0 0 0 1px rgba(0,0,0,0.5)",
+				}}
+			/>
+		</div>
+	);
+};
+
+export type ColorPickerHueProps = ComponentProps<typeof Root>;
+
+export const ColorPickerHue = ({
+	className,
+	...props
+}: ColorPickerHueProps) => {
+	const { hue, setHue } = useColorPicker();
+
+	return (
+		<Root
+			value={[hue]}
+			max={360}
+			step={1}
+			className={cn("relative flex h-4 w-full touch-none", className)}
+			onValueChange={([hue]) => setHue(hue)}
+			{...props}
+		>
+			<Track className="relative my-0.5 h-3 w-full grow rounded-full bg-[linear-gradient(90deg,#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000)]">
+				<Range className="absolute h-full" />
+			</Track>
+			<Thumb className="block h-4 w-4 rounded-full border-2 border-white shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
+		</Root>
+	);
+};
+
+export type ColorPickerAlphaProps = ComponentProps<typeof Root>;
+
+export const ColorPickerAlpha = ({
+	className,
+	...props
+}: ColorPickerAlphaProps) => {
+	const { alpha, setAlpha } = useColorPicker();
+
+	return (
+		<Root
+			value={[alpha]}
+			max={100}
+			step={1}
+			className={cn("relative flex h-4 w-full touch-none", className)}
+			onValueChange={([alpha]) => setAlpha(alpha)}
+			{...props}
+		>
+			<Track
+				className="relative my-0.5 h-3 w-full grow rounded-full"
+				style={{
+					background:
+						'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==") left center',
+				}}
+			>
+				<div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent to-primary/50" />
+				<Range className="absolute h-full rounded-full bg-transparent" />
+			</Track>
+			<Thumb className="block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
+		</Root>
+	);
+};
+
+export type ColorPickerEyeDropperProps = ComponentProps<typeof Button>;
+
+export const ColorPickerEyeDropper = ({
+	className,
+	...props
+}: ColorPickerEyeDropperProps) => {
+	const { setHue, setSaturation, setLightness, setAlpha } = useColorPicker();
+
+	const handleEyeDropper = async () => {
+		try {
+			// @ts-expect-error - EyeDropper API is experimental
+			const eyeDropper = new EyeDropper();
+			const result = await eyeDropper.open();
+			const color = Color(result.sRGBHex);
+			const [h, s, l] = color.hsl().array();
+
+			setHue(h);
+			setSaturation(s);
+			setLightness(l);
+			setAlpha(100);
+		} catch (error) {
+			console.error("EyeDropper failed:", error);
+		}
+	};
+
+	return (
+		<Button
+			variant="outline"
+			size="icon"
+			onClick={handleEyeDropper}
+			className={cn("shrink-0 text-muted-foreground", className)}
+			{...props}
+		>
+			<PipetteIcon size={16} />
+		</Button>
+	);
+};
+
+export type ColorPickerHexInputProps = ComponentProps<typeof Input>;
+
+export const ColorPickerHexInput = ({ className, onBlur, onKeyDown, onChange, ...props }: ColorPickerHexInputProps) => {
+  const { hue, saturation, lightness, setHue, setSaturation, setLightness } = useColorPicker();
+  const currentHex = useMemo(
+    () => Color.hsl(hue, saturation, lightness).hex().toUpperCase(),
+    [hue, saturation, lightness],
+  );
+  const [draft, setDraft] = useState(currentHex);
+
+  useEffect(() => {
+    setDraft(currentHex);
+  }, [currentHex]);
+
+  const commit = useCallback(
+    (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        setDraft(currentHex);
+        return;
+      }
+      const normalized = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+      try {
+        const color = Color(normalized);
+        const [h, s, l] = color.hsl().array();
+        setHue(Number.isFinite(h) ? h : 0);
+        setSaturation(Number.isFinite(s) ? s : 0);
+        setLightness(Number.isFinite(l) ? l : 0);
+      } catch {
+        setDraft(currentHex);
+      }
+    },
+    [currentHex, setHue, setLightness, setSaturation],
+  );
+
+  const handleBlur: FocusEventHandler<HTMLInputElement> = (event) => {
+    commit(event.target.value);
+    onBlur?.(event);
+  };
+
+  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commit((event.target as HTMLInputElement).value);
+    }
+    onKeyDown?.(event);
+  };
+
+  const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const value = event.target.value;
+    const normalized = value.startsWith("#") || value === "" ? value : `#${value}`;
+    setDraft(normalized.toUpperCase());
+    onChange?.(event);
+  };
+
+  return (
+    <Input
+      value={draft}
+      onBlur={handleBlur}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      className={cn("uppercase", className)}
+      placeholder="#FFFFFF"
+      {...props}
+    />
+  );
+};
+
+export type ColorPickerOutputProps = ComponentProps<typeof SelectTrigger>;
+
+const formats = ["hex", "rgb", "css", "hsl"];
+
+export const ColorPickerOutput = ({
+	...props
+}: ColorPickerOutputProps) => {
+	const { mode, setMode } = useColorPicker();
+
+	return (
+		<Select
+			value={mode}
+			onValueChange={setMode}
+		>
+			<SelectTrigger
+				className="h-9 w-[5rem] shrink-0 text-xs"
+				{...props}
+			>
+				<SelectValue placeholder="Mode" />
+			</SelectTrigger>
+			<SelectContent>
+				{formats.map((format) => (
+					<SelectItem
+						key={format}
+						value={format}
+						className="text-xs"
+					>
+						{format.toUpperCase()}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+};
+
+type PercentageInputProps = ComponentProps<typeof Input>;
+
+const PercentageInput = ({ className, ...props }: PercentageInputProps) => {
+	return (
+		<div className="relative">
+			<Input
+				type="text"
+				{...props}
+				className={cn(
+					"h-9 w-[3.25rem] rounded-l-none bg-secondary px-2 text-xs shadow-none",
+					className,
+				)}
+			/>
+			<span className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground text-xs">
+				%
+			</span>
+		</div>
+	);
+};
+
+export type ColorPickerPopoverProps = {
+	value: string;
+	onChange: (rgba: unknown) => void;
+	isActive?: boolean;
+	triggerClassName?: string;
+	contentClassName?: string;
+	showAlphaSlider?: boolean;
+};
+
+export const ColorPickerPopover = ({
+	value,
+	onChange,
+	isActive = false,
+	triggerClassName,
+	contentClassName,
+	showAlphaSlider = true,
+}: ColorPickerPopoverProps) => {
+	const resolvedColor =
+		typeof value === "string" && value.trim().length > 0 ? value : SAFE_FALLBACK;
+	const textColor = determineTextColor(resolvedColor);
+	const backgroundColor = isActive ? resolvedColor : undefined;
+	const foregroundColor = isActive ? textColor : undefined;
+
+	return (
+		<MorphingPopover className="h-6 w-6">
+			<MorphingPopoverTrigger
+				data-keep-popover-open="true"
+				className={cn(
+					"flex h-6 w-6 items-center justify-center rounded-full border bg-background text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+					isActive ? "ring-2 ring-primary" : "",
+					triggerClassName,
+				)}
+				style={{ backgroundColor, color: foregroundColor }}
+				aria-label="Open color picker"
+			>
+				<PlusIcon size={16} />
+			</MorphingPopoverTrigger>
+			<MorphingPopoverContent
+				data-keep-popover-open="true"
+				className={cn(
+					"z-50 w-[280px] overflow-visible bg-background p-4 shadow-lg",
+					contentClassName,
+				)}
+			>
+				<ColorPicker value={resolvedColor} onChange={onChange} className="gap-3">
+			<div className="space-y-3" data-keep-popover-open="true">
+				<ColorPickerSelection className="rounded-lg border" />
+				<ColorPickerHue className="rounded-full" />
+				{showAlphaSlider ? <ColorPickerAlpha className="rounded-full" /> : null}
+				<div className="flex items-center gap-2">
+					<ColorPickerHexInput className="flex-1" />
+					<ColorPickerEyeDropper className="border" />
+				</div>
+			</div>
+		</ColorPicker>
+			</MorphingPopoverContent>
+		</MorphingPopover>
+	);
+};
+
+export type ColorPickerFormatProps = HTMLAttributes<HTMLDivElement>;
+
+export const ColorPickerFormat = ({
+	className,
+	...props
+}: ColorPickerFormatProps) => {
+	const {
+		hue,
+		saturation,
+		lightness,
+		alpha,
+		mode,
+		setAlpha,
+		setHue,
+		setSaturation,
+		setLightness,
+	} = useColorPicker();
+	const color = Color.hsl(hue, saturation, lightness, alpha / 100);
+
+	if (mode === "hex") {
+		const hex = color.hex();
+
+		return (
+			<div
+				className={cn(
+					"-space-x-px relative flex items-center h-9",
+					className,
+				)}
+				{...props}
+			>
+				<Input
+					type="text"
+					defaultValue={hex}
+					className="h-9 rounded-r-none bg-secondary px-2 text-xs"
+					onChange={(e) => {
+						const newColor = Color(e.target.value);
+						setHue(newColor.hue());
+						setSaturation(newColor.saturationl());
+						setLightness(newColor.lightness());
+					}}
+				/>
+				<PercentageInput
+					value={alpha}
+					onChange={(e) => setAlpha(Number(e.target.value))}
+				/>
+			</div>
+		);
+	}
+
+	if (mode === "rgb") {
+		const rgb = color
+			.rgb()
+			.array()
+			.map((value) => Math.round(value));
+
+		return (
+			<div
+				className={cn(
+					"-space-x-px flex items-center shadow-sm",
+					className,
+				)}
+				{...props}
+			>
+				{rgb.map((value, index) => (
+					<Input
+						key={index}
+						type="text"
+						value={value}
+						readOnly
+						className={cn(
+							"h-8 rounded-r-none bg-secondary px-2 text-xs shadow-none",
+							index && "rounded-l-none",
+							className,
+						)}
+					/>
+				))}
+				<PercentageInput value={alpha} />
+			</div>
+		);
+	}
+
+	if (mode === "css") {
+		const rgb = color
+			.rgb()
+			.array()
+			.map((value) => Math.round(value));
+
+		return (
+			<div
+				className={cn("w-full shadow-sm", className)}
+				{...props}
+			>
+				<Input
+					type="text"
+					className="h-8 w-full bg-secondary px-2 text-xs shadow-none"
+					value={`rgba(${rgb.join(", ")}, ${alpha}%)`}
+					readOnly
+					{...props}
+				/>
+			</div>
+		);
+	}
+
+	if (mode === "hsl") {
+		const hsl = color
+			.hsl()
+			.array()
+			.map((value) => Math.round(value));
+
+		return (
+			<div
+				className={cn(
+					"-space-x-px flex items-center shadow-sm",
+					className,
+				)}
+				{...props}
+			>
+				{hsl.map((value, index) => (
+					<Input
+						key={index}
+						type="text"
+						value={value}
+						readOnly
+						className={cn(
+							"h-8 rounded-r-none bg-secondary px-2 text-xs shadow-none",
+							index && "rounded-l-none",
+							className,
+						)}
+					/>
+				))}
+				<PercentageInput value={alpha} />
+			</div>
+		);
+	}
+
+	return null;
+};

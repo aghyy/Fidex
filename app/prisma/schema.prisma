@@ -23,6 +23,8 @@ model User {
   sessions       Session[]
   authenticators Authenticator[]
   categories     Category[]
+  Document       Document[]
+  Account        Account[]
 }
 
 model OAuthAccount {
@@ -76,7 +78,7 @@ model EmailVerificationToken {
 }
 
 model Authenticator {
-  credentialID         String  @unique
+  credentialID         String   @unique
   userId               String
   providerAccountId    String
   credentialPublicKey  String
@@ -90,6 +92,63 @@ model Authenticator {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, credentialID])
+}
+
+model Transaction {
+  id              String              @id @default(cuid())
+  userId          String
+  originAccountId String
+  targetAccountId String
+  amount          BigInt
+  notes           String
+  interval        TransactionInterval @default(ONCE)
+  type            TransactionType     @default(EXPENSE)
+  category        String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @default(now()) @updatedAt
+  expires         DateTime
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String?
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  name       String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, categoryId])
+}
+
+model Account {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  accountNumber String
+  color         String
+  icon          String
+  balance       BigInt
+  currency      Currency
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, accountNumber])
 }
 
 // Enums
@@ -115,51 +174,122 @@ enum TransactionType {
   TRANSFER
 }
 
-model Transaction {
-  id              String @id @default(cuid())
-  userId          String @unique
-  originAccountId String
-  targetAccountId String
-  amount          BigInt
-  notes           String
-  interval        TransactionInterval @default(ONCE)
-  type            TransactionType @default(EXPENSE)
-  category        String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
-  expires         DateTime
-}
-
-model Category {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  color     String?
-  icon      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, name])
-}
-
-model Document {
-  id          String @id @default(cuid())
-  userId      String @unique
-  categoryId  String @unique
-  name        String @unique
-  content     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-}
-
-model Account {
-  id            String @id @default(cuid())
-  userId        String @unique
-  name          String
-  accountNumber String @unique
-  icon          String
-  balance       BigInt
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+enum Currency {
+  USD
+  EUR
+  GBP
+  CHF
+  JPY
+  CAD
+  AUD
+  NZD
+  CNY
+  HKD
+  SGD
+  KRW
+  INR
+  RUB
+  BRL
+  MXN
+  ZAR
+  TRY
+  SAR
+  AED
+  ALL
+  BGN
+  CZK
+  DKK
+  HUF
+  ISK
+  NOK
+  PLN
+  RON
+  RSD
+  SEK
+  UAH
+  ARS
+  BSD
+  BBD
+  BZD
+  BMD
+  BOB
+  CLP
+  COP
+  CRC
+  CUP
+  DOP
+  GTQ
+  HTG
+  HNL
+  JMD
+  NIO
+  PAB
+  PYG
+  PEN
+  TTD
+  UYU
+  VES
+  DZD
+  AOA
+  BWP
+  CVE
+  EGP
+  ETB
+  GHS
+  KES
+  LYD
+  MAD
+  MZN
+  NAD
+  NGN
+  RWF
+  SCR
+  TZS
+  TND
+  UGX
+  XOF
+  XAF
+  ZMW
+  ZWL
+  AFN
+  AMD
+  AZN
+  BHD
+  BDT
+  BTN
+  BND
+  KHR
+  GEL
+  IDR
+  IRR
+  IQD
+  ILS
+  JOD
+  KZT
+  KWD
+  KGS
+  LAK
+  LBP
+  MYR
+  MVR
+  MNT
+  NPR
+  OMR
+  PKR
+  PHP
+  QAR
+  LKR
+  SYP
+  TJS
+  THB
+  TMT
+  UZS
+  VND
+  YER
+  FJD
+  PGK
+  WST
+  SBD
+  TOP
+  VUV
 }
