@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
 import { TransactionInterval, TransactionType } from "@/types/transactions";
+import { RouteContext } from "@/types/api";
 
 export const runtime = "nodejs";
 
@@ -27,9 +28,10 @@ function toJsonSafe<T>(value: T): T {
 }
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+    _: Request,
+    context: RouteContext
 ) {
+    const { id } = await context.params;
     const session = await auth();
     if (!session || !session.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,7 +51,7 @@ export async function GET(
             };
         };
         const found = await db.transaction.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!found) {
@@ -69,8 +71,9 @@ export async function GET(
 
 export async function PATCH(
     request: Request,
-    { params }: { params: { id: string } }
+    context: RouteContext
 ) {
+    const { id } = await context.params;
     const session = await auth();
     if (!session || !session.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -100,7 +103,7 @@ export async function PATCH(
         };
 
         const existing = await db.transaction.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!existing) {
@@ -134,7 +137,7 @@ export async function PATCH(
         if (expires !== undefined) data.expires = new Date(expires);
 
         const updated = await db.transaction.update({
-            where: { id: params.id },
+            where: { id },
             data,
         });
 
@@ -146,9 +149,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+    _: Request,
+    context: RouteContext
 ) {
+    const { id } = await context.params;
     const session = await auth();
     if (!session || !session.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -177,7 +181,7 @@ export async function DELETE(
 
         await db.$transaction(async (tx) => {
             const existing = await tx.transaction.findUnique({
-                where: { id: params.id },
+                where: { id },
             });
 
             if (!existing) {
@@ -224,7 +228,7 @@ export async function DELETE(
             }
 
             await tx.transaction.delete({
-                where: { id: params.id },
+                where: { id },
             });
         });
 
