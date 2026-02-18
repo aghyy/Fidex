@@ -19,6 +19,7 @@ import { Category } from "@/types/categories";
 import { TransactionType } from "@/types/transactions";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { renderIconByName } from "@/utils/icons";
 
 type DashboardTransaction = {
   id: string;
@@ -259,7 +260,10 @@ export default function DashboardOverview() {
   }, [transactions, periodMode, range.start]);
 
   const categorySpendData = useMemo(() => {
-    const spendMap = new Map<string, { categoryId: string; category: string; spent: number; transactions: number }>();
+    const spendMap = new Map<
+      string,
+      { categoryId: string; category: string; spent: number; transactions: number; color: string | null; icon: string | null }
+    >();
     for (const tx of transactions) {
       if (tx.type !== "EXPENSE") continue;
       const amount = parseAmount(tx.amount);
@@ -270,6 +274,8 @@ export default function DashboardOverview() {
         category: label,
         spent: 0,
         transactions: 0,
+        color: category?.color ?? null,
+        icon: category?.icon ?? null,
       };
       current.spent += amount;
       current.transactions += 1;
@@ -279,7 +285,10 @@ export default function DashboardOverview() {
   }, [transactions, categoryById]);
 
   const categoryIncomeData = useMemo(() => {
-    const incomeMap = new Map<string, { categoryId: string; category: string; earned: number; transactions: number }>();
+    const incomeMap = new Map<
+      string,
+      { categoryId: string; category: string; earned: number; transactions: number; color: string | null; icon: string | null }
+    >();
     for (const tx of transactions) {
       if (tx.type !== "INCOME") continue;
       const amount = parseAmount(tx.amount);
@@ -290,6 +299,8 @@ export default function DashboardOverview() {
         category: label,
         earned: 0,
         transactions: 0,
+        color: category?.color ?? null,
+        icon: category?.icon ?? null,
       };
       current.earned += amount;
       current.transactions += 1;
@@ -554,9 +565,17 @@ export default function DashboardOverview() {
               className="block rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium">{row.account.name}</p>
-                  <p className="text-xs text-muted-foreground">{row.account.accountNumber}</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
+                    style={{ backgroundColor: row.account.color ?? "#e5e7eb" }}
+                  >
+                    {renderIconByName(row.account.icon, row.account.color ?? "#e5e7eb", true)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{row.account.name}</p>
+                    <p className="text-xs text-muted-foreground">{row.account.accountNumber}</p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className={`text-sm font-semibold ${row.displayedBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -587,9 +606,17 @@ export default function DashboardOverview() {
                 href={`/categories/${encodeURIComponent(row.categoryId)}`}
                 className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
               >
-                <div>
-                  <p className="font-medium">{row.category}</p>
-                  <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
+                    style={{ backgroundColor: row.color ?? "#e5e7eb" }}
+                  >
+                    {renderIconByName(row.icon, row.color ?? "#e5e7eb", true)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{row.category}</p>
+                    <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
+                  </div>
                 </div>
                 <p className="font-semibold text-red-600">EUR {row.spent.toLocaleString()}</p>
               </Link>
@@ -609,9 +636,17 @@ export default function DashboardOverview() {
                 href={`/categories/${encodeURIComponent(row.categoryId)}`}
                 className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
               >
-                <div>
-                  <p className="font-medium">{row.category}</p>
-                  <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
+                    style={{ backgroundColor: row.color ?? "#e5e7eb" }}
+                  >
+                    {renderIconByName(row.icon, row.color ?? "#e5e7eb", true)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{row.category}</p>
+                    <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
+                  </div>
                 </div>
                 <p className="font-semibold text-green-600">EUR {row.earned.toLocaleString()}</p>
               </Link>

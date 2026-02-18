@@ -8,6 +8,7 @@ import TransactionFAB from "@/components/transactions/TransactionFAB";
 import { Account } from "@/types/accounts";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { determineTextColor } from "@/utils/colors";
 
 type PeriodMode = "month" | "year";
 
@@ -92,6 +93,8 @@ export default function AccountDetailPage() {
     const current = new Date();
     return range.end.getTime() > current.getTime() ? current : range.end;
   }, [range.end]);
+  const headerTextColor = determineTextColor(account?.color ?? undefined);
+  const mutedHeaderTextClass = headerTextColor === "black" ? "text-black/70" : "text-white/80";
 
   useEffect(() => {
     async function loadAccount() {
@@ -277,26 +280,32 @@ export default function AccountDetailPage() {
           )}
         </div>
 
-        <div className="mb-6 rounded-xl border bg-background p-4">
+        <div
+          className="mb-6 rounded-xl border p-4"
+          style={{
+            backgroundColor: account?.color ?? undefined,
+            color: account?.color ? headerTextColor : undefined,
+          }}
+        >
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading account...</p>
           ) : account ? (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <p className="text-xs text-muted-foreground">Name</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>Name</p>
                 <p className="font-medium">{account.name}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Account Number</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>Account Number</p>
                 <p className="font-medium">{account.accountNumber}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Balance</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>Balance</p>
                 <p className="font-medium">EUR {(displayedBalance ?? account.balance).toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">As of {effectiveTo.toLocaleDateString()}</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>As of {effectiveTo.toLocaleDateString()}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Currency</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>Currency</p>
                 <p className="font-medium">EUR (currently only supported)</p>
               </div>
             </div>

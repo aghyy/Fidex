@@ -8,6 +8,7 @@ import TransactionFAB from "@/components/transactions/TransactionFAB";
 import { Category } from "@/types/categories";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { determineTextColor } from "@/utils/colors";
 
 type PeriodMode = "month" | "year";
 
@@ -97,6 +98,8 @@ export default function CategoryDetailPage() {
     const current = new Date();
     return range.end.getTime() > current.getTime() ? current : range.end;
   }, [range.end]);
+  const headerTextColor = determineTextColor(category?.color ?? undefined);
+  const mutedHeaderTextClass = headerTextColor === "black" ? "text-black/70" : "text-white/80";
 
   useEffect(() => {
     async function loadCategory() {
@@ -273,33 +276,29 @@ export default function CategoryDetailPage() {
           )}
         </div>
 
-        <div className="mb-6 rounded-xl border bg-background p-4">
+        <div
+          className="mb-6 rounded-xl border p-4"
+          style={{
+            backgroundColor: category?.color ?? undefined,
+            color: category?.color ? headerTextColor : undefined,
+          }}
+        >
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading category...</p>
           ) : category ? (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <p className="text-xs text-muted-foreground">Name</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>Name</p>
                 <p className="font-medium">{category.name}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Color</p>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block h-3 w-3 rounded-full border"
-                    style={{ backgroundColor: category.color ?? "#e5e7eb" }}
-                  />
-                  <p className="font-medium">{category.color ?? "Not set"}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Currency</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>Currency</p>
                 <p className="font-medium">EUR (currently only supported)</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Spent</p>
-                <p className="font-medium text-red-600">EUR {formatCategorySpend(categorySpend)}</p>
-                <p className="text-xs text-muted-foreground">{categoryTransactionsCount} transactions</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>Spent</p>
+                <p className="font-medium">EUR {formatCategorySpend(categorySpend)}</p>
+                <p className={`text-xs ${mutedHeaderTextClass}`}>{categoryTransactionsCount} transactions</p>
               </div>
             </div>
           ) : (
