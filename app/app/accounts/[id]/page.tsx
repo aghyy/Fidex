@@ -9,8 +9,31 @@ import { Account } from "@/types/accounts";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { determineTextColor } from "@/utils/colors";
+import {
+  MorphingDialog,
+  MorphingDialogTrigger,
+  MorphingDialogContainer,
+  MorphingDialogContent,
+  MorphingDialogTitle,
+  MorphingDialogDescription,
+  useMorphingDialog,
+} from "@/components/motion-primitives/morphing-dialog";
+import { IconPencil } from "@tabler/icons-react";
+import { ColorSwatchPicker, DEFAULT_COLOR_SWATCHES, normalizeHexColor } from "@/components/ui/color-swatch-picker";
+import { IconPicker } from "@/components/ui/icon-picker";
+import { renderIconByName } from "@/utils/icons";
 
 type PeriodMode = "month" | "year";
+const ICON_OPTIONS = [
+  "IconBread",
+  "IconBus",
+  "IconMovie",
+  "IconShoppingCart",
+  "IconCashBanknote",
+  "IconTransferIn",
+  "IconTax",
+  "IconQuestionMark",
+];
 
 function getRange(mode: PeriodMode, monthValue: string, yearValue: string) {
   const now = new Date();
@@ -61,6 +84,168 @@ function getPeriodOptionsFromTransactions(transactions: AccountTransaction[]) {
     normalizedMonthsByYear[year] = Array.from(months).sort((a, b) => Number(b) - Number(a));
   }
   return { years, monthsByYear: normalizedMonthsByYear };
+}
+
+function EditAccountForm({
+  account,
+  onUpdated,
+}: {
+  account: Account;
+  onUpdated: (updated: Account) => void;
+}) {
+  const { setIsOpen } = useMorphingDialog();
+  const [name, setName] = useState(account.name);
+  const [accountNumber, setAccountNumber] = useState(account.accountNumber);
+  const [balance, setBalance] = useState<number>(account.balance);
+  const [color, setColor] = useState<string>(account.color ?? DEFAULT_COLOR_SWATCHES[0]);
+  const [icon, setIcon] = useState<string>(account.icon ?? "IconQuestionMark");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(account.name);
+    setAccountNumber(account.accountNumber);
+    setBalance(account.balance);
+    setColor(account.color ?? DEFAULT_COLOR_SWATCHES[0]);
+    setIcon(account.icon ?? "IconQuestionMark");
+    setError(null);
+  }, [account]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !accountNumber.trim()) {
+      setError("Name and account number are required");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/account/${account.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: name.trim(),
+          accountNumber: accountNumber.trim(),
+          balance: Number(balance),
+          color: normalizeHexColor(color, DEFAULT_COLOR_SWATCHES[0]),
+          icon,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to update account");
+      onUpdated(data.account as Account);
+      setIsOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update account");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSave} className="mt-4 grid gap-4">
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor={`account-name-${account.id}`}>
+          Name
+        </label>
+        <div className="mt-1 flex items-center gap-3">
+          <IconPicker
+            icons={ICON_OPTIONS}
+            value={icon}
+            backgroundColor={normalizeHexColor(color, DEFAULT_COLOR_SWATCHES[0])}
+            onChange={setIcon}
+          />
+          <input
+            id={`account-name-${account.id}`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 rounded-md border bg-background px-3 py-2"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor={`account-number-${account.id}`}>
+          Account Number
+        </label>
+        <input
+          id={`account-number-${account.id}`}
+          value={accountNumber}
+          onChange={(e) => setAccountNumber(e.target.value)}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+        />
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor={`account-balance-${account.id}`}>
+          Balance
+        </label>
+        <input
+          id={`account-balance-${account.id}`}
+          type="number"
+          value={balance}
+          onChange={(e) => setBalance(Number(e.target.value))}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+        />
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground">Color</label>
+        <ColorSwatchPicker
+          className="mt-2"
+          value={color}
+          colors={DEFAULT_COLOR_SWATCHES}
+          onChange={setColor}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
+      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setIsOpen(false)}
+          className="rounded-md border px-4 py-2 text-sm"
+          disabled={saving}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+          disabled={saving || !name.trim() || !accountNumber.trim()}
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function EditAccountDialog({
+  account,
+  onUpdated,
+}: {
+  account: Account;
+  onUpdated: (updated: Account) => void;
+}) {
+  return (
+    <MorphingDialog>
+      <MorphingDialogTrigger
+        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent"
+        aria-label="Edit account"
+      >
+        <IconPencil className="h-4 w-4" />
+        Edit
+      </MorphingDialogTrigger>
+      <MorphingDialogContainer>
+        <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl" style={{ overflow: "visible" }}>
+          <MorphingDialogTitle className="text-xl">Edit Account</MorphingDialogTitle>
+          <MorphingDialogDescription className="text-sm text-muted-foreground">
+            Update account details.
+          </MorphingDialogDescription>
+          <EditAccountForm account={account} onUpdated={onUpdated} />
+        </MorphingDialogContent>
+      </MorphingDialogContainer>
+    </MorphingDialog>
+  );
 }
 
 export default function AccountDetailPage() {
@@ -214,6 +399,17 @@ export default function AccountDetailPage() {
             </svg>
           </Link>
           <h1 className="text-2xl font-bold">Account</h1>
+          {account ? (
+            <div className="ml-auto">
+              <EditAccountDialog
+                account={account}
+                onUpdated={(updated) => {
+                  setAccount(updated);
+                  setDisplayedBalance(updated.balance);
+                }}
+              />
+            </div>
+          ) : null}
         </div>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="inline-flex rounded-lg border bg-background p-1">
@@ -290,7 +486,17 @@ export default function AccountDetailPage() {
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading account...</p>
           ) : account ? (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: account.color ?? "#e5e7eb" }}
+                >
+                  {renderIconByName(account.icon, account.color ?? "#e5e7eb", true)}
+                </div>
+                <p className="text-lg font-semibold">{account.name}</p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Name</p>
                 <p className="font-medium">{account.name}</p>
@@ -308,6 +514,7 @@ export default function AccountDetailPage() {
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Currency</p>
                 <p className="font-medium">EUR (currently only supported)</p>
               </div>
+            </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Account not found.</p>

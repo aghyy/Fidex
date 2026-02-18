@@ -19,6 +19,7 @@
     "@simplewebauthn/browser": "^9.0.1",
     "@simplewebauthn/server": "^9.0.3",
     "@tabler/icons-react": "^3.35.0",
+    "@uploadthing/react": "^7.3.3",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "bcryptjs": "^3.0.2",
@@ -36,9 +37,12 @@
     "nodemailer": "^7.0.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-dropzone": "^15.0.0",
     "recharts": "^3.7.0",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "uploadthing": "^7.7.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

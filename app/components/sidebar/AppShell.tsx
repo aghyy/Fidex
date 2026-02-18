@@ -11,6 +11,7 @@ import {
   IconLayoutDashboard,
   IconWallet,
   IconReceipt,
+  IconFileDescription,
   IconSettings,
 } from "@tabler/icons-react";
 import SidebarHeader from "./SidebarHeader";
@@ -76,6 +77,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       label: "Transactions",
       href: "/transactions",
       icon: <IconReceipt className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
+    },
+    {
+      label: "Documents",
+      href: "/documents",
+      icon: <IconFileDescription className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
     },
     {
       label: "Settings",

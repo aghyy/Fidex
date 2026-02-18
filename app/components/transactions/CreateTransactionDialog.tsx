@@ -14,6 +14,7 @@ import { Plus } from "lucide-react";
 import { TransactionType, TransactionInterval } from "@/types/transactions";
 import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
+import { DocumentItem } from "@/types/documents";
 
 interface CreateTransactionDialogProps {
   preselectedCategory?: string;
@@ -41,14 +42,17 @@ function FormContent({
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const isTransfer = type === "TRANSFER";
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [accountsRes, categoriesRes] = await Promise.all([
+        const [accountsRes, categoriesRes, documentsRes] = await Promise.all([
           fetch("/api/account", { credentials: "include" }),
           fetch("/api/category", { credentials: "include" }),
+          fetch("/api/document", { credentials: "include" }),
         ]);
 
         if (accountsRes.ok) {
@@ -59,6 +63,10 @@ function FormContent({
         if (categoriesRes.ok) {
           const data = await categoriesRes.json();
           setCategories(data.categories || []);
+        }
+        if (documentsRes.ok) {
+          const data = await documentsRes.json();
+          setDocuments(data.documents || []);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -118,6 +126,17 @@ function FormContent({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create");
+
+      if (selectedDocumentIds.length > 0 && data?.transaction?.id) {
+        const linkRes = await fetch(`/api/transaction/${data.transaction.id}/documents`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ documentIds: selectedDocumentIds }),
+        });
+        const linkData = await linkRes.json().catch(() => ({}));
+        if (!linkRes.ok) throw new Error(linkData.error ?? "Transaction created but linking documents failed");
+      }
       
       try {
         window.dispatchEvent(new CustomEvent("transaction:created", { detail: data.transaction }));
@@ -132,6 +151,7 @@ function FormContent({
       setType("EXPENSE");
       setCategory(preselectedCategory || "");
       setExpires("");
+      setSelectedDocumentIds([]);
       
       setIsOpen(false);
     } catch (e) {
@@ -292,6 +312,32 @@ function FormContent({
           placeholder="Optional notes..."
           rows={3}
         />
+      </div>
+
+      <div>
+        <label className="text-sm text-muted-foreground">Linked documents</label>
+        <div className="mt-1 max-h-36 space-y-1 overflow-auto rounded-md border bg-background p-2">
+          {documents.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No uploaded documents yet.</p>
+          ) : (
+            documents.map((doc) => (
+              <label key={doc.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedDocumentIds.includes(doc.id)}
+                  onChange={(e) => {
+                    setSelectedDocumentIds((prev) =>
+                      e.target.checked ? [...prev, doc.id] : prev.filter((id) => id !== doc.id)
+                    );
+                  }}
+                />
+                <span className="truncate">
+                  {doc.title} ({doc.kind})
+                </span>
+              </label>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 mt-2">

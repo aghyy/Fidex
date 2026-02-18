@@ -12,6 +12,7 @@ import {
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import { TransactionInterval, TransactionType } from "@/types/transactions";
+import { DocumentItem } from "@/types/documents";
 
 type Transaction = {
   id: string;
@@ -63,6 +64,8 @@ function FormContent({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const isTransfer = type === "TRANSFER";
 
   useEffect(() => {
@@ -76,6 +79,30 @@ function FormContent({
     setCategory(transaction.category);
     setExpires(transaction.expires ? new Date(transaction.expires).toISOString().slice(0, 10) : "");
     setError(null);
+
+    void (async () => {
+      try {
+        const [docsRes, linkedRes] = await Promise.all([
+          fetch("/api/document", { credentials: "include" }),
+          fetch(`/api/transaction/${transaction.id}/documents`, { credentials: "include" }),
+        ]);
+        if (docsRes.ok) {
+          const docsData = await docsRes.json();
+          setDocuments((docsData.documents ?? []) as DocumentItem[]);
+        } else {
+          setDocuments([]);
+        }
+        if (linkedRes.ok) {
+          const linkedData = await linkedRes.json();
+          setSelectedDocumentIds((linkedData.documentIds ?? []) as string[]);
+        } else {
+          setSelectedDocumentIds([]);
+        }
+      } catch {
+        setDocuments([]);
+        setSelectedDocumentIds([]);
+      }
+    })();
   }, [isOpen, transaction]);
 
   async function handleSave(e: React.FormEvent) {
@@ -109,6 +136,17 @@ function FormContent({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to update transaction");
+
+      const linkRes = await fetch(`/api/transaction/${transaction.id}/documents`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ documentIds: selectedDocumentIds }),
+      });
+      const linkData = await linkRes.json().catch(() => ({}));
+      if (!linkRes.ok) {
+        throw new Error(linkData.error ?? "Transaction saved but document links failed");
+      }
 
       onUpdated(data.transaction as Transaction);
       try {
@@ -273,6 +311,32 @@ function FormContent({
           rows={3}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"
         />
+      </div>
+
+      <div>
+        <label className="text-sm text-muted-foreground">Linked documents</label>
+        <div className="mt-1 max-h-36 space-y-1 overflow-auto rounded-md border bg-background p-2">
+          {documents.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No uploaded documents yet.</p>
+          ) : (
+            documents.map((doc) => (
+              <label key={doc.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedDocumentIds.includes(doc.id)}
+                  onChange={(e) => {
+                    setSelectedDocumentIds((prev) =>
+                      e.target.checked ? [...prev, doc.id] : prev.filter((id) => id !== doc.id)
+                    );
+                  }}
+                />
+                <span className="truncate">
+                  {doc.title} ({doc.kind})
+                </span>
+              </label>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 mt-2">

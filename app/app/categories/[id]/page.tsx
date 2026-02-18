@@ -9,8 +9,31 @@ import { Category } from "@/types/categories";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { determineTextColor } from "@/utils/colors";
+import {
+  MorphingDialog,
+  MorphingDialogTrigger,
+  MorphingDialogContainer,
+  MorphingDialogContent,
+  MorphingDialogTitle,
+  MorphingDialogDescription,
+  useMorphingDialog,
+} from "@/components/motion-primitives/morphing-dialog";
+import { IconPencil } from "@tabler/icons-react";
+import { ColorSwatchPicker, DEFAULT_COLOR_SWATCHES, normalizeHexColor } from "@/components/ui/color-swatch-picker";
+import { IconPicker } from "@/components/ui/icon-picker";
+import { renderIconByName } from "@/utils/icons";
 
 type PeriodMode = "month" | "year";
+const ICON_OPTIONS = [
+  "IconBread",
+  "IconBus",
+  "IconMovie",
+  "IconShoppingCart",
+  "IconCashBanknote",
+  "IconTransferIn",
+  "IconTax",
+  "IconQuestionMark",
+];
 
 function getRange(mode: PeriodMode, monthValue: string, yearValue: string) {
   const now = new Date();
@@ -65,6 +88,138 @@ function getPeriodOptionsFromTransactions(transactions: CategoryTransaction[]) {
     normalizedMonthsByYear[year] = Array.from(months).sort((a, b) => Number(b) - Number(a));
   }
   return { years, monthsByYear: normalizedMonthsByYear };
+}
+
+function EditCategoryForm({
+  category,
+  onUpdated,
+}: {
+  category: Category;
+  onUpdated: (updated: Category) => void;
+}) {
+  const { setIsOpen } = useMorphingDialog();
+  const [name, setName] = useState(category.name);
+  const [color, setColor] = useState<string>(category.color ?? DEFAULT_COLOR_SWATCHES[0]);
+  const [icon, setIcon] = useState<string>(category.icon ?? "IconQuestionMark");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(category.name);
+    setColor(category.color ?? DEFAULT_COLOR_SWATCHES[0]);
+    setIcon(category.icon ?? "IconQuestionMark");
+    setError(null);
+  }, [category]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/category/${category.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: name.trim(),
+          color: normalizeHexColor(color, DEFAULT_COLOR_SWATCHES[0]),
+          icon,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to update category");
+      onUpdated(data.category as Category);
+      setIsOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update category");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSave} className="mt-4 grid gap-4">
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor={`category-name-${category.id}`}>
+          Name
+        </label>
+        <div className="mt-1 flex items-center gap-3">
+          <IconPicker
+            icons={ICON_OPTIONS}
+            value={icon}
+            backgroundColor={normalizeHexColor(color, DEFAULT_COLOR_SWATCHES[0])}
+            onChange={setIcon}
+          />
+          <input
+            id={`category-name-${category.id}`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 rounded-md border bg-background px-3 py-2"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="text-sm text-muted-foreground">Color</label>
+        <ColorSwatchPicker
+          className="mt-2"
+          value={color}
+          colors={DEFAULT_COLOR_SWATCHES}
+          onChange={setColor}
+        />
+      </div>
+      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setIsOpen(false)}
+          className="rounded-md border px-4 py-2 text-sm"
+          disabled={saving}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+          disabled={saving || !name.trim()}
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function EditCategoryDialog({
+  category,
+  onUpdated,
+}: {
+  category: Category;
+  onUpdated: (updated: Category) => void;
+}) {
+  return (
+    <MorphingDialog>
+      <MorphingDialogTrigger
+        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent"
+        aria-label="Edit category"
+      >
+        <IconPencil className="h-4 w-4" />
+        Edit
+      </MorphingDialogTrigger>
+      <MorphingDialogContainer>
+        <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl" style={{ overflow: "visible" }}>
+          <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>
+          <MorphingDialogDescription className="text-sm text-muted-foreground">
+            Update category details.
+          </MorphingDialogDescription>
+          <EditCategoryForm category={category} onUpdated={onUpdated} />
+        </MorphingDialogContent>
+      </MorphingDialogContainer>
+    </MorphingDialog>
+  );
 }
 
 export default function CategoryDetailPage() {
@@ -210,6 +365,11 @@ export default function CategoryDetailPage() {
             </svg>
           </Link>
           <h1 className="text-2xl font-bold">Category</h1>
+          {category ? (
+            <div className="ml-auto">
+              <EditCategoryDialog category={category} onUpdated={setCategory} />
+            </div>
+          ) : null}
         </div>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="inline-flex rounded-lg border bg-background p-1">
@@ -286,7 +446,17 @@ export default function CategoryDetailPage() {
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading category...</p>
           ) : category ? (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: category.color ?? "#e5e7eb" }}
+                >
+                  {renderIconByName(category.icon, category.color ?? "#e5e7eb", true)}
+                </div>
+                <p className="text-lg font-semibold">{category.name}</p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Name</p>
                 <p className="font-medium">{category.name}</p>
@@ -300,6 +470,7 @@ export default function CategoryDetailPage() {
                 <p className="font-medium">EUR {formatCategorySpend(categorySpend)}</p>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>{categoryTransactionsCount} transactions</p>
               </div>
+            </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Category not found.</p>
