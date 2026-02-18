@@ -149,12 +149,12 @@ export default function DashboardOverview() {
     if (periodMode === "month") {
       const daysInMonth = new Date(range.start.getFullYear(), range.start.getMonth() + 1, 0).getDate();
       for (let day = 1; day <= daysInMonth; day += 1) {
-        const key = String(day).padStart(2, "0");
+        const key = String(day);
         bucket.set(key, { label: key, income: 0, expense: 0, net: 0 });
       }
       for (const tx of transactions) {
         const d = new Date(tx.createdAt);
-        const key = String(d.getDate()).padStart(2, "0");
+        const key = String(d.getDate());
         const row = bucket.get(key);
         if (!row) continue;
         const amount = parseAmount(tx.amount);
@@ -350,10 +350,10 @@ export default function DashboardOverview() {
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={cashflowChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis dataKey="label" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "var(--radius)" }} />
                 <Legend />
                 <Line type="monotone" dataKey="income" name="Income" stroke="#16a34a" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="expense" name="Expense" stroke="#dc2626" strokeWidth={2} dot={false} />
@@ -369,11 +369,14 @@ export default function DashboardOverview() {
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categorySpendData.slice(0, 8)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" interval={0} angle={-20} textAnchor="end" height={55} />
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="category" interval={0} height={35} />
                 <YAxis />
-                <Tooltip />
-                <Bar dataKey="spent" name="Spent (EUR)" fill="#f97316" radius={[6, 6, 0, 0]} />
+                <Tooltip
+                  cursor={false}
+                  contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "var(--radius)" }}
+                />
+                <Bar dataKey="spent" name="Spent (EUR)" fill="#f97316" radius={[6, 6, 0, 0]} activeBar={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
