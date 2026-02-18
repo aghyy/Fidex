@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Trash2, Calendar, ArrowRight } from "lucide-react";
 
 interface Transaction {
@@ -32,11 +32,15 @@ interface Category {
 interface TransactionsManagerProps {
   categoryFilter?: string;
   accountFilter?: string;
+  from?: string;
+  to?: string;
 }
 
 export default function TransactionsManager({
   categoryFilter,
   accountFilter,
+  from,
+  to,
 }: TransactionsManagerProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -44,11 +48,14 @@ export default function TransactionsManager({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function fetchTransactions() {
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
     try {
       const params = new URLSearchParams();
       if (categoryFilter) params.append("category", categoryFilter);
       if (accountFilter) params.append("accountId", accountFilter);
+      if (from) params.append("from", from);
+      if (to) params.append("to", to);
 
       const res = await fetch(`/api/transaction?${params.toString()}`, {
         credentials: "include",
@@ -63,7 +70,7 @@ export default function TransactionsManager({
     } finally {
       setLoading(false);
     }
-  }
+  }, [categoryFilter, accountFilter, from, to]);
 
   async function fetchAccounts() {
     try {
@@ -90,12 +97,12 @@ export default function TransactionsManager({
   }
 
   useEffect(() => {
-    fetchTransactions();
+    void fetchTransactions();
     fetchAccounts();
     fetchCategories();
 
     const handleCreated = () => {
-      fetchTransactions();
+      void fetchTransactions();
     };
 
     window.addEventListener("transaction:created", handleCreated);
@@ -103,7 +110,7 @@ export default function TransactionsManager({
     return () => {
       window.removeEventListener("transaction:created", handleCreated);
     };
-  }, [categoryFilter, accountFilter]);
+  }, [fetchTransactions]);
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this transaction?")) return;
