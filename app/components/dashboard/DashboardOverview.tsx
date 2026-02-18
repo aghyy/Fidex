@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -608,22 +607,6 @@ export default function DashboardOverview() {
               <p className="text-sm text-muted-foreground">No income transactions in the selected timespan.</p>
             ) : null}
           </div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border bg-card p-4 sm:p-6">
-        <h3 className="mb-3 text-base font-semibold">Quick Links</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {accounts.slice(0, 4).map((account) => (
-            <Link
-              key={account.id}
-              href={`/accounts/${encodeURIComponent(account.id)}`}
-              className="rounded-lg border bg-background px-3 py-2 text-sm hover:bg-accent/50"
-            >
-              {account.name}
-            </Link>
-          ))}
-          {accounts.length === 0 ? <p className="text-sm text-muted-foreground">No accounts yet.</p> : null}
         </div>
       </div>
     </div>

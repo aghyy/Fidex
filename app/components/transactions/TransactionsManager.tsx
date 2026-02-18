@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Trash2, Calendar, ArrowRight } from "lucide-react";
+import EditTransactionDialog from "@/components/transactions/EditTransactionDialog";
 
 interface Transaction {
   id: string;
@@ -239,13 +240,23 @@ export default function TransactionsManager({
                 {formatDate(transaction.createdAt)}
               </p>
             </div>
-            <button
-              onClick={() => handleDelete(transaction.id)}
-              className="ml-4 p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors"
-              aria-label="Delete transaction"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <div className="ml-4 flex items-center gap-1">
+              <EditTransactionDialog
+                transaction={transaction}
+                accounts={accounts}
+                categories={categories}
+                onUpdated={(updated) =>
+                  setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+                }
+              />
+              <button
+                onClick={() => handleDelete(transaction.id)}
+                className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors"
+                aria-label="Delete transaction"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       ))}
