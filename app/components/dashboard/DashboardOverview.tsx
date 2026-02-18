@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -547,7 +548,11 @@ export default function DashboardOverview() {
         <h3 className="mb-3 text-base font-semibold">Accounts Overview</h3>
         <div className="space-y-2">
           {accountOverview.map((row) => (
-            <div key={row.account.id} className="rounded-lg border bg-background p-3">
+            <Link
+              key={row.account.id}
+              href={`/accounts/${encodeURIComponent(row.account.id)}`}
+              className="block rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">{row.account.name}</p>
@@ -566,7 +571,7 @@ export default function DashboardOverview() {
                 <p className={row.net >= 0 ? "text-green-600" : "text-red-600"}>Net: EUR {row.net.toLocaleString()}</p>
                 <p className="text-muted-foreground">Transactions: {row.txCount}</p>
               </div>
-            </div>
+            </Link>
           ))}
           {accountOverview.length === 0 ? <p className="text-sm text-muted-foreground">No accounts available.</p> : null}
         </div>
@@ -577,13 +582,17 @@ export default function DashboardOverview() {
           <h3 className="mb-3 text-base font-semibold text-[#dc2626]">Category Spending</h3>
           <div className="space-y-2">
             {categorySpendData.map((row) => (
-              <div key={row.categoryId} className="flex items-center justify-between rounded-lg border bg-background p-3">
+              <Link
+                key={row.categoryId}
+                href={`/categories/${encodeURIComponent(row.categoryId)}`}
+                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+              >
                 <div>
                   <p className="font-medium">{row.category}</p>
                   <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
                 </div>
                 <p className="font-semibold text-red-600">EUR {row.spent.toLocaleString()}</p>
-              </div>
+              </Link>
             ))}
             {categorySpendData.length === 0 ? (
               <p className="text-sm text-muted-foreground">No expense transactions in the selected timespan.</p>
@@ -595,13 +604,17 @@ export default function DashboardOverview() {
           <h3 className="mb-3 text-base font-semibold text-[#22c55e]">Category Earnings</h3>
           <div className="space-y-2">
             {categoryIncomeData.map((row) => (
-              <div key={row.categoryId} className="flex items-center justify-between rounded-lg border bg-background p-3">
+              <Link
+                key={row.categoryId}
+                href={`/categories/${encodeURIComponent(row.categoryId)}`}
+                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+              >
                 <div>
                   <p className="font-medium">{row.category}</p>
                   <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
                 </div>
                 <p className="font-semibold text-green-600">EUR {row.earned.toLocaleString()}</p>
-              </div>
+              </Link>
             ))}
             {categoryIncomeData.length === 0 ? (
               <p className="text-sm text-muted-foreground">No income transactions in the selected timespan.</p>

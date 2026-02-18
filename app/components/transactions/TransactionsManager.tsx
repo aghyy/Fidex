@@ -140,6 +140,14 @@ export default function TransactionsManager({
     return category ? category.name : "Unknown Category";
   }
 
+  function getTransactionTitle(transaction: Transaction): string {
+    const firstLine = (transaction.notes ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.length > 0);
+    return firstLine ?? getCategoryName(transaction.category);
+  }
+
   function formatAmount(amount: string): string {
     const num = parseFloat(amount);
     return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -207,20 +215,23 @@ export default function TransactionsManager({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{getAccountName(transaction.originAccountId)}</span>
-                {transaction.type === "TRANSFER" ? (
-                  <>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{getAccountName(transaction.targetAccountId)}</span>
-                  </>
-                ) : null}
+                <span className="font-medium">{getTransactionTitle(transaction)}</span>
               </div>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span className={`font-semibold ${getTypeColor(transaction.type)}`}>
                   EUR {formatAmount(transaction.amount)}
                 </span>
                 <span>•</span>
-                <span>{getCategoryName(transaction.category)}</span>
+                <span>
+                  {getAccountName(transaction.originAccountId)}
+                  {transaction.type === "TRANSFER" ? (
+                    <>
+                      {" "}
+                      <ArrowRight className="inline h-3 w-3 align-middle text-muted-foreground" />{" "}
+                      {getAccountName(transaction.targetAccountId)}
+                    </>
+                  ) : null}
+                </span>
                 <span>•</span>
                 <span className="capitalize">{transaction.type.toLowerCase()}</span>
                 {transaction.interval !== "ONCE" && (
