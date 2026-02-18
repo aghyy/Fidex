@@ -533,6 +533,32 @@ export default function DashboardOverview() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <div className="mt-4 space-y-2">
+            {categorySpendData.map((row) => (
+              <Link
+                key={row.categoryId}
+                href={`/categories/${encodeURIComponent(row.categoryId)}`}
+                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
+                    style={{ backgroundColor: row.color ?? "#e5e7eb" }}
+                  >
+                    {renderIconByName(row.icon, row.color ?? "#e5e7eb", true)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{row.category}</p>
+                    <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
+                  </div>
+                </div>
+                <p className="font-semibold text-red-600">EUR {row.spent.toLocaleString()}</p>
+              </Link>
+            ))}
+            {categorySpendData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No expense transactions in the selected timespan.</p>
+            ) : null}
+          </div>
         </div>
 
         <div className="rounded-2xl border bg-card p-4 sm:p-6">
@@ -551,6 +577,32 @@ export default function DashboardOverview() {
                 <Bar dataKey="earned" name="Earned (EUR)" fill="#22c55e" radius={[6, 6, 0, 0]} activeBar={false} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-4 space-y-2">
+            {categoryIncomeData.map((row) => (
+              <Link
+                key={row.categoryId}
+                href={`/categories/${encodeURIComponent(row.categoryId)}`}
+                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
+                    style={{ backgroundColor: row.color ?? "#e5e7eb" }}
+                  >
+                    {renderIconByName(row.icon, row.color ?? "#e5e7eb", true)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{row.category}</p>
+                    <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
+                  </div>
+                </div>
+                <p className="font-semibold text-green-600">EUR {row.earned.toLocaleString()}</p>
+              </Link>
+            ))}
+            {categoryIncomeData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No income transactions in the selected timespan.</p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -596,67 +648,6 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border bg-card p-4 sm:p-6">
-          <h3 className="mb-3 text-base font-semibold text-[#dc2626]">Category Spending</h3>
-          <div className="space-y-2">
-            {categorySpendData.map((row) => (
-              <Link
-                key={row.categoryId}
-                href={`/categories/${encodeURIComponent(row.categoryId)}`}
-                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
-                    style={{ backgroundColor: row.color ?? "#e5e7eb" }}
-                  >
-                    {renderIconByName(row.icon, row.color ?? "#e5e7eb", true)}
-                  </div>
-                  <div>
-                    <p className="font-medium">{row.category}</p>
-                    <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
-                  </div>
-                </div>
-                <p className="font-semibold text-red-600">EUR {row.spent.toLocaleString()}</p>
-              </Link>
-            ))}
-            {categorySpendData.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No expense transactions in the selected timespan.</p>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border bg-card p-4 sm:p-6">
-          <h3 className="mb-3 text-base font-semibold text-[#22c55e]">Category Earnings</h3>
-          <div className="space-y-2">
-            {categoryIncomeData.map((row) => (
-              <Link
-                key={row.categoryId}
-                href={`/categories/${encodeURIComponent(row.categoryId)}`}
-                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
-                    style={{ backgroundColor: row.color ?? "#e5e7eb" }}
-                  >
-                    {renderIconByName(row.icon, row.color ?? "#e5e7eb", true)}
-                  </div>
-                  <div>
-                    <p className="font-medium">{row.category}</p>
-                    <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
-                  </div>
-                </div>
-                <p className="font-semibold text-green-600">EUR {row.earned.toLocaleString()}</p>
-              </Link>
-            ))}
-            {categoryIncomeData.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No income transactions in the selected timespan.</p>
-            ) : null}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
