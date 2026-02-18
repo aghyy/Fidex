@@ -35,6 +35,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
     const accountId = searchParams.get("accountId");
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
 
     try {
         const db = prisma as unknown as {
@@ -44,6 +46,10 @@ export async function GET(request: Request) {
                         userId: string;
                         category?: string;
                         OR?: Array<{ originAccountId: string } | { targetAccountId: string }>;
+                        createdAt?: {
+                            gte?: Date;
+                            lte?: Date;
+                        };
                     };
                     orderBy: { createdAt: "asc" | "desc" };
                 }) => Promise<unknown[]>;
@@ -54,11 +60,29 @@ export async function GET(request: Request) {
             userId: string;
             category?: string;
             OR?: Array<{ originAccountId: string } | { targetAccountId: string }>;
+            createdAt?: {
+                gte?: Date;
+                lte?: Date;
+            };
         } = { userId: session.user.id };
 
         if (category) where.category = category;
         if (accountId) {
             where.OR = [{ originAccountId: accountId }, { targetAccountId: accountId }];
+        }
+        if (from || to) {
+            const dateFilter: { gte?: Date; lte?: Date } = {};
+            if (from) {
+                const parsedFrom = new Date(from);
+                if (!Number.isNaN(parsedFrom.getTime())) dateFilter.gte = parsedFrom;
+            }
+            if (to) {
+                const parsedTo = new Date(to);
+                if (!Number.isNaN(parsedTo.getTime())) dateFilter.lte = parsedTo;
+            }
+            if (dateFilter.gte || dateFilter.lte) {
+                where.createdAt = dateFilter;
+            }
         }
 
         const transactions = await db.transaction.findMany({
