@@ -570,7 +570,16 @@ export default function DashboardOverview() {
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="label" />
               <YAxis />
-              <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "var(--radius)" }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background) / 0.55)",
+                  border: "1px solid hsl(var(--foreground) / 0.2)",
+                  borderRadius: "var(--radius)",
+                  boxShadow: "0 8px 24px hsl(var(--foreground) / 0.08)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                }}
+              />
               <Legend />
               <Line type="monotone" dataKey="income" name="Income" stroke="#16a34a" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="expense" name="Expense" stroke="#dc2626" strokeWidth={2} dot={false} />
@@ -629,11 +638,18 @@ export default function DashboardOverview() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categorySpendData}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="category" interval={0} height={35} />
+                <XAxis dataKey="category" tick={false} tickLine={false} axisLine={false} />
                 <YAxis />
                 <Tooltip
                   cursor={false}
-                  contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "var(--radius)" }}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background) / 0.55)",
+                    border: "1px solid hsl(var(--foreground) / 0.2)",
+                    borderRadius: "var(--radius)",
+                    boxShadow: "0 8px 24px hsl(var(--foreground) / 0.08)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                  }}
                 />
                 <Bar dataKey="spent" name="Spent (EUR)" fill="#dc2626" radius={[6, 6, 0, 0]} activeBar={false} />
               </BarChart>
@@ -684,11 +700,18 @@ export default function DashboardOverview() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryIncomeData}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="category" interval={0} height={35} />
+                <XAxis dataKey="category" tick={false} tickLine={false} axisLine={false} />
                 <YAxis />
                 <Tooltip
                   cursor={false}
-                  contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "var(--radius)" }}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background) / 0.55)",
+                    border: "1px solid hsl(var(--foreground) / 0.2)",
+                    borderRadius: "var(--radius)",
+                    boxShadow: "0 8px 24px hsl(var(--foreground) / 0.08)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                  }}
                 />
                 <Bar dataKey="earned" name="Earned (EUR)" fill="#22c55e" radius={[6, 6, 0, 0]} activeBar={false} />
               </BarChart>

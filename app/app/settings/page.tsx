@@ -5,7 +5,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/skeleton";
 import Link from "next/link";
-import { IconUser, IconCategory, IconWallet, IconLogout } from "@tabler/icons-react";
+import { IconUser, IconCategory, IconWallet, IconLogout, IconAdjustmentsHorizontal } from "@tabler/icons-react";
 
 export default function SettingsPage() {
   const { status } = useSession();
@@ -22,7 +22,7 @@ export default function SettingsPage() {
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <Skeleton className="h-7 w-40 mb-6" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="rounded-xl border bg-background p-5">
               <div className="flex items-start gap-3">
                 <Skeleton className="h-5 w-5 rounded mb-1" />
@@ -71,6 +71,16 @@ export default function SettingsPage() {
               <div>
                 <h2 className="text-base font-semibold">Manage Categories</h2>
                 <p className="text-sm text-muted-foreground">Create, edit, and organize your categories.</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/settings/advanced" className="rounded-xl border bg-background p-5 hover:bg-accent hover:text-accent-foreground transition-colors">
+            <div className="flex items-start gap-3">
+              <IconAdjustmentsHorizontal className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <h2 className="text-base font-semibold">Advanced Settings</h2>
+                <p className="text-sm text-muted-foreground">Configure booking behavior and future advanced customization options.</p>
               </div>
             </div>
           </Link>
