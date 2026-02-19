@@ -147,7 +147,10 @@ export default function CreateAccountDialog() {
 
   return (
     <MorphingDialog>
-      <MorphingDialogTrigger className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground shadow hover:opacity-90" aria-label="Add category">
+      <MorphingDialogTrigger
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/25 text-white shadow-md backdrop-blur-md transition-colors hover:bg-white/35 dark:border-white/30 dark:bg-white/10 dark:hover:bg-white/20"
+        aria-label="Add category"
+      >
         <Plus className="h-5 w-5" />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>

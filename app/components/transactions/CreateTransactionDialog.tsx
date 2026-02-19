@@ -55,7 +55,7 @@ function SafeDialogSelect({
         }
       }}
     >
-      <SelectTrigger id={id}>
+      <SelectTrigger id={id} className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>{children}</SelectContent>
@@ -277,7 +277,7 @@ function FormContent({
                   }
                 }}
                 placeholder="0.00"
-                className="pr-12 text-base font-medium tabular-nums"
+                className="pr-12 text-base font-medium tabular-nums focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
                 required
               />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
@@ -365,6 +365,7 @@ function FormContent({
               <Checkbox
                 checked={pending}
                 onCheckedChange={(checked) => setPending(checked === true)}
+                className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
               />
               <span className="text-sm font-medium">Mark as pending</span>
             </label>
@@ -385,7 +386,11 @@ function FormContent({
                 }}
               >
                 <PopoverTrigger asChild>
-                  <Button type="button" variant="outline" className="h-10 w-full justify-start text-left font-normal">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 w-full justify-start text-left font-normal focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
+                  >
                     <CalendarIcon className="h-4 w-4" />
                     {formatTransactionDateLabel(transactionDate)}
                   </Button>
@@ -413,6 +418,7 @@ function FormContent({
                     setIncludeTime(isChecked);
                     if (!isChecked) setTransactionTime("");
                   }}
+                  className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
                 />
                 <label htmlFor="include-time" className="text-sm text-muted-foreground whitespace-nowrap">
                   Time
@@ -423,7 +429,7 @@ function FormContent({
                   value={transactionTime}
                   onChange={(e) => setTransactionTime(e.target.value)}
                   disabled={!includeTime}
-                  className="ml-auto w-[130px] border-none"
+                  className="ml-auto w-[130px] border-none focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
                 />
               </div>
             </div>
@@ -467,7 +473,10 @@ function FormContent({
                   <Button
                     type="button"
                     variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !expiresDate && "text-muted-foreground")}
+                    className={cn(
+                      "w-full justify-start text-left font-normal focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0",
+                      !expiresDate && "text-muted-foreground"
+                    )}
                   >
                     <CalendarIcon className="h-4 w-4" />
                     {formatDateLabel(expiresDate)}
@@ -503,7 +512,7 @@ function FormContent({
             id="transaction-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="min-h-[96px] w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className="min-h-[96px] w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
             placeholder="Optional notes..."
             rows={4}
           />
@@ -529,8 +538,8 @@ function FormContent({
                         );
                       }}
                       className={cn(
-                        "group relative flex flex-col items-center gap-2 rounded-lg border bg-background p-3 text-center transition-all hover:shadow-sm",
-                        selected && "border-primary ring-1 ring-primary/70 bg-primary/5"
+                        "group relative flex flex-col items-center gap-2 rounded-lg border bg-background p-3 text-center transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0",
+                        selected && "border-primary bg-primary/5"
                       )}
                       title={`${doc.title} (${doc.kind})`}
                     >
@@ -559,6 +568,7 @@ function FormContent({
         <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
         <Button
           type="submit"
+          className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
           disabled={submitting || !originAccountId || (isTransfer && !targetAccountId) || !category || normalizedAmount <= 0}
         >
           {submitting ? "Creating..." : "Create Transaction"}
@@ -576,7 +586,7 @@ export default function CreateTransactionDialog({
   return (
     <MorphingDialog>
       <MorphingDialogTrigger
-        className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground shadow hover:opacity-90"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/25 text-white shadow-md backdrop-blur-md transition-colors hover:bg-white/35 dark:border-white/30 dark:bg-white/10 dark:hover:bg-white/20"
         aria-label="Create transaction"
       >
         <Plus className="h-5 w-5" />
