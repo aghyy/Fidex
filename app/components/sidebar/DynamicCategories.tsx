@@ -15,6 +15,7 @@ import {
 } from "@tabler/icons-react";
 
 import { useCategories } from "@/state/categories";
+import { determineTextColor } from "@/utils/colors";
 
 const iconMap: Record<string, (props: { className?: string }) => JSX.Element> = {
   IconQuestionMark: (p) => <IconQuestionMark {...p} />,
@@ -27,9 +28,17 @@ const iconMap: Record<string, (props: { className?: string }) => JSX.Element> = 
   IconTax: (p) => <IconTax {...p} />,
 };
 
-function resolveIcon(name?: string | null) {
+function resolveIcon(name?: string | null, color?: string | null) {
   const Comp = (name && iconMap[name]) || iconMap["IconQuestionMark"];
-  return <Comp className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />;
+  if (!color) {
+    return <Comp className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />;
+  }
+
+  return (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md" style={{ backgroundColor: color }}>
+      <Comp className="h-4 w-4" style={{ color: determineTextColor(color) }} />
+    </span>
+  );
 }
 
 export default function DynamicCategories({ staggerOffset = 0 }: { staggerOffset?: number }) {
@@ -40,7 +49,7 @@ export default function DynamicCategories({ staggerOffset = 0 }: { staggerOffset
       categories.map((c) => ({
         label: c.name,
         href: `/categories/${encodeURIComponent(c.id)}`,
-        icon: resolveIcon(c.icon),
+        icon: resolveIcon(c.icon, c.color),
       })),
     [categories]
   );

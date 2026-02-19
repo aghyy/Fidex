@@ -1,27 +1,22 @@
 "use client";
 
-import { JSX, useMemo } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { SidebarLink } from "../ui/sidebar";
-import {
-  IconQuestionMark,
-  IconCashBanknote,
-  IconCreditCard,
-  IconShoppingCart,
-} from "@tabler/icons-react";
 
 import { useAccounts } from "@/state/accounts";
+import { renderIconByName } from "@/utils/icons";
 
-const iconMap: Record<string, (props: { className?: string }) => JSX.Element> = {
-  IconQuestionMark: (p) => <IconQuestionMark {...p} />,
-  IconCashBanknote: (p) => <IconCashBanknote {...p} />,
-  IconCreditCard: (p) => <IconCreditCard {...p} />,
-  IconShoppingCart: (p) => <IconShoppingCart {...p} />,
-};
+function resolveIcon(name?: string | null, color?: string | null) {
+  if (!color) {
+    return renderIconByName(name);
+  }
 
-function resolveIcon(name?: string | null) {
-  const Comp = (name && iconMap[name]) || iconMap["IconQuestionMark"];
-  return <Comp className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />;
+  return (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md" style={{ backgroundColor: color }}>
+      {renderIconByName(name, color, true)}
+    </span>
+  );
 }
 
 export default function DynamicAccounts({ staggerOffset = 0 }: { staggerOffset?: number }) {
@@ -32,7 +27,7 @@ export default function DynamicAccounts({ staggerOffset = 0 }: { staggerOffset?:
       accounts.map((a) => ({
         label: a.name,
         href: `/accounts/${encodeURIComponent(a.id)}`,
-        icon: resolveIcon(a.icon),
+        icon: resolveIcon(a.icon, a.color),
       })),
     [accounts]
   );
