@@ -21,17 +21,7 @@ import {
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
 import { IconPicker } from "@/components/ui/icon-picker";
-
-const ICON_OPTIONS = [
-  "IconBread",
-  "IconBus",
-  "IconMovie",
-  "IconShoppingCart",
-  "IconCashBanknote",
-  "IconTransferIn",
-  "IconTax",
-  "IconQuestionMark",
-];
+import { CATEGORY_ICON_OPTIONS } from "@/utils/icons";
 
 const FALLBACK_COLOR = "#e5e7eb";
 
@@ -279,7 +269,7 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
           </label>
           <div className="mt-1 flex items-center gap-3">
             <IconPicker
-              icons={ICON_OPTIONS}
+              icons={CATEGORY_ICON_OPTIONS}
               value={draft.icon}
               backgroundColor={normalizedColor}
               onChange={(icon) => setDraft((prev) => ({ ...prev, icon }))}

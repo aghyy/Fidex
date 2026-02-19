@@ -20,17 +20,7 @@ import {
   normalizeHexColor,
 } from "@/components/ui/color-swatch-picker";
 import { IconPicker } from "@/components/ui/icon-picker";
-
-const ICON_OPTIONS = [
-  "IconBread",
-  "IconBus",
-  "IconMovie",
-  "IconShoppingCart",
-  "IconCashBanknote",
-  "IconTransferIn",
-  "IconTax",
-  "IconQuestionMark",
-];
+import { CATEGORY_ICON_OPTIONS } from "@/utils/icons";
 
 function FormContent() {
   const { setIsOpen } = useMorphingDialog();
@@ -80,7 +70,7 @@ function FormContent() {
         </label>
         <div className="mt-1 flex items-center gap-3">
           <IconPicker
-            icons={ICON_OPTIONS}
+            icons={CATEGORY_ICON_OPTIONS}
             value={newIcon}
             backgroundColor={normalizedColor}
             onChange={setNewIcon}

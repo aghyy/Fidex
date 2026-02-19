@@ -21,19 +21,9 @@ import {
 import { IconPencil } from "@tabler/icons-react";
 import { ColorSwatchPicker, DEFAULT_COLOR_SWATCHES, normalizeHexColor } from "@/components/ui/color-swatch-picker";
 import { IconPicker } from "@/components/ui/icon-picker";
-import { renderIconByName } from "@/utils/icons";
+import { ACCOUNT_ICON_OPTIONS, renderIconByName } from "@/utils/icons";
 
 type PeriodMode = "month" | "year";
-const ICON_OPTIONS = [
-  "IconBread",
-  "IconBus",
-  "IconMovie",
-  "IconShoppingCart",
-  "IconCashBanknote",
-  "IconTransferIn",
-  "IconTax",
-  "IconQuestionMark",
-];
 
 function getRange(mode: PeriodMode, monthValue: string, yearValue: string) {
   const now = new Date();
@@ -151,7 +141,7 @@ function EditAccountForm({
         </label>
         <div className="mt-1 flex items-center gap-3">
           <IconPicker
-            icons={ICON_OPTIONS}
+            icons={ACCOUNT_ICON_OPTIONS}
             value={icon}
             backgroundColor={normalizeHexColor(color, DEFAULT_COLOR_SWATCHES[0])}
             onChange={setIcon}

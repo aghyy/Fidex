@@ -515,6 +515,47 @@ export default function DashboardOverview() {
         </div>
       </div>
 
+      <div className="rounded-2xl border bg-card p-4 sm:p-6">
+        <h3 className="mb-3 text-base font-semibold">Accounts Overview</h3>
+        <div className="space-y-2">
+          {accountOverview.map((row) => (
+            <Link
+              key={row.account.id}
+              href={`/accounts/${encodeURIComponent(row.account.id)}`}
+              className="block rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
+                    style={{ backgroundColor: row.account.color ?? "#e5e7eb" }}
+                  >
+                    {renderIconByName(row.account.icon, row.account.color ?? "#e5e7eb", true)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{row.account.name}</p>
+                    <p className="text-xs text-muted-foreground">{row.account.accountNumber}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`text-sm font-semibold ${row.displayedBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    EUR {formatDisplayedBalance(row.displayedBalance)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">As of {balanceCutoff.toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                <p className="text-muted-foreground">Income: EUR {row.income.toLocaleString()}</p>
+                <p className="text-muted-foreground">Expense: EUR {row.expense.toLocaleString()}</p>
+                <p className={row.net >= 0 ? "text-green-600" : "text-red-600"}>Net: EUR {row.net.toLocaleString()}</p>
+                <p className="text-muted-foreground">Transactions: {row.txCount}</p>
+              </div>
+            </Link>
+          ))}
+          {accountOverview.length === 0 ? <p className="text-sm text-muted-foreground">No accounts available.</p> : null}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <div className="rounded-2xl border bg-card p-4 sm:p-6">
           <h3 className="mb-1 text-base font-semibold">Spending by Category</h3>
@@ -606,48 +647,6 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
-
-      <div className="rounded-2xl border bg-card p-4 sm:p-6">
-        <h3 className="mb-3 text-base font-semibold">Accounts Overview</h3>
-        <div className="space-y-2">
-          {accountOverview.map((row) => (
-            <Link
-              key={row.account.id}
-              href={`/accounts/${encodeURIComponent(row.account.id)}`}
-              className="block rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border"
-                    style={{ backgroundColor: row.account.color ?? "#e5e7eb" }}
-                  >
-                    {renderIconByName(row.account.icon, row.account.color ?? "#e5e7eb", true)}
-                  </div>
-                  <div>
-                    <p className="font-medium">{row.account.name}</p>
-                    <p className="text-xs text-muted-foreground">{row.account.accountNumber}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`text-sm font-semibold ${row.displayedBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    EUR {formatDisplayedBalance(row.displayedBalance)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">As of {balanceCutoff.toLocaleDateString()}</p>
-                </div>
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                <p className="text-muted-foreground">Income: EUR {row.income.toLocaleString()}</p>
-                <p className="text-muted-foreground">Expense: EUR {row.expense.toLocaleString()}</p>
-                <p className={row.net >= 0 ? "text-green-600" : "text-red-600"}>Net: EUR {row.net.toLocaleString()}</p>
-                <p className="text-muted-foreground">Transactions: {row.txCount}</p>
-              </div>
-            </Link>
-          ))}
-          {accountOverview.length === 0 ? <p className="text-sm text-muted-foreground">No accounts available.</p> : null}
-        </div>
-      </div>
-
     </div>
   );
 }
