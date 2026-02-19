@@ -6,8 +6,6 @@ import { useParams } from "next/navigation";
 import TransactionsManager from "@/components/transactions/TransactionsManager";
 import TransactionFAB from "@/components/transactions/TransactionFAB";
 import { Account } from "@/types/accounts";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { determineTextColor } from "@/utils/colors";
 import {
   MorphingDialog,
@@ -24,6 +22,7 @@ import { IconPicker } from "@/components/ui/icon-picker";
 import { ACCOUNT_ICON_OPTIONS, renderIconByName } from "@/utils/icons";
 import { useAtomValue } from "jotai";
 import { profileAtom } from "@/state/profile";
+import PeriodFilterPopover from "@/components/filters/PeriodFilterPopover";
 
 type PeriodMode = "month" | "year";
 
@@ -57,25 +56,34 @@ function parseAmount(value: string | number): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function getPeriodOptionsFromTransactions(transactions: AccountTransaction[]) {
-  const yearSet = new Set<string>();
-  const monthsByYear = new Map<string, Set<string>>();
-  for (const tx of transactions) {
-    const d = new Date(tx.occurredAt);
-    if (Number.isNaN(d.getTime())) continue;
-    const year = String(d.getFullYear());
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    yearSet.add(year);
-    if (!monthsByYear.has(year)) monthsByYear.set(year, new Set<string>());
-    monthsByYear.get(year)?.add(month);
+function getContinuousPeriodOptionsFromFirstTransaction(firstTransactionAt: string | null) {
+  const now = new Date();
+  const first = firstTransactionAt ? new Date(firstTransactionAt) : new Date(now);
+  const firstDate = Number.isNaN(first.getTime()) ? new Date(now) : first;
+  if (firstDate.getTime() > now.getTime()) {
+    firstDate.setTime(now.getTime());
   }
 
-  const years = Array.from(yearSet).sort((a, b) => Number(b) - Number(a));
-  const normalizedMonthsByYear: Record<string, string[]> = {};
-  for (const [year, months] of monthsByYear.entries()) {
-    normalizedMonthsByYear[year] = Array.from(months).sort((a, b) => Number(b) - Number(a));
+  const startYear = firstDate.getFullYear();
+  const startMonth = firstDate.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const years: string[] = [];
+  const monthsByYear: Record<string, string[]> = {};
+
+  for (let year = currentYear; year >= startYear; year -= 1) {
+    years.push(String(year));
+    const minMonth = year === startYear ? startMonth : 1;
+    const maxMonth = year === currentYear ? currentMonth : 12;
+    const months: string[] = [];
+    for (let month = maxMonth; month >= minMonth; month -= 1) {
+      months.push(String(month).padStart(2, "0"));
+    }
+    monthsByYear[String(year)] = months;
   }
-  return { years, monthsByYear: normalizedMonthsByYear };
+
+  return { years, monthsByYear };
 }
 
 function EditAccountForm({
@@ -221,11 +229,10 @@ function EditAccountDialog({
   return (
     <MorphingDialog>
       <MorphingDialogTrigger
-        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/25 text-white shadow-md backdrop-blur-md transition-colors hover:bg-white/35 dark:border-white/30 dark:bg-white/10 dark:hover:bg-white/20"
         aria-label="Edit account"
       >
         <IconPencil className="h-4 w-4" />
-        Edit
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl" style={{ overflow: "visible" }}>
@@ -247,7 +254,7 @@ export default function AccountDetailPage() {
   const id = params?.id ?? "";
   const [account, setAccount] = useState<Account | null>(null);
   const [resolvedAccountId, setResolvedAccountId] = useState("");
-  const [allAccountTransactions, setAllAccountTransactions] = useState<AccountTransaction[]>([]);
+  const [firstTransactionAt, setFirstTransactionAt] = useState<string | null>(null);
   const [displayedBalance, setDisplayedBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [periodMode, setPeriodMode] = useState<PeriodMode>("month");
@@ -259,11 +266,10 @@ export default function AccountDetailPage() {
   const includePending = Boolean(profile?.bookAllTransactions);
 
   const periodOptions = useMemo(
-    () => getPeriodOptionsFromTransactions(allAccountTransactions),
-    [allAccountTransactions]
+    () => getContinuousPeriodOptionsFromFirstTransaction(firstTransactionAt),
+    [firstTransactionAt]
   );
   const selectedMonthPart = selectedMonth.split("-")[1] ?? "";
-  const monthOptionsForSelectedYear = periodOptions.monthsByYear[selectedYear] ?? [];
   const range = useMemo(
     () => getRange(periodMode, selectedMonth, selectedYear),
     [periodMode, selectedMonth, selectedYear]
@@ -313,22 +319,30 @@ export default function AccountDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    async function loadAllAccountTransactions() {
-      if (!resolvedAccountId) return;
+    async function loadGlobalFirstTransactionDate() {
       try {
-        const params = new URLSearchParams({ accountId: resolvedAccountId });
-        params.set("includePending", String(includePending));
-        const res = await fetch(`/api/transaction?${params.toString()}`, { credentials: "include" });
+        const res = await fetch(`/api/transaction?${new URLSearchParams({ includePending: "true" }).toString()}`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch transactions");
         const data = await res.json();
-        setAllAccountTransactions((data.transactions ?? []) as AccountTransaction[]);
+        const txs = (data.transactions ?? []) as AccountTransaction[];
+        if (txs.length === 0) {
+          setFirstTransactionAt(null);
+          return;
+        }
+        const earliest = txs.reduce((min, tx) => {
+          const t = new Date(tx.occurredAt).getTime();
+          return Number.isNaN(t) ? min : Math.min(min, t);
+        }, Number.POSITIVE_INFINITY);
+        setFirstTransactionAt(Number.isFinite(earliest) ? new Date(earliest).toISOString() : null);
       } catch {
-        setAllAccountTransactions([]);
+        setFirstTransactionAt(null);
       }
     }
 
-    void loadAllAccountTransactions();
-  }, [resolvedAccountId, includePending]);
+    void loadGlobalFirstTransactionDate();
+  }, []);
 
   useEffect(() => {
     if (periodOptions.years.length > 0 && !periodOptions.years.includes(selectedYear)) {
@@ -422,8 +436,21 @@ export default function AccountDetailPage() {
             </svg>
           </Link>
           <h1 className="text-2xl font-bold">Account</h1>
-          {account ? (
-            <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <PeriodFilterPopover
+              appliedMode={periodMode}
+              appliedYear={selectedYear}
+              appliedMonth={selectedMonth}
+              years={periodOptions.years}
+              monthsByYear={periodOptions.monthsByYear}
+              triggerAriaLabel="Open account filters"
+              onApply={({ mode, year, month }) => {
+                setPeriodMode(mode);
+                setSelectedYear(year);
+                setSelectedMonth(month);
+              }}
+            />
+            {account ? (
               <EditAccountDialog
                 account={account}
                 onUpdated={(updated) => {
@@ -431,72 +458,8 @@ export default function AccountDetailPage() {
                   setDisplayedBalance(updated.balance);
                 }}
               />
-            </div>
-          ) : null}
-        </div>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="inline-flex rounded-lg border bg-background p-1">
-            <Button
-              type="button"
-              variant={periodMode === "month" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setPeriodMode("month")}
-            >
-              Month
-            </Button>
-            <Button
-              type="button"
-              variant={periodMode === "year" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setPeriodMode("year")}
-            >
-              Year
-            </Button>
+            ) : null}
           </div>
-          {periodMode === "month" ? (
-            <div className="flex gap-2">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {periodOptions.years.map((y) => (
-                    <SelectItem key={y} value={y}>
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedMonthPart}
-                onValueChange={(month) => setSelectedMonth(`${selectedYear}-${month}`)}
-              >
-                <SelectTrigger className="h-10 w-[180px] bg-background" disabled={monthOptionsForSelectedYear.length === 0}>
-                  <SelectValue placeholder="Select month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptionsForSelectedYear.map((month) => (
-                    <SelectItem key={month} value={month}>
-                      {new Date(2000, Number(month) - 1, 1).toLocaleString(undefined, { month: "long" })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
-              <SelectContent>
-                  {periodOptions.years.map((y) => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
         </div>
 
         <div

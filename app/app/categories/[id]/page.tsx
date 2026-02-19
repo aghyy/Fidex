@@ -6,8 +6,6 @@ import { useParams } from "next/navigation";
 import TransactionsManager from "@/components/transactions/TransactionsManager";
 import TransactionFAB from "@/components/transactions/TransactionFAB";
 import { Category } from "@/types/categories";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { determineTextColor } from "@/utils/colors";
 import {
   MorphingDialog,
@@ -24,6 +22,7 @@ import { IconPicker } from "@/components/ui/icon-picker";
 import { CATEGORY_ICON_OPTIONS, renderIconByName } from "@/utils/icons";
 import { useAtomValue } from "jotai";
 import { profileAtom } from "@/state/profile";
+import PeriodFilterPopover from "@/components/filters/PeriodFilterPopover";
 
 type PeriodMode = "month" | "year";
 
@@ -61,25 +60,34 @@ function formatCategorySpend(value: number): string {
   });
 }
 
-function getPeriodOptionsFromTransactions(transactions: CategoryTransaction[]) {
-  const yearSet = new Set<string>();
-  const monthsByYear = new Map<string, Set<string>>();
-  for (const tx of transactions) {
-    const d = new Date(tx.occurredAt);
-    if (Number.isNaN(d.getTime())) continue;
-    const year = String(d.getFullYear());
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    yearSet.add(year);
-    if (!monthsByYear.has(year)) monthsByYear.set(year, new Set<string>());
-    monthsByYear.get(year)?.add(month);
+function getContinuousPeriodOptionsFromFirstTransaction(firstTransactionAt: string | null) {
+  const now = new Date();
+  const first = firstTransactionAt ? new Date(firstTransactionAt) : new Date(now);
+  const firstDate = Number.isNaN(first.getTime()) ? new Date(now) : first;
+  if (firstDate.getTime() > now.getTime()) {
+    firstDate.setTime(now.getTime());
   }
 
-  const years = Array.from(yearSet).sort((a, b) => Number(b) - Number(a));
-  const normalizedMonthsByYear: Record<string, string[]> = {};
-  for (const [year, months] of monthsByYear.entries()) {
-    normalizedMonthsByYear[year] = Array.from(months).sort((a, b) => Number(b) - Number(a));
+  const startYear = firstDate.getFullYear();
+  const startMonth = firstDate.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const years: string[] = [];
+  const monthsByYear: Record<string, string[]> = {};
+
+  for (let year = currentYear; year >= startYear; year -= 1) {
+    years.push(String(year));
+    const minMonth = year === startYear ? startMonth : 1;
+    const maxMonth = year === currentYear ? currentMonth : 12;
+    const months: string[] = [];
+    for (let month = maxMonth; month >= minMonth; month -= 1) {
+      months.push(String(month).padStart(2, "0"));
+    }
+    monthsByYear[String(year)] = months;
   }
-  return { years, monthsByYear: normalizedMonthsByYear };
+
+  return { years, monthsByYear };
 }
 
 function EditCategoryForm({
@@ -195,11 +203,10 @@ function EditCategoryDialog({
   return (
     <MorphingDialog>
       <MorphingDialogTrigger
-        className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/25 text-white shadow-md backdrop-blur-md transition-colors hover:bg-white/35 dark:border-white/30 dark:bg-white/10 dark:hover:bg-white/20"
         aria-label="Edit category"
       >
         <IconPencil className="h-4 w-4" />
-        Edit
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl" style={{ overflow: "visible" }}>
@@ -221,7 +228,7 @@ export default function CategoryDetailPage() {
   const id = params?.id ?? "";
   const [category, setCategory] = useState<Category | null>(null);
   const [resolvedCategoryId, setResolvedCategoryId] = useState("");
-  const [allCategoryTransactions, setAllCategoryTransactions] = useState<CategoryTransaction[]>([]);
+  const [firstTransactionAt, setFirstTransactionAt] = useState<string | null>(null);
   const [categorySpend, setCategorySpend] = useState(0);
   const [categoryTransactionsCount, setCategoryTransactionsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -234,11 +241,10 @@ export default function CategoryDetailPage() {
   const includePending = Boolean(profile?.bookAllTransactions);
 
   const periodOptions = useMemo(
-    () => getPeriodOptionsFromTransactions(allCategoryTransactions),
-    [allCategoryTransactions]
+    () => getContinuousPeriodOptionsFromFirstTransaction(firstTransactionAt),
+    [firstTransactionAt]
   );
   const selectedMonthPart = selectedMonth.split("-")[1] ?? "";
-  const monthOptionsForSelectedYear = periodOptions.monthsByYear[selectedYear] ?? [];
   const range = useMemo(
     () => getRange(periodMode, selectedMonth, selectedYear),
     [periodMode, selectedMonth, selectedYear]
@@ -285,22 +291,30 @@ export default function CategoryDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    async function loadAllCategoryTransactions() {
-      if (!resolvedCategoryId) return;
+    async function loadGlobalFirstTransactionDate() {
       try {
-        const params = new URLSearchParams({ category: resolvedCategoryId });
-        params.set("includePending", String(includePending));
-        const res = await fetch(`/api/transaction?${params.toString()}`, { credentials: "include" });
+        const res = await fetch(`/api/transaction?${new URLSearchParams({ includePending: "true" }).toString()}`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch transactions");
         const data = await res.json();
-        setAllCategoryTransactions((data.transactions ?? []) as CategoryTransaction[]);
+        const txs = (data.transactions ?? []) as CategoryTransaction[];
+        if (txs.length === 0) {
+          setFirstTransactionAt(null);
+          return;
+        }
+        const earliest = txs.reduce((min, tx) => {
+          const t = new Date(tx.occurredAt).getTime();
+          return Number.isNaN(t) ? min : Math.min(min, t);
+        }, Number.POSITIVE_INFINITY);
+        setFirstTransactionAt(Number.isFinite(earliest) ? new Date(earliest).toISOString() : null);
       } catch {
-        setAllCategoryTransactions([]);
+        setFirstTransactionAt(null);
       }
     }
 
-    void loadAllCategoryTransactions();
-  }, [resolvedCategoryId, includePending]);
+    void loadGlobalFirstTransactionDate();
+  }, []);
 
   useEffect(() => {
     if (periodOptions.years.length > 0 && !periodOptions.years.includes(selectedYear)) {
@@ -361,75 +375,24 @@ export default function CategoryDetailPage() {
             </svg>
           </Link>
           <h1 className="text-2xl font-bold">Category</h1>
-          {category ? (
-            <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <PeriodFilterPopover
+              appliedMode={periodMode}
+              appliedYear={selectedYear}
+              appliedMonth={selectedMonth}
+              years={periodOptions.years}
+              monthsByYear={periodOptions.monthsByYear}
+              triggerAriaLabel="Open category filters"
+              onApply={({ mode, year, month }) => {
+                setPeriodMode(mode);
+                setSelectedYear(year);
+                setSelectedMonth(month);
+              }}
+            />
+            {category ? (
               <EditCategoryDialog category={category} onUpdated={setCategory} />
-            </div>
-          ) : null}
-        </div>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="inline-flex rounded-lg border bg-background p-1">
-            <Button
-              type="button"
-              variant={periodMode === "month" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setPeriodMode("month")}
-            >
-              Month
-            </Button>
-            <Button
-              type="button"
-              variant={periodMode === "year" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setPeriodMode("year")}
-            >
-              Year
-            </Button>
+            ) : null}
           </div>
-          {periodMode === "month" ? (
-            <div className="flex gap-2">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {periodOptions.years.map((y) => (
-                    <SelectItem key={y} value={y}>
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedMonthPart}
-                onValueChange={(month) => setSelectedMonth(`${selectedYear}-${month}`)}
-              >
-                <SelectTrigger className="h-10 w-[180px] bg-background" disabled={monthOptionsForSelectedYear.length === 0}>
-                  <SelectValue placeholder="Select month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptionsForSelectedYear.map((month) => (
-                    <SelectItem key={month} value={month}>
-                      {new Date(2000, Number(month) - 1, 1).toLocaleString(undefined, { month: "long" })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
-              <SelectContent>
-                  {periodOptions.years.map((y) => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
         </div>
 
         <div
