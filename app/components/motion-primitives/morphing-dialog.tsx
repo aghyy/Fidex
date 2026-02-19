@@ -222,7 +222,11 @@ function MorphingDialogContent({
     }
   }, [isOpen, triggerRef, lockSidebar]);
 
-  useClickOutside(containerRef, () => {
+  useClickOutside(containerRef, (event) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('[data-keep-dialog-open="true"]')) {
+      return;
+    }
     if (document.body.dataset.radixSelectOpen === 'true') {
       delete document.body.dataset.radixSelectOpen;
     } else if (isOpen) {

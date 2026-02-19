@@ -37,6 +37,7 @@ function ProfileBootstrapper() {
           isOAuthUser: Boolean((data?.user as BasicUser)?.isOAuthUser),
           theme: (data?.user?.theme ? String(data.user.theme).toLowerCase() : undefined) as
             | "light" | "dark" | "system" | undefined,
+          bookAllTransactions: Boolean((data?.user as BasicUser)?.bookAllTransactions),
         };
         setProfile(profile);
         if (profile.theme) {

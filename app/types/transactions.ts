@@ -11,6 +11,8 @@ export type Transaction = {
   interval: TransactionInterval;
   type: TransactionType;
   category: string;
+  occurredAt: Date;
+  pending: boolean;
   createdAt: Date;
   updatedAt: Date;
   expires: Date;
@@ -24,6 +26,8 @@ export type TransactionDraft = {
   interval?: TransactionInterval;
   type?: TransactionType;
   category: string;
+  occurredAt?: Date;
+  pending?: boolean;
   expires?: Date;
 };
 
@@ -37,6 +41,8 @@ export type TransactionRecord = {
   interval: TransactionInterval;
   type: TransactionType;
   category: string;
+  occurredAt: Date;
+  pending: boolean;
   createdAt: Date;
   updatedAt: Date;
   expires: Date;
@@ -72,6 +78,8 @@ export type TransactionDelegate = {
       interval?: TransactionInterval;
       type?: TransactionType;
       category: string;
+      occurredAt?: Date;
+      pending?: boolean;
       expires: Date;
     };
   }) => Promise<TransactionRecord>;
@@ -90,6 +98,8 @@ export type TransactionDelegate = {
       interval?: TransactionInterval;
       type?: TransactionType;
       category?: string;
+      occurredAt?: Date;
+      pending?: boolean;
       expires?: Date;
     };
   }) => Promise<TransactionRecord>;

@@ -26,6 +26,7 @@ export default function ProfileSettingsPage() {
   const [image, setImage] = useState(profile?.image || "");
   const [imagePreview, setImagePreview] = useState(profile?.image || "");
   const [isOAuthUser, setIsOAuthUser] = useState(Boolean(profile?.isOAuthUser));
+  const [bookAllTransactions, setBookAllTransactions] = useState(Boolean(profile?.bookAllTransactions));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,6 +46,7 @@ export default function ProfileSettingsPage() {
     setIsOAuthUser(Boolean(profile.isOAuthUser));
     setImage(profile.image || "");
     setImagePreview(profile.image || "");
+    setBookAllTransactions(Boolean(profile.bookAllTransactions));
   }, [status, profile]);
 
   const initials = useMemo(() => {
@@ -98,7 +100,7 @@ export default function ProfileSettingsPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ firstName, lastName, username, image }),
+        body: JSON.stringify({ firstName, lastName, username, image, bookAllTransactions }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -120,6 +122,7 @@ export default function ProfileSettingsPage() {
         isOAuthUser,
         theme: (data.user.theme ? String(data.user.theme).toLowerCase() : undefined) as
           | "light" | "dark" | "system" | undefined,
+        bookAllTransactions: Boolean(data.user.bookAllTransactions),
       });
       setLoading(false);
     } catch {
@@ -290,6 +293,23 @@ export default function ProfileSettingsPage() {
                 className="w-full px-3 py-2 text-sm border rounded-md bg-muted text-muted-foreground cursor-not-allowed"
               />
               <p className="text-[10px] text-muted-foreground mt-1">Email cannot be changed</p>
+            </div>
+
+            <div className="rounded-md border p-3">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={bookAllTransactions}
+                  onChange={(e) => setBookAllTransactions(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-input"
+                />
+                <span>
+                  <span className="block text-sm font-medium">Book all transactions</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Include pending transactions when calculating balances, totals, charts, and statistics.
+                  </span>
+                </span>
+              </label>
             </div>
 
             {error && (

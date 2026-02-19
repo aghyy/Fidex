@@ -23,6 +23,8 @@ type Transaction = {
   interval: string;
   type: "EXPENSE" | "INCOME" | "TRANSFER";
   category: string;
+  occurredAt: string;
+  pending: boolean;
   createdAt: string;
   expires: string;
 };
@@ -51,6 +53,35 @@ function FormContent({
   categories,
   onUpdated,
 }: EditTransactionDialogProps) {
+  const formatLocalDate = (value?: string) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  const formatLocalTime = (value?: string) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  };
+  const combineLocalDateTime = (dateValue: string, timeValue: string, include: boolean) => {
+    const [yy, mm, dd] = dateValue.split("-").map(Number);
+    const result = new Date(yy, (mm || 1) - 1, dd || 1, 12, 0, 0, 0);
+    if (include && timeValue) {
+      const [h, m] = timeValue.split(":").map(Number);
+      if (Number.isFinite(h) && Number.isFinite(m)) {
+        result.setHours(h, m, 0, 0);
+      }
+    }
+    return result;
+  };
+
   const { setIsOpen, isOpen } = useMorphingDialog();
   const [originAccountId, setOriginAccountId] = useState(transaction.originAccountId);
   const [targetAccountId, setTargetAccountId] = useState(transaction.targetAccountId);
@@ -59,6 +90,10 @@ function FormContent({
   const [interval, setInterval] = useState<TransactionInterval>(transaction.interval as TransactionInterval);
   const [type, setType] = useState<TransactionType>(transaction.type);
   const [category, setCategory] = useState(transaction.category);
+  const [occurredDate, setOccurredDate] = useState(formatLocalDate(transaction.occurredAt || transaction.createdAt));
+  const [includeTime, setIncludeTime] = useState(Boolean(formatLocalTime(transaction.occurredAt)));
+  const [occurredTime, setOccurredTime] = useState(formatLocalTime(transaction.occurredAt));
+  const [pending, setPending] = useState(Boolean(transaction.pending));
   const [expires, setExpires] = useState(
     transaction.expires ? new Date(transaction.expires).toISOString().slice(0, 10) : ""
   );
@@ -77,6 +112,10 @@ function FormContent({
     setInterval(transaction.interval as TransactionInterval);
     setType(transaction.type);
     setCategory(transaction.category);
+    setOccurredDate(formatLocalDate(transaction.occurredAt || transaction.createdAt));
+    setIncludeTime(Boolean(formatLocalTime(transaction.occurredAt)));
+    setOccurredTime(formatLocalTime(transaction.occurredAt));
+    setPending(Boolean(transaction.pending));
     setExpires(transaction.expires ? new Date(transaction.expires).toISOString().slice(0, 10) : "");
     setError(null);
 
@@ -131,6 +170,8 @@ function FormContent({
           interval,
           type,
           category,
+          occurredAt: combineLocalDateTime(occurredDate, occurredTime, includeTime).toISOString(),
+          pending,
           expires: expires ? new Date(expires).toISOString() : undefined,
         }),
       });
@@ -283,6 +324,65 @@ function FormContent({
           <option value="QUARTERLY">Quarterly</option>
           <option value="YEARLY">Yearly</option>
         </select>
+      </div>
+
+      <div>
+        <label className="text-sm text-muted-foreground" htmlFor={`edit-transaction-occurred-date-${transaction.id}`}>
+          Transaction day
+        </label>
+        <input
+          id={`edit-transaction-occurred-date-${transaction.id}`}
+          type="date"
+          value={occurredDate}
+          onChange={(e) => setOccurredDate(e.target.value)}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="text-sm text-muted-foreground">Optional time</label>
+        <div className="mt-1 flex items-center gap-3 rounded-md border bg-background px-3 py-2">
+          <input
+            id={`edit-transaction-include-time-${transaction.id}`}
+            type="checkbox"
+            checked={includeTime}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setIncludeTime(checked);
+              if (!checked) setOccurredTime("");
+            }}
+            className="h-4 w-4 rounded border-input"
+          />
+          <label htmlFor={`edit-transaction-include-time-${transaction.id}`} className="text-sm text-muted-foreground">
+            Set specific time
+          </label>
+          <input
+            type="time"
+            value={occurredTime}
+            onChange={(e) => setOccurredTime(e.target.value)}
+            disabled={!includeTime}
+            className="ml-auto w-[130px] rounded-md border bg-background px-2 py-1 text-sm"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm text-muted-foreground">Booking</label>
+        <label className="mt-1 flex items-start gap-3 rounded-md border bg-background px-3 py-2">
+          <input
+            type="checkbox"
+            checked={pending}
+            onChange={(e) => setPending(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-input"
+          />
+          <span>
+            <span className="block text-sm font-medium">Pending transaction</span>
+            <span className="block text-xs text-muted-foreground">
+              Pending transactions are excluded from balances and statistics unless enabled in settings.
+            </span>
+          </span>
+        </label>
       </div>
 
       {interval !== "ONCE" ? (

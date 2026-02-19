@@ -47,6 +47,8 @@ export async function GET(
                     targetAccountId: string;
                     amount: bigint | number;
                     type: TransactionType;
+                    occurredAt: Date;
+                    pending: boolean;
                 } | null>;
             };
         };
@@ -89,6 +91,8 @@ export async function PATCH(
             type,
             category,
             expires,
+            occurredAt,
+            pending,
         } = await request.json();
 
         const db = prisma as unknown as {
@@ -104,6 +108,8 @@ export async function PATCH(
                         interval: TransactionInterval;
                         type: TransactionType;
                         category: string;
+                        occurredAt: Date;
+                        pending: boolean;
                         expires: Date;
                     } | null>;
                     update: (args: {
@@ -116,6 +122,8 @@ export async function PATCH(
                             interval: TransactionInterval;
                             type: TransactionType;
                             category: string;
+                            occurredAt: Date;
+                            pending: boolean;
                             expires: Date;
                         };
                     }) => Promise<unknown>;
@@ -160,26 +168,28 @@ export async function PATCH(
                     typeof oldTarget.balance === "bigint" ? oldTarget.balance : BigInt(oldTarget.balance);
             }
 
-            // Revert existing transaction impact first.
-            if (existing.type === "EXPENSE") {
-                await tx.account.update({
-                    where: { id: existing.originAccountId },
-                    data: { balance: oldOriginBalance + existingAmount },
-                });
-            } else if (existing.type === "INCOME") {
-                await tx.account.update({
-                    where: { id: existing.originAccountId },
-                    data: { balance: oldOriginBalance - existingAmount },
-                });
-            } else {
-                await tx.account.update({
-                    where: { id: existing.originAccountId },
-                    data: { balance: oldOriginBalance + existingAmount },
-                });
-                await tx.account.update({
-                    where: { id: existing.targetAccountId },
-                    data: { balance: (oldTargetBalance as bigint) - existingAmount },
-                });
+            // Revert existing transaction impact first, but only if already booked.
+            if (!existing.pending) {
+                if (existing.type === "EXPENSE") {
+                    await tx.account.update({
+                        where: { id: existing.originAccountId },
+                        data: { balance: oldOriginBalance + existingAmount },
+                    });
+                } else if (existing.type === "INCOME") {
+                    await tx.account.update({
+                        where: { id: existing.originAccountId },
+                        data: { balance: oldOriginBalance - existingAmount },
+                    });
+                } else {
+                    await tx.account.update({
+                        where: { id: existing.originAccountId },
+                        data: { balance: oldOriginBalance + existingAmount },
+                    });
+                    await tx.account.update({
+                        where: { id: existing.targetAccountId },
+                        data: { balance: (oldTargetBalance as bigint) - existingAmount },
+                    });
+                }
             }
 
             const normalizedType = (type as TransactionType | undefined) ?? existing.type;
@@ -197,6 +207,11 @@ export async function PATCH(
             const nextNotes = notes !== undefined ? String(notes).trim() : existing.notes;
             const nextInterval = (interval as TransactionInterval | undefined) ?? existing.interval;
             const nextExpires = expires !== undefined ? new Date(expires) : existing.expires;
+            const nextOccurredAt = occurredAt !== undefined ? new Date(occurredAt) : existing.occurredAt;
+            const nextPending = pending !== undefined ? Boolean(pending) : existing.pending;
+            if (Number.isNaN(nextExpires.getTime()) || Number.isNaN(nextOccurredAt.getTime())) {
+                throw new Error("Invalid transaction date values");
+            }
 
             if (normalizedType === "TRANSFER" && (!nextTargetId || nextTargetId.length === 0)) {
                 throw new Error("Target account is required for transfer");
@@ -228,26 +243,28 @@ export async function PATCH(
             const nextTargetBalance =
                 typeof nextTarget.balance === "bigint" ? nextTarget.balance : BigInt(nextTarget.balance);
 
-            // Apply new transaction impact.
-            if (normalizedType === "EXPENSE") {
-                await tx.account.update({
-                    where: { id: nextOriginId },
-                    data: { balance: nextOriginBalance - nextAmount },
-                });
-            } else if (normalizedType === "INCOME") {
-                await tx.account.update({
-                    where: { id: nextOriginId },
-                    data: { balance: nextOriginBalance + nextAmount },
-                });
-            } else {
-                await tx.account.update({
-                    where: { id: nextOriginId },
-                    data: { balance: nextOriginBalance - nextAmount },
-                });
-                await tx.account.update({
-                    where: { id: nextTargetId },
-                    data: { balance: nextTargetBalance + nextAmount },
-                });
+            // Apply new transaction impact only if it should be booked.
+            if (!nextPending) {
+                if (normalizedType === "EXPENSE") {
+                    await tx.account.update({
+                        where: { id: nextOriginId },
+                        data: { balance: nextOriginBalance - nextAmount },
+                    });
+                } else if (normalizedType === "INCOME") {
+                    await tx.account.update({
+                        where: { id: nextOriginId },
+                        data: { balance: nextOriginBalance + nextAmount },
+                    });
+                } else {
+                    await tx.account.update({
+                        where: { id: nextOriginId },
+                        data: { balance: nextOriginBalance - nextAmount },
+                    });
+                    await tx.account.update({
+                        where: { id: nextTargetId },
+                        data: { balance: nextTargetBalance + nextAmount },
+                    });
+                }
             }
 
             return tx.transaction.update({
@@ -260,6 +277,8 @@ export async function PATCH(
                     interval: nextInterval,
                     type: normalizedType,
                     category: nextCategoryId,
+                    occurredAt: nextOccurredAt,
+                    pending: nextPending,
                     expires: nextExpires,
                 },
             });
@@ -276,7 +295,8 @@ export async function PATCH(
                 ? 403
                 : message.includes("not found") ||
                   message.includes("required") ||
-                  message.includes("Only EUR")
+                  message.includes("Only EUR") ||
+                  message.includes("Invalid transaction date values")
                 ? 400
                 : 500;
         return NextResponse.json({ error: message }, { status });
@@ -304,6 +324,7 @@ export async function DELETE(
                         targetAccountId: string;
                         amount: bigint | number;
                         type: TransactionType;
+                        pending: boolean;
                     } | null>;
                     delete: (args: { where: { id: string } }) => Promise<unknown>;
                 };
@@ -335,31 +356,33 @@ export async function DELETE(
             if (!origin) throw new Error("Origin account not found");
             const originBalance = typeof origin.balance === "bigint" ? origin.balance : BigInt(origin.balance);
 
-            if (existing.type === "EXPENSE") {
-                await tx.account.update({
-                    where: { id: existing.originAccountId },
-                    data: { balance: originBalance + amount },
-                });
-            } else if (existing.type === "INCOME") {
-                await tx.account.update({
-                    where: { id: existing.originAccountId },
-                    data: { balance: originBalance - amount },
-                });
-            } else {
-                const target = await tx.account.findFirst({
-                    where: { id: existing.targetAccountId, userId: session.user.id },
-                });
-                if (!target) throw new Error("Target account not found");
-                const targetBalance = typeof target.balance === "bigint" ? target.balance : BigInt(target.balance);
+            if (!existing.pending) {
+                if (existing.type === "EXPENSE") {
+                    await tx.account.update({
+                        where: { id: existing.originAccountId },
+                        data: { balance: originBalance + amount },
+                    });
+                } else if (existing.type === "INCOME") {
+                    await tx.account.update({
+                        where: { id: existing.originAccountId },
+                        data: { balance: originBalance - amount },
+                    });
+                } else {
+                    const target = await tx.account.findFirst({
+                        where: { id: existing.targetAccountId, userId: session.user.id },
+                    });
+                    if (!target) throw new Error("Target account not found");
+                    const targetBalance = typeof target.balance === "bigint" ? target.balance : BigInt(target.balance);
 
-                await tx.account.update({
-                    where: { id: existing.originAccountId },
-                    data: { balance: originBalance + amount },
-                });
-                await tx.account.update({
-                    where: { id: existing.targetAccountId },
-                    data: { balance: targetBalance - amount },
-                });
+                    await tx.account.update({
+                        where: { id: existing.originAccountId },
+                        data: { balance: originBalance + amount },
+                    });
+                    await tx.account.update({
+                        where: { id: existing.targetAccountId },
+                        data: { balance: targetBalance - amount },
+                    });
+                }
             }
 
             await tx.transaction.delete({

@@ -18,6 +18,7 @@ model User {
   image          String?
   password       String?
   theme          ThemePreference @default(SYSTEM)
+  bookAllTransactions Boolean    @default(false)
   updatedAt      DateTime        @default(now()) @updatedAt
   accounts       OAuthAccount[]
   sessions       Session[]
@@ -104,6 +105,8 @@ model Transaction {
   interval        TransactionInterval @default(ONCE)
   type            TransactionType     @default(EXPENSE)
   category        String
+  occurredAt      DateTime            @default(now())
+  pending         Boolean             @default(false)
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @default(now()) @updatedAt
   expires         DateTime

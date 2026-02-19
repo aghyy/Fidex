@@ -22,6 +22,8 @@ import { IconPencil } from "@tabler/icons-react";
 import { ColorSwatchPicker, DEFAULT_COLOR_SWATCHES, normalizeHexColor } from "@/components/ui/color-swatch-picker";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { ACCOUNT_ICON_OPTIONS, renderIconByName } from "@/utils/icons";
+import { useAtomValue } from "jotai";
+import { profileAtom } from "@/state/profile";
 
 type PeriodMode = "month" | "year";
 
@@ -46,7 +48,7 @@ type AccountTransaction = {
   targetAccountId: string;
   amount: string | number;
   type: "EXPENSE" | "INCOME" | "TRANSFER";
-  createdAt: string;
+  occurredAt: string;
 };
 
 function parseAmount(value: string | number): number {
@@ -59,7 +61,7 @@ function getPeriodOptionsFromTransactions(transactions: AccountTransaction[]) {
   const yearSet = new Set<string>();
   const monthsByYear = new Map<string, Set<string>>();
   for (const tx of transactions) {
-    const d = new Date(tx.createdAt);
+    const d = new Date(tx.occurredAt);
     if (Number.isNaN(d.getTime())) continue;
     const year = String(d.getFullYear());
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -253,6 +255,8 @@ export default function AccountDetailPage() {
     `${currentYear}-${String(currentMonth).padStart(2, "0")}`
   );
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const profile = useAtomValue(profileAtom);
+  const includePending = Boolean(profile?.bookAllTransactions);
 
   const periodOptions = useMemo(
     () => getPeriodOptionsFromTransactions(allAccountTransactions),
@@ -313,6 +317,7 @@ export default function AccountDetailPage() {
       if (!resolvedAccountId) return;
       try {
         const params = new URLSearchParams({ accountId: resolvedAccountId });
+        params.set("includePending", String(includePending));
         const res = await fetch(`/api/transaction?${params.toString()}`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to fetch transactions");
         const data = await res.json();
@@ -323,7 +328,7 @@ export default function AccountDetailPage() {
     }
 
     void loadAllAccountTransactions();
-  }, [resolvedAccountId]);
+  }, [resolvedAccountId, includePending]);
 
   useEffect(() => {
     if (periodOptions.years.length > 0 && !periodOptions.years.includes(selectedYear)) {
@@ -347,11 +352,24 @@ export default function AccountDetailPage() {
         const params = new URLSearchParams({
           accountId: resolvedAccountId,
           from: new Date(effectiveTo.getTime() + 1).toISOString(),
+          includePending: "false",
         });
-        const res = await fetch(`/api/transaction?${params.toString()}`, { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to fetch transactions");
+        const pendingParams = new URLSearchParams({
+          accountId: resolvedAccountId,
+          to: effectiveTo.toISOString(),
+          pendingOnly: "true",
+        });
+        const [res, pendingRes] = await Promise.all([
+          fetch(`/api/transaction?${params.toString()}`, { credentials: "include" }),
+          includePending
+            ? fetch(`/api/transaction?${pendingParams.toString()}`, { credentials: "include" })
+            : Promise.resolve(new Response(JSON.stringify({ transactions: [] }), { status: 200 })),
+        ]);
+        if (!res.ok || !pendingRes.ok) throw new Error("Failed to fetch transactions");
         const data = await res.json();
+        const pendingData = await pendingRes.json();
         const txs = (data.transactions ?? []) as AccountTransaction[];
+        const pendingTxs = (pendingData.transactions ?? []) as AccountTransaction[];
 
         let adjustment = 0;
         for (const tx of txs) {
@@ -366,14 +384,29 @@ export default function AccountDetailPage() {
           }
         }
 
-        setDisplayedBalance(account.balance + adjustment);
+        let pendingAdjustment = 0;
+        if (includePending) {
+          for (const tx of pendingTxs) {
+            const amount = parseAmount(tx.amount);
+            if (tx.type === "EXPENSE" && tx.originAccountId === resolvedAccountId) {
+              pendingAdjustment -= amount;
+            } else if (tx.type === "INCOME" && tx.originAccountId === resolvedAccountId) {
+              pendingAdjustment += amount;
+            } else if (tx.type === "TRANSFER") {
+              if (tx.originAccountId === resolvedAccountId) pendingAdjustment -= amount;
+              if (tx.targetAccountId === resolvedAccountId) pendingAdjustment += amount;
+            }
+          }
+        }
+
+        setDisplayedBalance(account.balance + adjustment + pendingAdjustment);
       } catch {
         setDisplayedBalance(account.balance);
       }
     }
 
     void loadFilteredBalance();
-  }, [account, resolvedAccountId, effectiveTo]);
+  }, [account, resolvedAccountId, effectiveTo, includePending]);
 
   return (
     <>

@@ -37,6 +37,9 @@ export async function GET(request: Request) {
     const accountId = searchParams.get("accountId");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    const includePendingParam = searchParams.get("includePending");
+    const includePending = includePendingParam === null ? true : includePendingParam === "true";
+    const pendingOnly = searchParams.get("pendingOnly") === "true";
 
     try {
         const db = prisma as unknown as {
@@ -46,12 +49,13 @@ export async function GET(request: Request) {
                         userId: string;
                         category?: string;
                         OR?: Array<{ originAccountId: string } | { targetAccountId: string }>;
-                        createdAt?: {
+                        occurredAt?: {
                             gte?: Date;
                             lte?: Date;
                         };
+                        pending?: boolean;
                     };
-                    orderBy: { createdAt: "asc" | "desc" };
+                    orderBy: { occurredAt: "asc" | "desc" };
                 }) => Promise<unknown[]>;
             };
         };
@@ -60,15 +64,21 @@ export async function GET(request: Request) {
             userId: string;
             category?: string;
             OR?: Array<{ originAccountId: string } | { targetAccountId: string }>;
-            createdAt?: {
+            occurredAt?: {
                 gte?: Date;
                 lte?: Date;
             };
+            pending?: boolean;
         } = { userId: session.user.id };
 
         if (category) where.category = category;
         if (accountId) {
             where.OR = [{ originAccountId: accountId }, { targetAccountId: accountId }];
+        }
+        if (pendingOnly) {
+            where.pending = true;
+        } else if (!includePending) {
+            where.pending = false;
         }
         if (from || to) {
             const dateFilter: { gte?: Date; lte?: Date } = {};
@@ -81,13 +91,13 @@ export async function GET(request: Request) {
                 if (!Number.isNaN(parsedTo.getTime())) dateFilter.lte = parsedTo;
             }
             if (dateFilter.gte || dateFilter.lte) {
-                where.createdAt = dateFilter;
+                where.occurredAt = dateFilter;
             }
         }
 
         const transactions = await db.transaction.findMany({
             where,
-            orderBy: { createdAt: "desc" },
+            orderBy: { occurredAt: "desc" },
         });
 
         return NextResponse.json({ transactions: toJsonSafe(transactions) });
@@ -104,8 +114,20 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { originAccountId, targetAccountId, amount, notes, interval, type, category, expires } = await request.json();
+        const {
+            originAccountId,
+            targetAccountId,
+            amount,
+            notes,
+            interval,
+            type,
+            category,
+            expires,
+            occurredAt,
+            pending,
+        } = await request.json();
         const normalizedType = (type as TransactionType | undefined) ?? "EXPENSE";
+        const isPending = Boolean(pending);
 
         if (!originAccountId || typeof originAccountId !== "string") {
             return NextResponse.json({ error: "Account is required" }, { status: 400 });
@@ -127,6 +149,10 @@ export async function POST(request: Request) {
         const expiresDate = expires
             ? new Date(expires)
             : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
+        const occurredAtDate = occurredAt ? new Date(occurredAt) : new Date();
+        if (Number.isNaN(expiresDate.getTime()) || Number.isNaN(occurredAtDate.getTime())) {
+            return NextResponse.json({ error: "Invalid transaction date values" }, { status: 400 });
+        }
         const originId = String(originAccountId).trim();
         const categoryId = String(category).trim();
 
@@ -150,6 +176,8 @@ export async function POST(request: Request) {
                             interval: TransactionInterval;
                             type: TransactionType;
                             category: string;
+                            occurredAt: Date;
+                            pending: boolean;
                             expires: Date;
                         };
                     }) => Promise<unknown>;
@@ -191,29 +219,33 @@ export async function POST(request: Request) {
                     interval: (interval as TransactionInterval) ?? "ONCE",
                     type: normalizedType,
                     category: categoryId,
+                    occurredAt: occurredAtDate,
+                    pending: isPending,
                     expires: expiresDate,
                 },
             });
 
-            if (normalizedType === "EXPENSE") {
-                await tx.account.update({
-                    where: { id: originId },
-                    data: { balance: originBalance - amountBigInt },
-                });
-            } else if (normalizedType === "INCOME") {
-                await tx.account.update({
-                    where: { id: originId },
-                    data: { balance: originBalance + amountBigInt },
-                });
-            } else {
-                await tx.account.update({
-                    where: { id: originId },
-                    data: { balance: originBalance - amountBigInt },
-                });
-                await tx.account.update({
-                    where: { id: resolvedTargetId },
-                    data: { balance: targetBalance + amountBigInt },
-                });
+            if (!isPending) {
+                if (normalizedType === "EXPENSE") {
+                    await tx.account.update({
+                        where: { id: originId },
+                        data: { balance: originBalance - amountBigInt },
+                    });
+                } else if (normalizedType === "INCOME") {
+                    await tx.account.update({
+                        where: { id: originId },
+                        data: { balance: originBalance + amountBigInt },
+                    });
+                } else {
+                    await tx.account.update({
+                        where: { id: originId },
+                        data: { balance: originBalance - amountBigInt },
+                    });
+                    await tx.account.update({
+                        where: { id: resolvedTargetId },
+                        data: { balance: targetBalance + amountBigInt },
+                    });
+                }
             }
 
             return createdTx;
@@ -226,7 +258,8 @@ export async function POST(request: Request) {
         const isValidationError =
             message.includes("required") ||
             message.includes("not found") ||
-            message.includes("Only EUR");
+            message.includes("Only EUR") ||
+            message.includes("Invalid transaction date values");
         return NextResponse.json({ error: message }, { status: isValidationError ? 400 : 500 });
     }
 }

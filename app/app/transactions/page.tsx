@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type PeriodMode = "month" | "year";
-type Tx = { createdAt: string };
+type Tx = { occurredAt?: string; createdAt: string };
 
 function getPeriodOptionsFromTransactions(transactions: Tx[]) {
   const yearSet = new Set<string>();
   const monthsByYear = new Map<string, Set<string>>();
   for (const tx of transactions) {
-    const d = new Date(tx.createdAt);
+    const d = new Date(tx.occurredAt ?? tx.createdAt);
     if (Number.isNaN(d.getTime())) continue;
     const year = String(d.getFullYear());
     const month = String(d.getMonth() + 1).padStart(2, "0");

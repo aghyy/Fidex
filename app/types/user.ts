@@ -5,4 +5,5 @@ export type BasicUser = {
   username?: string;
   image?: string;
   isOAuthUser?: boolean;
+  bookAllTransactions?: boolean;
 };

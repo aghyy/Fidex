@@ -22,6 +22,8 @@ import { IconPencil } from "@tabler/icons-react";
 import { ColorSwatchPicker, DEFAULT_COLOR_SWATCHES, normalizeHexColor } from "@/components/ui/color-swatch-picker";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { CATEGORY_ICON_OPTIONS, renderIconByName } from "@/utils/icons";
+import { useAtomValue } from "jotai";
+import { profileAtom } from "@/state/profile";
 
 type PeriodMode = "month" | "year";
 
@@ -43,7 +45,7 @@ function getRange(mode: PeriodMode, monthValue: string, yearValue: string) {
 type CategoryTransaction = {
   amount: string | number;
   type: "EXPENSE" | "INCOME" | "TRANSFER";
-  createdAt: string;
+  occurredAt: string;
 };
 
 function parseAmount(value: string | number): number {
@@ -63,7 +65,7 @@ function getPeriodOptionsFromTransactions(transactions: CategoryTransaction[]) {
   const yearSet = new Set<string>();
   const monthsByYear = new Map<string, Set<string>>();
   for (const tx of transactions) {
-    const d = new Date(tx.createdAt);
+    const d = new Date(tx.occurredAt);
     if (Number.isNaN(d.getTime())) continue;
     const year = String(d.getFullYear());
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -228,6 +230,8 @@ export default function CategoryDetailPage() {
     `${currentYear}-${String(currentMonth).padStart(2, "0")}`
   );
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const profile = useAtomValue(profileAtom);
+  const includePending = Boolean(profile?.bookAllTransactions);
 
   const periodOptions = useMemo(
     () => getPeriodOptionsFromTransactions(allCategoryTransactions),
@@ -285,6 +289,7 @@ export default function CategoryDetailPage() {
       if (!resolvedCategoryId) return;
       try {
         const params = new URLSearchParams({ category: resolvedCategoryId });
+        params.set("includePending", String(includePending));
         const res = await fetch(`/api/transaction?${params.toString()}`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to fetch transactions");
         const data = await res.json();
@@ -295,7 +300,7 @@ export default function CategoryDetailPage() {
     }
 
     void loadAllCategoryTransactions();
-  }, [resolvedCategoryId]);
+  }, [resolvedCategoryId, includePending]);
 
   useEffect(() => {
     if (periodOptions.years.length > 0 && !periodOptions.years.includes(selectedYear)) {
@@ -320,6 +325,7 @@ export default function CategoryDetailPage() {
           category: resolvedCategoryId,
           from: range.start.toISOString(),
           to: effectiveTo.toISOString(),
+          includePending: String(includePending),
         });
         const res = await fetch(`/api/transaction?${params.toString()}`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to fetch transactions");
@@ -339,7 +345,7 @@ export default function CategoryDetailPage() {
     }
 
     void loadCategoryStats();
-  }, [resolvedCategoryId, range.start, effectiveTo]);
+  }, [resolvedCategoryId, range.start, effectiveTo, includePending]);
 
   return (
     <>

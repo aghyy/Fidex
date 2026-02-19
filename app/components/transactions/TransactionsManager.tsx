@@ -13,6 +13,8 @@ interface Transaction {
   interval: string;
   type: "EXPENSE" | "INCOME" | "TRANSFER";
   category: string;
+  occurredAt: string;
+  pending: boolean;
   createdAt: string;
   expires: string;
 }
@@ -216,6 +218,11 @@ export default function TransactionsManager({
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-medium">{getTransactionTitle(transaction)}</span>
+                {transaction.pending ? (
+                  <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
+                    Pending
+                  </span>
+                ) : null}
               </div>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span className={`font-semibold ${getTypeColor(transaction.type)}`}>
@@ -248,7 +255,7 @@ export default function TransactionsManager({
                 <p className="text-sm text-muted-foreground mt-2">{transaction.notes}</p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                {formatDate(transaction.createdAt)}
+                {formatDate(transaction.occurredAt || transaction.createdAt)}
               </p>
             </div>
             <div className="ml-4 flex items-center gap-1">

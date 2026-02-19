@@ -10,15 +10,59 @@ import {
   MorphingDialogDescription,
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
-import { Plus } from "lucide-react";
+import { CalendarIcon, Check, FileImage, FileText, Plus } from "lucide-react";
 import { TransactionType, TransactionInterval } from "@/types/transactions";
 import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
 import { DocumentItem } from "@/types/documents";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 interface CreateTransactionDialogProps {
   preselectedCategory?: string;
   preselectedAccount?: string;
+}
+
+function SafeDialogSelect({
+  value,
+  onValueChange,
+  placeholder,
+  children,
+  id,
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  children: React.ReactNode;
+  id?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Select
+      value={value}
+      onValueChange={onValueChange}
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) {
+          document.body.dataset.radixSelectOpen = "true";
+        } else {
+          delete document.body.dataset.radixSelectOpen;
+        }
+      }}
+    >
+      <SelectTrigger id={id}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>{children}</SelectContent>
+    </Select>
+  );
 }
 
 function FormContent({
@@ -31,12 +75,16 @@ function FormContent({
   const { setIsOpen } = useMorphingDialog();
   const [originAccountId, setOriginAccountId] = useState<string>(preselectedAccount || "");
   const [targetAccountId, setTargetAccountId] = useState<string>("");
-  const [amount, setAmount] = useState<number>(0);
+  const [amountInput, setAmountInput] = useState("");
   const [notes, setNotes] = useState("");
   const [interval, setInterval] = useState<TransactionInterval>("ONCE");
   const [type, setType] = useState<TransactionType>("EXPENSE");
   const [category, setCategory] = useState<string>(preselectedCategory || "");
-  const [expires, setExpires] = useState<string>("");
+  const [transactionDate, setTransactionDate] = useState<Date>(new Date());
+  const [includeTime, setIncludeTime] = useState(false);
+  const [transactionTime, setTransactionTime] = useState("");
+  const [pending, setPending] = useState(false);
+  const [expiresDate, setExpiresDate] = useState<Date | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +92,11 @@ function FormContent({
   const [categories, setCategories] = useState<Category[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [isExpiresPopoverOpen, setIsExpiresPopoverOpen] = useState(false);
+  const [isTransactionDatePopoverOpen, setIsTransactionDatePopoverOpen] = useState(false);
   const isTransfer = type === "TRANSFER";
+  const amount = Number(amountInput.replace(",", "."));
+  const normalizedAmount = Number.isFinite(amount) ? amount : 0;
 
   useEffect(() => {
     async function fetchData() {
@@ -100,9 +152,24 @@ function FormContent({
     }
   }, [categories, preselectedCategory]);
 
+  function combineDateAndOptionalTime(baseDate: Date, timeValue: string, include: boolean) {
+    const combined = new Date(baseDate);
+    if (!include || !timeValue) {
+      combined.setHours(12, 0, 0, 0);
+      return combined;
+    }
+    const [hours, minutes] = timeValue.split(":").map((part) => Number(part));
+    if (Number.isFinite(hours) && Number.isFinite(minutes)) {
+      combined.setHours(hours, minutes, 0, 0);
+    } else {
+      combined.setHours(12, 0, 0, 0);
+    }
+    return combined;
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!originAccountId || !category || amount <= 0 || (isTransfer && !targetAccountId)) {
+    if (!originAccountId || !category || normalizedAmount <= 0 || (isTransfer && !targetAccountId)) {
       setError("Please fill all required fields");
       return;
     }
@@ -116,12 +183,14 @@ function FormContent({
         body: JSON.stringify({
           originAccountId,
           targetAccountId: isTransfer ? targetAccountId : undefined,
-          amount,
+          amount: normalizedAmount,
           notes,
           interval,
           type,
           category,
-          expires: expires ? new Date(expires).toISOString() : undefined,
+          pending,
+          occurredAt: combineDateAndOptionalTime(transactionDate, transactionTime, includeTime).toISOString(),
+          expires: expiresDate ? expiresDate.toISOString() : undefined,
         }),
       });
       const data = await res.json();
@@ -145,13 +214,19 @@ function FormContent({
       // Reset form
       setOriginAccountId(preselectedAccount || "");
       setTargetAccountId("");
-      setAmount(0);
+      setAmountInput("");
       setNotes("");
       setInterval("ONCE");
       setType("EXPENSE");
       setCategory(preselectedCategory || "");
-      setExpires("");
+      setTransactionDate(new Date());
+      setIncludeTime(false);
+      setTransactionTime("");
+      setPending(false);
+      setExpiresDate(undefined);
       setSelectedDocumentIds([]);
+      setIsTransactionDatePopoverOpen(false);
+      setIsExpiresPopoverOpen(false);
       
       setIsOpen(false);
     } catch (e) {
@@ -161,196 +236,328 @@ function FormContent({
     }
   }
 
+  const formatDateLabel = (date?: Date) =>
+    date
+      ? date.toLocaleDateString(undefined, {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "Pick expiration date";
+  const tomorrowStart = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 1);
+    return d;
+  })();
+  const formatTransactionDateLabel = (date: Date) =>
+    date.toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
   return (
-    <form onSubmit={handleCreate} className="mt-4 grid gap-4">
-      <div>
-        <label className="text-sm text-muted-foreground" htmlFor="transaction-type">
-          Type
-        </label>
-        <select
-          id="transaction-type"
-          value={type}
-          onChange={(e) => setType(e.target.value as TransactionType)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-        >
-          <option value="EXPENSE">Expense</option>
-          <option value="INCOME">Income</option>
-          <option value="TRANSFER">Transfer</option>
-        </select>
-      </div>
+    <form onSubmit={handleCreate} className="mt-4">
+      <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Type</label>
+            <SafeDialogSelect
+              value={type}
+              onValueChange={(value) => {
+                const nextType = value as TransactionType;
+                setType(nextType);
+                if (nextType !== "TRANSFER") setTargetAccountId("");
+              }}
+              placeholder="Select type"
+            >
+              <SelectItem value="EXPENSE">Expense</SelectItem>
+              <SelectItem value="INCOME">Income</SelectItem>
+              <SelectItem value="TRANSFER">Transfer</SelectItem>
+            </SafeDialogSelect>
+          </div>
 
-      <div>
-        <label className="text-sm text-muted-foreground" htmlFor="transaction-origin-account">
-          {isTransfer ? "From Account" : "Account"}
-        </label>
-        <select
-          id="transaction-origin-account"
-          value={originAccountId}
-          onChange={(e) => setOriginAccountId(e.target.value)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          required
-        >
-          <option value="" disabled>
-            Select account
-          </option>
-          {accounts.map((acc) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.name} ({acc.accountNumber})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {isTransfer ? (
-        <div>
-          <label className="text-sm text-muted-foreground" htmlFor="transaction-target-account">
-            To Account
-          </label>
-          <select
-            id="transaction-target-account"
-            value={targetAccountId}
-            onChange={(e) => setTargetAccountId(e.target.value)}
-            className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-            required
-          >
-            <option value="" disabled>
-              Select account
-            </option>
-            {accounts
-              .filter((acc) => acc.id !== originAccountId)
-              .map((acc) => (
-                <option key={acc.id} value={acc.id}>
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">{isTransfer ? "From Account" : "Account"}</label>
+            <SafeDialogSelect value={originAccountId} onValueChange={setOriginAccountId} placeholder="Select account">
+              {accounts.map((acc) => (
+                <SelectItem key={acc.id} value={acc.id}>
                   {acc.name} ({acc.accountNumber})
-                </option>
+                </SelectItem>
               ))}
-          </select>
+            </SafeDialogSelect>
+          </div>
+
+          {isTransfer ? (
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">To Account</label>
+              <SafeDialogSelect value={targetAccountId} onValueChange={setTargetAccountId} placeholder="Select account">
+                {accounts
+                  .filter((acc) => acc.id !== originAccountId)
+                  .map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name} ({acc.accountNumber})
+                    </SelectItem>
+                  ))}
+              </SafeDialogSelect>
+            </div>
+          ) : null}
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground" htmlFor="transaction-category">
+              Category
+            </label>
+            <SafeDialogSelect
+              value={category}
+              onValueChange={setCategory}
+              placeholder="Select category"
+              id="transaction-category"
+            >
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SafeDialogSelect>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground" htmlFor="transaction-amount">
+              Amount
+            </label>
+            <div className="relative">
+              <Input
+                id="transaction-amount"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={amountInput}
+                onChange={(e) => {
+                  const next = e.target.value.replace(",", ".");
+                  if (/^\d*\.?\d{0,2}$/.test(next)) {
+                    setAmountInput(next);
+                  }
+                }}
+                placeholder="0.00"
+                className="pr-12 text-base font-medium tabular-nums"
+                required
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                EUR
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Interval</label>
+            <SafeDialogSelect
+              value={interval}
+              onValueChange={(value) => {
+                const nextValue = value as TransactionInterval;
+                setInterval(nextValue);
+                if (nextValue === "ONCE") setExpiresDate(undefined);
+              }}
+              placeholder="Select interval"
+            >
+              <SelectItem value="ONCE">Once</SelectItem>
+              <SelectItem value="DAILY">Daily</SelectItem>
+              <SelectItem value="WEEKLY">Weekly</SelectItem>
+              <SelectItem value="MONTHLY">Monthly</SelectItem>
+              <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+              <SelectItem value="YEARLY">Yearly</SelectItem>
+            </SafeDialogSelect>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Transaction day</label>
+            <Popover
+              open={isTransactionDatePopoverOpen}
+              onOpenChange={(open) => {
+                setIsTransactionDatePopoverOpen(open);
+                if (open) {
+                  document.body.dataset.radixSelectOpen = "true";
+                } else {
+                  delete document.body.dataset.radixSelectOpen;
+                }
+              }}
+            >
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="h-4 w-4" />
+                  {formatTransactionDateLabel(transactionDate)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  className="rounded-md"
+                  mode="single"
+                  selected={transactionDate}
+                  onSelect={(date) => {
+                    if (date) setTransactionDate(date);
+                    setIsTransactionDatePopoverOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Optional time</label>
+            <div className="flex items-center gap-3 rounded-md border px-3 py-2">
+              <input
+                id="include-time"
+                type="checkbox"
+                checked={includeTime}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setIncludeTime(checked);
+                  if (!checked) setTransactionTime("");
+                }}
+                className="h-4 w-4 rounded border-input"
+              />
+              <label htmlFor="include-time" className="text-sm text-muted-foreground">
+                Set a specific time
+              </label>
+              <Input
+                type="time"
+                step={60}
+                value={transactionTime}
+                onChange={(e) => setTransactionTime(e.target.value)}
+                disabled={!includeTime}
+                className="ml-auto w-[130px]"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Booking</label>
+            <label className="flex items-center gap-3 rounded-md border px-3 py-2">
+              <Checkbox
+                checked={pending}
+                onCheckedChange={(checked) => setPending(checked === true)}
+              />
+              <span className="text-sm font-medium">Mark as pending</span>
+            </label>
+          </div>
+
+          {interval !== "ONCE" ? (
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Expires</label>
+              <Popover
+                open={isExpiresPopoverOpen}
+                onOpenChange={(open) => {
+                  setIsExpiresPopoverOpen(open);
+                  if (open) {
+                    document.body.dataset.radixSelectOpen = "true";
+                  } else {
+                    delete document.body.dataset.radixSelectOpen;
+                  }
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !expiresDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    {formatDateLabel(expiresDate)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    className="rounded-md"
+                    mode="single"
+                    captionLayout="dropdown"
+                    selected={expiresDate}
+                    disabled={(date) => date < tomorrowStart}
+                    onSelect={(date) => {
+                      if (date && date >= tomorrowStart) {
+                        setExpiresDate(date);
+                      }
+                      setIsExpiresPopoverOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">Expires must be tomorrow or later.</p>
+            </div>
+          ) : null}
         </div>
-      ) : null}
 
-      <div>
-        <label className="text-sm text-muted-foreground" htmlFor="transaction-amount">
-          Amount
-        </label>
-        <input
-          id="transaction-amount"
-          type="number"
-          step="0.01"
-          min="0"
-          value={amount}
-          onChange={(e) => setAmount(Number(e.target.value))}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="0.00"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="text-sm text-muted-foreground" htmlFor="transaction-category">
-          Category
-        </label>
-        <select
-          id="transaction-category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          required
-        >
-          <option value="" disabled>
-            Select category
-          </option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="text-sm text-muted-foreground" htmlFor="transaction-interval">
-          Interval
-        </label>
-        <select
-          id="transaction-interval"
-          value={interval}
-          onChange={(e) => setInterval(e.target.value as TransactionInterval)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-        >
-          <option value="ONCE">Once</option>
-          <option value="DAILY">Daily</option>
-          <option value="WEEKLY">Weekly</option>
-          <option value="MONTHLY">Monthly</option>
-          <option value="QUARTERLY">Quarterly</option>
-          <option value="YEARLY">Yearly</option>
-        </select>
-      </div>
-
-      {interval !== "ONCE" && (
-        <div>
-          <label className="text-sm text-muted-foreground" htmlFor="transaction-expires">
-            Expires
+        <div className="space-y-2">
+          <label className="text-sm text-muted-foreground" htmlFor="transaction-notes">
+            Notes
           </label>
-          <input
-            id="transaction-expires"
-            type="date"
-            value={expires}
-            onChange={(e) => setExpires(e.target.value)}
-            className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+          <textarea
+            id="transaction-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="min-h-[96px] w-full rounded-md border bg-background px-3 py-2 text-sm"
+            placeholder="Optional notes..."
+            rows={4}
           />
         </div>
-      )}
 
-      <div>
-        <label className="text-sm text-muted-foreground" htmlFor="transaction-notes">
-          Notes
-        </label>
-        <textarea
-          id="transaction-notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="Optional notes..."
-          rows={3}
-        />
-      </div>
-
-      <div>
-        <label className="text-sm text-muted-foreground">Linked documents</label>
-        <div className="mt-1 max-h-36 space-y-1 overflow-auto rounded-md border bg-background p-2">
-          {documents.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No uploaded documents yet.</p>
-          ) : (
-            documents.map((doc) => (
-              <label key={doc.id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={selectedDocumentIds.includes(doc.id)}
-                  onChange={(e) => {
-                    setSelectedDocumentIds((prev) =>
-                      e.target.checked ? [...prev, doc.id] : prev.filter((id) => id !== doc.id)
-                    );
-                  }}
-                />
-                <span className="truncate">
-                  {doc.title} ({doc.kind})
-                </span>
-              </label>
-            ))
-          )}
+        <div className="space-y-2">
+          <label className="text-sm text-muted-foreground">Linked documents</label>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            {documents.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No uploaded documents yet.</p>
+            ) : (
+              <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3 md:grid-cols-4">
+                {documents.map((doc) => {
+                  const selected = selectedDocumentIds.includes(doc.id);
+                  const isImage = doc.mimeType.startsWith("image/");
+                  return (
+                    <button
+                      key={doc.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDocumentIds((prev) =>
+                          selected ? prev.filter((id) => id !== doc.id) : [...prev, doc.id]
+                        );
+                      }}
+                      className={cn(
+                        "group relative flex flex-col items-center gap-2 rounded-lg border bg-background p-3 text-center transition-all hover:shadow-sm",
+                        selected && "border-primary ring-1 ring-primary/70 bg-primary/5"
+                      )}
+                      title={`${doc.title} (${doc.kind})`}
+                    >
+                      {isImage ? (
+                        <FileImage className="h-8 w-8 text-muted-foreground group-hover:text-foreground" />
+                      ) : (
+                        <FileText className="h-8 w-8 text-muted-foreground group-hover:text-foreground" />
+                      )}
+                      <span className="line-clamp-2 w-full text-xs font-medium">{doc.title}</span>
+                      <span className="text-[11px] text-muted-foreground">{doc.kind}</span>
+                      {selected ? (
+                        <span className="absolute right-1.5 top-1.5 rounded-full bg-primary p-0.5 text-primary-foreground">
+                          <Check className="h-3 w-3" />
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 mt-2">
-        <button
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+        <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
+        <Button
           type="submit"
-          disabled={submitting || !originAccountId || (isTransfer && !targetAccountId) || !category || amount <= 0}
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-90 disabled:opacity-50"
+          disabled={submitting || !originAccountId || (isTransfer && !targetAccountId) || !category || normalizedAmount <= 0}
         >
-          Create Transaction
-        </button>
+          {submitting ? "Creating..." : "Create Transaction"}
+        </Button>
       </div>
-      <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
-      {error ? <p className="mt-1 text-sm text-red-500">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm text-red-500">{error}</p> : null}
     </form>
   );
 }
@@ -369,7 +576,7 @@ export default function CreateTransactionDialog({
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent
-          className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
+          className="w-full max-w-4xl rounded-2xl border bg-background p-5 shadow-xl"
           style={{ overflow: "visible" }}
         >
           <MorphingDialogTitle className="text-xl">Create Transaction</MorphingDialogTitle>

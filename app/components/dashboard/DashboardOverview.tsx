@@ -20,6 +20,8 @@ import { TransactionType } from "@/types/transactions";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { renderIconByName } from "@/utils/icons";
+import { useAtomValue } from "jotai";
+import { profileAtom } from "@/state/profile";
 
 type DashboardTransaction = {
   id: string;
@@ -28,7 +30,7 @@ type DashboardTransaction = {
   amount: string | number;
   type: TransactionType;
   category: string;
-  createdAt: string;
+  occurredAt: string;
 };
 
 type PeriodMode = "month" | "year";
@@ -51,7 +53,7 @@ function getPeriodOptionsFromTransactions(transactions: DashboardTransaction[]) 
   const yearSet = new Set<string>();
   const monthsByYear = new Map<string, Set<string>>();
   for (const tx of transactions) {
-    const d = new Date(tx.createdAt);
+    const d = new Date(tx.occurredAt);
     if (Number.isNaN(d.getTime())) continue;
     const year = String(d.getFullYear());
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -108,10 +110,13 @@ export default function DashboardOverview() {
   const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<DashboardTransaction[]>([]);
   const [transactionsAfterCutoff, setTransactionsAfterCutoff] = useState<DashboardTransaction[]>([]);
+  const [pendingTransactionsUntilCutoff, setPendingTransactionsUntilCutoff] = useState<DashboardTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllSpendingCategories, setShowAllSpendingCategories] = useState(false);
   const [showAllEarningCategories, setShowAllEarningCategories] = useState(false);
+  const profile = useAtomValue(profileAtom);
+  const includePending = Boolean(profile?.bookAllTransactions);
 
   const periodOptions = useMemo(
     () => getPeriodOptionsFromTransactions(allTransactions),
@@ -137,20 +142,29 @@ export default function DashboardOverview() {
         const txParams = new URLSearchParams({
           from: range.start.toISOString(),
           to: balanceCutoff.toISOString(),
+          includePending: String(includePending),
         });
         const afterCutoffParams = new URLSearchParams({
           from: new Date(balanceCutoff.getTime() + 1).toISOString(),
+          includePending: "false",
+        });
+        const pendingUntilCutoffParams = new URLSearchParams({
+          to: balanceCutoff.toISOString(),
+          pendingOnly: "true",
         });
 
-        const [accountsRes, categoriesRes, txRes, txAfterCutoffRes, allTxRes] = await Promise.all([
+        const [accountsRes, categoriesRes, txRes, txAfterCutoffRes, allTxRes, pendingTxRes] = await Promise.all([
           fetch("/api/account", { credentials: "include" }),
           fetch("/api/category", { credentials: "include" }),
           fetch(`/api/transaction?${txParams.toString()}`, { credentials: "include" }),
           fetch(`/api/transaction?${afterCutoffParams.toString()}`, { credentials: "include" }),
-          fetch("/api/transaction", { credentials: "include" }),
+          fetch(`/api/transaction?${new URLSearchParams({ includePending: String(includePending) }).toString()}`, { credentials: "include" }),
+          includePending
+            ? fetch(`/api/transaction?${pendingUntilCutoffParams.toString()}`, { credentials: "include" })
+            : Promise.resolve(new Response(JSON.stringify({ transactions: [] }), { status: 200 })),
         ]);
 
-        if (!accountsRes.ok || !categoriesRes.ok || !txRes.ok || !txAfterCutoffRes.ok || !allTxRes.ok) {
+        if (!accountsRes.ok || !categoriesRes.ok || !txRes.ok || !txAfterCutoffRes.ok || !allTxRes.ok || !pendingTxRes.ok) {
           throw new Error("Failed to load dashboard data");
         }
 
@@ -159,12 +173,14 @@ export default function DashboardOverview() {
         const txData = await txRes.json();
         const txAfterCutoffData = await txAfterCutoffRes.json();
         const allTxData = await allTxRes.json();
+        const pendingTxData = await pendingTxRes.json();
 
         setAccounts(accountsData.accounts ?? []);
         setCategories(categoriesData.categories ?? []);
         setTransactions(txData.transactions ?? []);
         setTransactionsAfterCutoff(txAfterCutoffData.transactions ?? []);
         setAllTransactions(allTxData.transactions ?? []);
+        setPendingTransactionsUntilCutoff(pendingTxData.transactions ?? []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard data");
       } finally {
@@ -173,7 +189,7 @@ export default function DashboardOverview() {
     }
 
     void loadDashboardData();
-  }, [range.start, balanceCutoff]);
+  }, [range.start, balanceCutoff, includePending]);
 
   useEffect(() => {
     if (periodOptions.years.length > 0 && !periodOptions.years.includes(selectedYear)) {
@@ -223,7 +239,7 @@ export default function DashboardOverview() {
         bucket.set(key, { label: key, income: 0, expense: 0, net: 0 });
       }
       for (const tx of transactions) {
-        const d = new Date(tx.createdAt);
+        const d = new Date(tx.occurredAt);
         const key = String(d.getDate());
         const row = bucket.get(key);
         if (!row) continue;
@@ -244,7 +260,7 @@ export default function DashboardOverview() {
         bucket.set(String(month), { label, income: 0, expense: 0, net: 0 });
       }
       for (const tx of transactions) {
-        const d = new Date(tx.createdAt);
+        const d = new Date(tx.occurredAt);
         const key = String(d.getMonth());
         const row = bucket.get(key);
         if (!row) continue;
@@ -401,13 +417,43 @@ export default function DashboardOverview() {
       }
     }
 
+    const pendingAdjustments = new Map<string, number>();
+    if (includePending) {
+      for (const tx of pendingTransactionsUntilCutoff) {
+        const amount = parseAmount(tx.amount);
+        if (tx.type === "EXPENSE") {
+          pendingAdjustments.set(
+            tx.originAccountId,
+            (pendingAdjustments.get(tx.originAccountId) ?? 0) - amount
+          );
+        } else if (tx.type === "INCOME") {
+          pendingAdjustments.set(
+            tx.originAccountId,
+            (pendingAdjustments.get(tx.originAccountId) ?? 0) + amount
+          );
+        } else {
+          pendingAdjustments.set(
+            tx.originAccountId,
+            (pendingAdjustments.get(tx.originAccountId) ?? 0) - amount
+          );
+          pendingAdjustments.set(
+            tx.targetAccountId,
+            (pendingAdjustments.get(tx.targetAccountId) ?? 0) + amount
+          );
+        }
+      }
+    }
+
     return Array.from(stats.values())
       .map((row) => ({
         ...row,
-        displayedBalance: row.account.balance + (balanceAdjustments.get(row.account.id) ?? 0),
+        displayedBalance:
+          row.account.balance +
+          (balanceAdjustments.get(row.account.id) ?? 0) +
+          (pendingAdjustments.get(row.account.id) ?? 0),
       }))
       .sort((a, b) => a.account.name.localeCompare(b.account.name));
-  }, [accounts, transactions, transactionsAfterCutoff]);
+  }, [accounts, transactions, transactionsAfterCutoff, includePending, pendingTransactionsUntilCutoff]);
 
   if (loading) {
     return <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">Loading dashboard...</div>;

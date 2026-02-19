@@ -10,6 +10,7 @@ export type UserProfile = {
   image: string;
   isOAuthUser: boolean;
   theme?: "light" | "dark" | "system";
+  bookAllTransactions?: boolean;
 };
 
 export const profileLoadedAtom = atom(false);
