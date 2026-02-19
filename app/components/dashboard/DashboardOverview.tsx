@@ -94,6 +94,7 @@ function getRange(mode: PeriodMode, monthValue: string, yearValue: string) {
 }
 
 export default function DashboardOverview() {
+  const categoryListDefaultLimit = 5;
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const [periodMode, setPeriodMode] = useState<PeriodMode>("month");
@@ -109,6 +110,8 @@ export default function DashboardOverview() {
   const [transactionsAfterCutoff, setTransactionsAfterCutoff] = useState<DashboardTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllSpendingCategories, setShowAllSpendingCategories] = useState(false);
+  const [showAllEarningCategories, setShowAllEarningCategories] = useState(false);
 
   const periodOptions = useMemo(
     () => getPeriodOptionsFromTransactions(allTransactions),
@@ -308,6 +311,22 @@ export default function DashboardOverview() {
     }
     return Array.from(incomeMap.values()).sort((a, b) => b.earned - a.earned);
   }, [transactions, categoryById]);
+
+  const visibleSpendCategories = useMemo(
+    () =>
+      showAllSpendingCategories
+        ? categorySpendData
+        : categorySpendData.slice(0, categoryListDefaultLimit),
+    [showAllSpendingCategories, categorySpendData]
+  );
+
+  const visibleIncomeCategories = useMemo(
+    () =>
+      showAllEarningCategories
+        ? categoryIncomeData
+        : categoryIncomeData.slice(0, categoryListDefaultLimit),
+    [showAllEarningCategories, categoryIncomeData]
+  );
 
   const accountOverview = useMemo(() => {
     const stats = new Map<
@@ -562,7 +581,7 @@ export default function DashboardOverview() {
           <p className="mb-4 text-xs text-muted-foreground">Only expense transactions are included.</p>
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categorySpendData.slice(0, 8)}>
+              <BarChart data={categorySpendData}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis dataKey="category" interval={0} height={35} />
                 <YAxis />
@@ -575,7 +594,7 @@ export default function DashboardOverview() {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2">
-            {categorySpendData.map((row) => (
+            {visibleSpendCategories.map((row) => (
               <Link
                 key={row.categoryId}
                 href={`/categories/${encodeURIComponent(row.categoryId)}`}
@@ -599,6 +618,16 @@ export default function DashboardOverview() {
             {categorySpendData.length === 0 ? (
               <p className="text-sm text-muted-foreground">No expense transactions in the selected timespan.</p>
             ) : null}
+            {categorySpendData.length > categoryListDefaultLimit ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAllSpendingCategories((prev) => !prev)}
+              >
+                {showAllSpendingCategories ? "Show less" : `Show more (${categorySpendData.length - categoryListDefaultLimit} more)`}
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -607,7 +636,7 @@ export default function DashboardOverview() {
           <p className="mb-4 text-xs text-muted-foreground">Only income transactions are included.</p>
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryIncomeData.slice(0, 8)}>
+              <BarChart data={categoryIncomeData}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis dataKey="category" interval={0} height={35} />
                 <YAxis />
@@ -620,7 +649,7 @@ export default function DashboardOverview() {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2">
-            {categoryIncomeData.map((row) => (
+            {visibleIncomeCategories.map((row) => (
               <Link
                 key={row.categoryId}
                 href={`/categories/${encodeURIComponent(row.categoryId)}`}
@@ -643,6 +672,16 @@ export default function DashboardOverview() {
             ))}
             {categoryIncomeData.length === 0 ? (
               <p className="text-sm text-muted-foreground">No income transactions in the selected timespan.</p>
+            ) : null}
+            {categoryIncomeData.length > categoryListDefaultLimit ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAllEarningCategories((prev) => !prev)}
+              >
+                {showAllEarningCategories ? "Show less" : `Show more (${categoryIncomeData.length - categoryListDefaultLimit} more)`}
+              </Button>
             ) : null}
           </div>
         </div>
