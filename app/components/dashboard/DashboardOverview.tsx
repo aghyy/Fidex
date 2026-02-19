@@ -581,7 +581,7 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
         <div className="rounded-2xl border bg-card p-4 sm:p-6">
           <h3 className="mb-1 text-base font-semibold">Spending by Category</h3>
           <p className="mb-4 text-xs text-muted-foreground">Only expense transactions are included.</p>
