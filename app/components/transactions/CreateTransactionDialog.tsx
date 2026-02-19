@@ -52,8 +52,6 @@ function SafeDialogSelect({
         setIsOpen(open);
         if (open) {
           document.body.dataset.radixSelectOpen = "true";
-        } else {
-          delete document.body.dataset.radixSelectOpen;
         }
       }}
     >
@@ -206,11 +204,11 @@ function FormContent({
         const linkData = await linkRes.json().catch(() => ({}));
         if (!linkRes.ok) throw new Error(linkData.error ?? "Transaction created but linking documents failed");
       }
-      
+
       try {
         window.dispatchEvent(new CustomEvent("transaction:created", { detail: data.transaction }));
-      } catch {}
-      
+      } catch { }
+
       // Reset form
       setOriginAccountId(preselectedAccount || "");
       setTargetAccountId("");
@@ -227,7 +225,7 @@ function FormContent({
       setSelectedDocumentIds([]);
       setIsTransactionDatePopoverOpen(false);
       setIsExpiresPopoverOpen(false);
-      
+
       setIsOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create");
@@ -239,10 +237,10 @@ function FormContent({
   const formatDateLabel = (date?: Date) =>
     date
       ? date.toLocaleDateString(undefined, {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
       : "Pick expiration date";
   const tomorrowStart = (() => {
     const d = new Date();
@@ -259,69 +257,8 @@ function FormContent({
 
   return (
     <form onSubmit={handleCreate} className="mt-4">
-      <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+      <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1 no-scrollbar">
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Type</label>
-            <SafeDialogSelect
-              value={type}
-              onValueChange={(value) => {
-                const nextType = value as TransactionType;
-                setType(nextType);
-                if (nextType !== "TRANSFER") setTargetAccountId("");
-              }}
-              placeholder="Select type"
-            >
-              <SelectItem value="EXPENSE">Expense</SelectItem>
-              <SelectItem value="INCOME">Income</SelectItem>
-              <SelectItem value="TRANSFER">Transfer</SelectItem>
-            </SafeDialogSelect>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">{isTransfer ? "From Account" : "Account"}</label>
-            <SafeDialogSelect value={originAccountId} onValueChange={setOriginAccountId} placeholder="Select account">
-              {accounts.map((acc) => (
-                <SelectItem key={acc.id} value={acc.id}>
-                  {acc.name} ({acc.accountNumber})
-                </SelectItem>
-              ))}
-            </SafeDialogSelect>
-          </div>
-
-          {isTransfer ? (
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">To Account</label>
-              <SafeDialogSelect value={targetAccountId} onValueChange={setTargetAccountId} placeholder="Select account">
-                {accounts
-                  .filter((acc) => acc.id !== originAccountId)
-                  .map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id}>
-                      {acc.name} ({acc.accountNumber})
-                    </SelectItem>
-                  ))}
-              </SafeDialogSelect>
-            </div>
-          ) : null}
-
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground" htmlFor="transaction-category">
-              Category
-            </label>
-            <SafeDialogSelect
-              value={category}
-              onValueChange={setCategory}
-              placeholder="Select category"
-              id="transaction-category"
-            >
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SafeDialogSelect>
-          </div>
-
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground" htmlFor="transaction-amount">
               Amount
@@ -350,6 +287,149 @@ function FormContent({
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Type</label>
+            <SafeDialogSelect
+              value={type}
+              onValueChange={(value) => {
+                const nextType = value as TransactionType;
+                setType(nextType);
+                if (nextType !== "TRANSFER") setTargetAccountId("");
+              }}
+              placeholder="Select type"
+            >
+              <SelectItem value="EXPENSE">Expense</SelectItem>
+              <SelectItem value="INCOME">Income</SelectItem>
+              <SelectItem value="TRANSFER">Transfer</SelectItem>
+            </SafeDialogSelect>
+          </div>
+
+          {isTransfer ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:col-span-2">
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">From Account</label>
+                <SafeDialogSelect value={originAccountId} onValueChange={setOriginAccountId} placeholder="Select account">
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name} ({acc.accountNumber})
+                    </SelectItem>
+                  ))}
+                </SafeDialogSelect>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">To Account</label>
+                <SafeDialogSelect value={targetAccountId} onValueChange={setTargetAccountId} placeholder="Select account">
+                  {accounts
+                    .filter((acc) => acc.id !== originAccountId)
+                    .map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.accountNumber})
+                      </SelectItem>
+                    ))}
+                </SafeDialogSelect>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2 lg:col-span-2">
+              <label className="text-sm text-muted-foreground">Account</label>
+              <SafeDialogSelect value={originAccountId} onValueChange={setOriginAccountId} placeholder="Select account">
+                {accounts.map((acc) => (
+                  <SelectItem key={acc.id} value={acc.id}>
+                    {acc.name} ({acc.accountNumber})
+                  </SelectItem>
+                ))}
+              </SafeDialogSelect>
+            </div>
+          )}
+
+          <div className="space-y-2 lg:col-span-2">
+            <label className="text-sm text-muted-foreground" htmlFor="transaction-category">
+              Category
+            </label>
+            <SafeDialogSelect
+              value={category}
+              onValueChange={setCategory}
+              placeholder="Select category"
+              id="transaction-category"
+            >
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SafeDialogSelect>
+          </div>
+
+          <div className="space-y-2 lg:col-span-2">
+            <label className="text-sm text-muted-foreground">Booking</label>
+            <label className="flex items-center gap-3 rounded-md border px-3 py-2">
+              <Checkbox
+                checked={pending}
+                onCheckedChange={(checked) => setPending(checked === true)}
+              />
+              <span className="text-sm font-medium">Mark as pending</span>
+            </label>
+          </div>
+
+          <div className="space-y-2 lg:col-span-2">
+            <label className="text-sm text-muted-foreground">Transaction date & time</label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Popover
+                open={isTransactionDatePopoverOpen}
+                onOpenChange={(open) => {
+                  setIsTransactionDatePopoverOpen(open);
+                  if (open) {
+                    document.body.dataset.radixSelectOpen = "true";
+                  } else {
+                    delete document.body.dataset.radixSelectOpen;
+                  }
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" className="h-10 w-full justify-start text-left font-normal">
+                    <CalendarIcon className="h-4 w-4" />
+                    {formatTransactionDateLabel(transactionDate)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    className="rounded-md"
+                    mode="single"
+                    selected={transactionDate}
+                    onSelect={(date) => {
+                      if (date) setTransactionDate(date);
+                      setIsTransactionDatePopoverOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <div className="flex h-10 items-center gap-3 rounded-md border px-3 py-2">
+                <Checkbox
+                  id="include-time"
+                  checked={includeTime}
+                  onCheckedChange={(checked) => {
+                    const isChecked = checked === true;
+                    setIncludeTime(isChecked);
+                    if (!isChecked) setTransactionTime("");
+                  }}
+                />
+                <label htmlFor="include-time" className="text-sm text-muted-foreground whitespace-nowrap">
+                  Time
+                </label>
+                <Input
+                  type="time"
+                  step={60}
+                  value={transactionTime}
+                  onChange={(e) => setTransactionTime(e.target.value)}
+                  disabled={!includeTime}
+                  className="ml-auto w-[130px] border-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className={cn("space-y-2", interval === "ONCE" && "lg:col-span-2")}>
             <label className="text-sm text-muted-foreground">Interval</label>
             <SafeDialogSelect
               value={interval}
@@ -367,79 +447,6 @@ function FormContent({
               <SelectItem value="QUARTERLY">Quarterly</SelectItem>
               <SelectItem value="YEARLY">Yearly</SelectItem>
             </SafeDialogSelect>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Transaction day</label>
-            <Popover
-              open={isTransactionDatePopoverOpen}
-              onOpenChange={(open) => {
-                setIsTransactionDatePopoverOpen(open);
-                if (open) {
-                  document.body.dataset.radixSelectOpen = "true";
-                } else {
-                  delete document.body.dataset.radixSelectOpen;
-                }
-              }}
-            >
-              <PopoverTrigger asChild>
-                <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
-                  <CalendarIcon className="h-4 w-4" />
-                  {formatTransactionDateLabel(transactionDate)}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  className="rounded-md"
-                  mode="single"
-                  selected={transactionDate}
-                  onSelect={(date) => {
-                    if (date) setTransactionDate(date);
-                    setIsTransactionDatePopoverOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Optional time</label>
-            <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-              <input
-                id="include-time"
-                type="checkbox"
-                checked={includeTime}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setIncludeTime(checked);
-                  if (!checked) setTransactionTime("");
-                }}
-                className="h-4 w-4 rounded border-input"
-              />
-              <label htmlFor="include-time" className="text-sm text-muted-foreground">
-                Set a specific time
-              </label>
-              <Input
-                type="time"
-                step={60}
-                value={transactionTime}
-                onChange={(e) => setTransactionTime(e.target.value)}
-                disabled={!includeTime}
-                className="ml-auto w-[130px]"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Booking</label>
-            <label className="flex items-center gap-3 rounded-md border px-3 py-2">
-              <Checkbox
-                checked={pending}
-                onCheckedChange={(checked) => setPending(checked === true)}
-              />
-              <span className="text-sm font-medium">Mark as pending</span>
-            </label>
           </div>
 
           {interval !== "ONCE" ? (
@@ -576,7 +583,7 @@ export default function CreateTransactionDialog({
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent
-          className="w-full max-w-4xl rounded-2xl border bg-background p-5 shadow-xl"
+          className="w-full max-w-2xl rounded-2xl border bg-background p-5 shadow-xl"
           style={{ overflow: "visible" }}
         >
           <MorphingDialogTitle className="text-xl">Create Transaction</MorphingDialogTitle>
