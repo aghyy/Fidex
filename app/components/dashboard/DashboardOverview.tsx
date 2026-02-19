@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   Bar,
@@ -22,6 +22,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { renderIconByName } from "@/utils/icons";
 import { useAtomValue } from "jotai";
 import { profileAtom } from "@/state/profile";
+import {
+  MorphingPopover,
+  MorphingPopoverContent,
+  MorphingPopoverTrigger,
+} from "@/components/motion-primitives/morphing-popover";
+import { SlidersHorizontal } from "lucide-react";
 
 type DashboardTransaction = {
   id: string;
@@ -95,15 +101,58 @@ function getRange(mode: PeriodMode, monthValue: string, yearValue: string) {
   };
 }
 
+function SafePopoverSelect({
+  value,
+  onValueChange,
+  placeholder,
+  children,
+  className,
+  disabled,
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  children: ReactNode;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Select
+      value={value}
+      onValueChange={onValueChange}
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) {
+          document.body.dataset.radixSelectOpen = "true";
+        }
+      }}
+    >
+      <SelectTrigger className={className} disabled={disabled}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent data-keep-popover-open="true">{children}</SelectContent>
+    </Select>
+  );
+}
+
 export default function DashboardOverview() {
   const categoryListDefaultLimit = 5;
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
-  const [periodMode, setPeriodMode] = useState<PeriodMode>("month");
-  const [selectedMonth, setSelectedMonth] = useState(
+  const [appliedPeriodMode, setAppliedPeriodMode] = useState<PeriodMode>("month");
+  const [appliedSelectedMonth, setAppliedSelectedMonth] = useState(
     `${currentYear}-${String(currentMonth).padStart(2, "0")}`
   );
-  const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const [appliedSelectedYear, setAppliedSelectedYear] = useState(String(currentYear));
+  const [draftPeriodMode, setDraftPeriodMode] = useState<PeriodMode>("month");
+  const [draftSelectedMonth, setDraftSelectedMonth] = useState(
+    `${currentYear}-${String(currentMonth).padStart(2, "0")}`
+  );
+  const [draftSelectedYear, setDraftSelectedYear] = useState(String(currentYear));
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -122,12 +171,12 @@ export default function DashboardOverview() {
     () => getPeriodOptionsFromTransactions(allTransactions),
     [allTransactions]
   );
-  const selectedMonthPart = selectedMonth.split("-")[1] ?? "";
-  const monthOptionsForSelectedYear = periodOptions.monthsByYear[selectedYear] ?? [];
+  const draftSelectedMonthPart = draftSelectedMonth.split("-")[1] ?? "";
+  const draftMonthOptionsForSelectedYear = periodOptions.monthsByYear[draftSelectedYear] ?? [];
 
   const range = useMemo(
-    () => getRange(periodMode, selectedMonth, selectedYear),
-    [periodMode, selectedMonth, selectedYear]
+    () => getRange(appliedPeriodMode, appliedSelectedMonth, appliedSelectedYear),
+    [appliedPeriodMode, appliedSelectedMonth, appliedSelectedYear]
   );
   const balanceCutoff = useMemo(() => {
     const now = new Date();
@@ -192,19 +241,53 @@ export default function DashboardOverview() {
   }, [range.start, balanceCutoff, includePending]);
 
   useEffect(() => {
-    if (periodOptions.years.length > 0 && !periodOptions.years.includes(selectedYear)) {
-      setSelectedYear(periodOptions.years[0]);
+    if (periodOptions.years.length === 0) return;
+    if (!periodOptions.years.includes(appliedSelectedYear)) {
+      setAppliedSelectedYear(periodOptions.years[0]);
     }
-  }, [periodOptions.years, selectedYear]);
+    if (!periodOptions.years.includes(draftSelectedYear)) {
+      setDraftSelectedYear(periodOptions.years[0]);
+    }
+  }, [periodOptions.years, appliedSelectedYear, draftSelectedYear]);
 
   useEffect(() => {
-    if (periodMode !== "month") return;
-    const months = periodOptions.monthsByYear[selectedYear] ?? [];
+    if (appliedPeriodMode !== "month") return;
+    const months = periodOptions.monthsByYear[appliedSelectedYear] ?? [];
     if (months.length === 0) return;
-    if (!selectedMonth.startsWith(`${selectedYear}-`) || !months.includes(selectedMonthPart)) {
-      setSelectedMonth(`${selectedYear}-${months[0]}`);
+    const appliedMonthPart = appliedSelectedMonth.split("-")[1] ?? "";
+    if (!appliedSelectedMonth.startsWith(`${appliedSelectedYear}-`) || !months.includes(appliedMonthPart)) {
+      setAppliedSelectedMonth(`${appliedSelectedYear}-${months[0]}`);
     }
-  }, [periodMode, periodOptions.monthsByYear, selectedYear, selectedMonth, selectedMonthPart]);
+  }, [appliedPeriodMode, periodOptions.monthsByYear, appliedSelectedYear, appliedSelectedMonth]);
+
+  useEffect(() => {
+    if (draftPeriodMode !== "month") return;
+    const months = periodOptions.monthsByYear[draftSelectedYear] ?? [];
+    if (months.length === 0) return;
+    if (!draftSelectedMonth.startsWith(`${draftSelectedYear}-`) || !months.includes(draftSelectedMonthPart)) {
+      setDraftSelectedMonth(`${draftSelectedYear}-${months[0]}`);
+    }
+  }, [draftPeriodMode, periodOptions.monthsByYear, draftSelectedYear, draftSelectedMonth, draftSelectedMonthPart]);
+
+  const applyDraftFilters = () => {
+    let nextYear = draftSelectedYear;
+    if (periodOptions.years.length > 0 && !periodOptions.years.includes(nextYear)) {
+      nextYear = periodOptions.years[0];
+    }
+    let nextMonth = draftSelectedMonth;
+    if (draftPeriodMode === "month") {
+      const months = periodOptions.monthsByYear[nextYear] ?? [];
+      const monthPart = nextMonth.split("-")[1] ?? "";
+      if (months.length > 0 && (!nextMonth.startsWith(`${nextYear}-`) || !months.includes(monthPart))) {
+        nextMonth = `${nextYear}-${months[0]}`;
+      }
+    }
+
+    setAppliedPeriodMode(draftPeriodMode);
+    setAppliedSelectedYear(nextYear);
+    setAppliedSelectedMonth(nextMonth);
+    setIsFilterPopoverOpen(false);
+  };
 
   const categoryById = useMemo(() => {
     const map = new Map<string, Category>();
@@ -232,7 +315,7 @@ export default function DashboardOverview() {
 
   const cashflowChartData = useMemo(() => {
     const bucket = new Map<string, { label: string; income: number; expense: number; net: number }>();
-    if (periodMode === "month") {
+    if (appliedPeriodMode === "month") {
       const daysInMonth = new Date(range.start.getFullYear(), range.start.getMonth() + 1, 0).getDate();
       for (let day = 1; day <= daysInMonth; day += 1) {
         const key = String(day);
@@ -276,7 +359,7 @@ export default function DashboardOverview() {
     }
 
     return Array.from(bucket.values());
-  }, [transactions, periodMode, range.start]);
+  }, [transactions, appliedPeriodMode, range.start]);
 
   const categorySpendData = useMemo(() => {
     const spendMap = new Map<
@@ -464,78 +547,115 @@ export default function DashboardOverview() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border bg-card p-4 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Financial Overview</h2>
-            <p className="text-sm text-muted-foreground">
-              Filtered for <span className="font-medium">{range.label}</span>. Currently only EUR is available.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="inline-flex rounded-lg border bg-background p-1">
-              <Button
-                type="button"
-                variant={periodMode === "month" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setPeriodMode("month")}
-              >
-                Month
-              </Button>
-              <Button
-                type="button"
-                variant={periodMode === "year" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setPeriodMode("year")}
-              >
-                Year
-              </Button>
-            </div>
-            {periodMode === "month" ? (
-              <div className="flex gap-2">
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
+    <div className="relative space-y-6">
+      <div className="fixed right-6 top-6 z-40">
+        <MorphingPopover
+          open={isFilterPopoverOpen}
+          onOpenChange={(open) => {
+            setIsFilterPopoverOpen(open);
+            if (open) {
+              setDraftPeriodMode(appliedPeriodMode);
+              setDraftSelectedYear(appliedSelectedYear);
+              setDraftSelectedMonth(appliedSelectedMonth);
+            }
+          }}
+        >
+          <MorphingPopoverTrigger
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/25 text-white shadow-md backdrop-blur-md transition-colors hover:bg-white/35 dark:border-white/30 dark:bg-white/10 dark:hover:bg-white/20"
+            aria-label="Open dashboard filters"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </MorphingPopoverTrigger>
+          <MorphingPopoverContent className="right-0 top-0 w-[320px] p-3">
+            <div className="space-y-3" data-keep-popover-open="true">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Filters</p>
+              <div className="inline-flex rounded-lg border bg-background p-1">
+                <Button
+                  type="button"
+                  variant={draftPeriodMode === "month" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setDraftPeriodMode("month")}
+                >
+                  Month
+                </Button>
+                <Button
+                  type="button"
+                  variant={draftPeriodMode === "year" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setDraftPeriodMode("year")}
+                >
+                  Year
+                </Button>
+              </div>
+              {draftPeriodMode === "month" ? (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <SafePopoverSelect
+                    value={draftSelectedYear}
+                    onValueChange={setDraftSelectedYear}
+                    placeholder="Select year"
+                    className="h-10 bg-background"
+                    disabled={periodOptions.years.length === 0}
+                  >
                     {periodOptions.years.map((y) => (
                       <SelectItem key={y} value={y}>
                         {y}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={selectedMonthPart}
-                  onValueChange={(month) => setSelectedMonth(`${selectedYear}-${month}`)}
-                >
-                  <SelectTrigger className="h-10 w-[180px] bg-background" disabled={monthOptionsForSelectedYear.length === 0}>
-                    <SelectValue placeholder="Select month" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monthOptionsForSelectedYear.map((month) => (
+                  </SafePopoverSelect>
+                  <SafePopoverSelect
+                    value={draftSelectedMonthPart}
+                    onValueChange={(month) => setDraftSelectedMonth(`${draftSelectedYear}-${month}`)}
+                    placeholder="Select month"
+                    className="h-10 bg-background"
+                    disabled={draftMonthOptionsForSelectedYear.length === 0}
+                  >
+                    {draftMonthOptionsForSelectedYear.map((month) => (
                       <SelectItem key={month} value={month}>
                         {new Date(2000, Number(month) - 1, 1).toLocaleString(undefined, { month: "long" })}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
+                  </SafePopoverSelect>
+                </div>
+              ) : (
+                <SafePopoverSelect
+                  value={draftSelectedYear}
+                  onValueChange={setDraftSelectedYear}
+                  placeholder="Select year"
+                  className="h-10 bg-background"
+                  disabled={periodOptions.years.length === 0}
+                >
                   {periodOptions.years.map((y) => (
                     <SelectItem key={y} value={y}>
                       {y}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            )}
+                </SafePopoverSelect>
+              )}
+              <div className="flex justify-end gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsFilterPopoverOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="button" size="sm" onClick={applyDraftFilters}>
+                  Apply filters
+                </Button>
+              </div>
+            </div>
+          </MorphingPopoverContent>
+        </MorphingPopover>
+      </div>
+
+      <div className="rounded-2xl border bg-card p-4 sm:p-6">
+        <div>
+          <div>
+            <h2 className="text-lg font-semibold">Financial Overview</h2>
+            <p className="text-sm text-muted-foreground">
+              Filtered for <span className="font-medium">{range.label}</span>. Currently only EUR is available.
+            </p>
           </div>
         </div>
 

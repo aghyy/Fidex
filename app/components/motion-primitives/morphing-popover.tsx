@@ -221,6 +221,11 @@ function MorphingPopoverContent({
     if (target && target.closest('[data-keep-popover-open="true"]')) {
       return;
     }
+    // Keep popover open while a nested Radix Select is handling selection/close.
+    if (document.body.dataset.radixSelectOpen === 'true') {
+      delete document.body.dataset.radixSelectOpen;
+      return;
+    }
     context.close();
   });
 
