@@ -28,7 +28,7 @@ function FormContent() {
   const [newAccountNumber, setNewAccountNumber] = useState("");
   const [newColor, setNewColor] = useState<string>(DEFAULT_COLOR_SWATCHES[0]);
   const [newIcon, setNewIcon] = useState<string>("IconQuestionMark");
-  const [newBalance, setNewBalance] = useState<number>(0);
+  const [newBalanceInput, setNewBalanceInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +49,7 @@ function FormContent() {
           accountNumber: newAccountNumber,
           color: newColor,
           icon: newIcon || null,
-          balance: newBalance,
+          balance: Number(newBalanceInput.replace(",", ".")) || 0,
           currency: "EUR",
         }),
       });
@@ -60,8 +60,10 @@ function FormContent() {
         window.dispatchEvent(new CustomEvent("account:created", { detail: created }));
       } catch { }
       setNewName("");
+      setNewAccountNumber("");
       setNewIcon("IconQuestionMark");
       setNewColor(DEFAULT_COLOR_SWATCHES[0]);
+      setNewBalanceInput("");
       // Close dialog after successful creation
       setIsOpen(false);
     } catch (e) {
@@ -108,16 +110,28 @@ function FormContent() {
       </div>
       <div>
         <label className="text-sm text-muted-foreground" htmlFor="new-account-balance">
-          Balance
+          Starting balance
         </label>
-        <input
-          id="new-account-balance"
-          value={newBalance}
-          onChange={(e) => setNewBalance(Number(e.target.value))}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2"
-          placeholder="e.g. 1000.00"
-          type="number"
-        />
+        <div className="relative mt-1">
+          <input
+            id="new-account-balance"
+            value={newBalanceInput}
+            onChange={(e) => {
+              const next = e.target.value.replace(",", ".");
+              if (/^\d*\.?\d{0,2}$/.test(next)) {
+                setNewBalanceInput(next);
+              }
+            }}
+            className="w-full rounded-md border bg-background px-3 py-2 pr-12 text-base font-medium tabular-nums"
+            placeholder="0.00"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+            EUR
+          </span>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
       <div>

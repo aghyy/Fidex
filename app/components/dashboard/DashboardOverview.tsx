@@ -209,6 +209,11 @@ export default function DashboardOverview() {
     };
   }, [transactions]);
 
+  const netWorth = useMemo(
+    () => accounts.reduce((sum, account) => sum + account.balance, 0),
+    [accounts]
+  );
+
   const cashflowChartData = useMemo(() => {
     const bucket = new Map<string, { label: string; income: number; expense: number; net: number }>();
     if (appliedPeriodMode === "month") {
@@ -417,6 +422,12 @@ export default function DashboardOverview() {
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-xl border bg-background p-3">
+            <p className="text-xs text-muted-foreground">Net Worth</p>
+            <p className={`text-lg font-semibold ${netWorth >= 0 ? "text-green-600" : "text-red-600"}`}>
+              EUR {netWorth.toLocaleString()}
+            </p>
+          </div>
+          <div className="rounded-xl border bg-background p-3">
             <p className="text-xs text-muted-foreground">Income</p>
             <p className="text-lg font-semibold text-green-600">EUR {totals.income.toLocaleString()}</p>
           </div>
@@ -429,10 +440,6 @@ export default function DashboardOverview() {
             <p className={`text-lg font-semibold ${totals.net >= 0 ? "text-green-600" : "text-red-600"}`}>
               EUR {totals.net.toLocaleString()}
             </p>
-          </div>
-          <div className="rounded-xl border bg-background p-3">
-            <p className="text-xs text-muted-foreground">Transfers</p>
-            <p className="text-lg font-semibold">EUR {totals.transfer.toLocaleString()}</p>
           </div>
         </div>
       </div>
