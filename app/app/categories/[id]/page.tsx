@@ -422,7 +422,7 @@ export default function CategoryDetailPage() {
               </div>
               <div>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Currency</p>
-                <p className="font-medium">EUR (currently only supported)</p>
+                <p className="font-medium">EUR</p>
               </div>
               <div>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Spent</p>

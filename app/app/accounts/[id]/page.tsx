@@ -196,7 +196,6 @@ function EditAccountForm({
           onChange={setColor}
         />
       </div>
-      <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
       <div className="flex justify-end gap-2">
         <button
@@ -498,7 +497,7 @@ export default function AccountDetailPage() {
               </div>
               <div>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Currency</p>
-                <p className="font-medium">EUR (currently only supported)</p>
+                <p className="font-medium">EUR</p>
               </div>
             </div>
             </div>

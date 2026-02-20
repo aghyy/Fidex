@@ -415,7 +415,7 @@ export default function DashboardOverview() {
           <div>
             <h2 className="text-lg font-semibold">Financial Overview</h2>
             <p className="text-sm text-muted-foreground">
-              Filtered for <span className="font-medium">{range.label}</span>. Currently only EUR is available.
+              Filtered for <span className="font-medium">{range.label}</span>.
             </p>
           </div>
         </div>

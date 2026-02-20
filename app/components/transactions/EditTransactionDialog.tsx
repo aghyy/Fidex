@@ -598,7 +598,6 @@ function FormContent({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-        <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
         <div className="flex items-center gap-2">
           <Button
             type="button"

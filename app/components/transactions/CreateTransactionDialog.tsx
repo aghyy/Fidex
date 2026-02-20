@@ -565,7 +565,6 @@ function FormContent({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-        <p className="text-xs text-muted-foreground">Currently only EUR is available.</p>
         <Button
           type="submit"
           className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
