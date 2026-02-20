@@ -10,7 +10,7 @@ import {
   MorphingDialogDescription,
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
-import { CalendarIcon, Check, FileImage, FileText, Plus } from "lucide-react";
+import { CalendarIcon, Check, Clock, FileImage, FileText, Plus } from "lucide-react";
 import { TransactionType, TransactionInterval } from "@/types/transactions";
 import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
@@ -22,6 +22,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { TimePickerInput } from "../ui/time-picker-input";
+import { Label } from "../ui/label";
 
 interface CreateTransactionDialogProps {
   preselectedCategory?: string;
@@ -70,6 +72,12 @@ function FormContent({
   preselectedCategory?: string;
   preselectedAccount?: string;
 }) {
+  const getStartOfToday = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
   const { setIsOpen } = useMorphingDialog();
   const [originAccountId, setOriginAccountId] = useState<string>(preselectedAccount || "");
   const [targetAccountId, setTargetAccountId] = useState<string>("");
@@ -78,9 +86,8 @@ function FormContent({
   const [interval, setInterval] = useState<TransactionInterval>("ONCE");
   const [type, setType] = useState<TransactionType>("EXPENSE");
   const [category, setCategory] = useState<string>(preselectedCategory || "");
-  const [transactionDate, setTransactionDate] = useState<Date>(new Date());
+  const [transactionDate, setTransactionDate] = useState<Date>(getStartOfToday());
   const [includeTime, setIncludeTime] = useState(false);
-  const [transactionTime, setTransactionTime] = useState("");
   const [pending, setPending] = useState(false);
   const [expiresDate, setExpiresDate] = useState<Date | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
@@ -95,6 +102,10 @@ function FormContent({
   const isTransfer = type === "TRANSFER";
   const amount = Number(amountInput.replace(",", "."));
   const normalizedAmount = Number.isFinite(amount) ? amount : 0;
+
+  const minuteRef = React.useRef<HTMLInputElement>(null);
+  const hourRef = React.useRef<HTMLInputElement>(null);
+  const secondRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -150,18 +161,13 @@ function FormContent({
     }
   }, [categories, preselectedCategory]);
 
-  function combineDateAndOptionalTime(baseDate: Date, timeValue: string, include: boolean) {
+  function combineDateAndOptionalTime(baseDate: Date, include: boolean) {
     const combined = new Date(baseDate);
-    if (!include || !timeValue) {
+    if (!include) {
       combined.setHours(0, 0, 0, 0);
       return combined;
     }
-    const [hours, minutes] = timeValue.split(":").map((part) => Number(part));
-    if (Number.isFinite(hours) && Number.isFinite(minutes)) {
-      combined.setHours(hours, minutes, 0, 0);
-    } else {
-      combined.setHours(0, 0, 0, 0);
-    }
+    // Keep HH:mm:ss from time picker when enabled.
     return combined;
   }
 
@@ -187,7 +193,7 @@ function FormContent({
           type,
           category,
           pending,
-          occurredAt: combineDateAndOptionalTime(transactionDate, transactionTime, includeTime).toISOString(),
+          occurredAt: combineDateAndOptionalTime(transactionDate, includeTime).toISOString(),
           expires: expiresDate ? expiresDate.toISOString() : undefined,
         }),
       });
@@ -217,9 +223,8 @@ function FormContent({
       setInterval("ONCE");
       setType("EXPENSE");
       setCategory(preselectedCategory || "");
-      setTransactionDate(new Date());
+      setTransactionDate(getStartOfToday());
       setIncludeTime(false);
-      setTransactionTime("");
       setPending(false);
       setExpiresDate(undefined);
       setSelectedDocumentIds([]);
@@ -389,7 +394,7 @@ function FormContent({
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 w-full justify-start text-left font-normal focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
+                    className="h-full min-h-10 w-full justify-start text-left font-normal focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
                   >
                     <CalendarIcon className="h-4 w-4" />
                     {formatTransactionDateLabel(transactionDate)}
@@ -409,28 +414,71 @@ function FormContent({
                 </PopoverContent>
               </Popover>
 
-              <div className="flex h-10 items-center gap-3 rounded-md border px-3 py-2">
+              <div className="flex items-center gap-3 rounded-md border px-3 py-2">
                 <Checkbox
                   id="include-time"
                   checked={includeTime}
                   onCheckedChange={(checked) => {
                     const isChecked = checked === true;
                     setIncludeTime(isChecked);
-                    if (!isChecked) setTransactionTime("");
+                    if (!isChecked) {
+                      setTransactionDate((prev) => {
+                        const next = new Date(prev);
+                        next.setHours(0, 0, 0, 0);
+                        return next;
+                      });
+                    }
                   }}
                   className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
                 />
                 <label htmlFor="include-time" className="text-sm text-muted-foreground whitespace-nowrap">
                   Time
                 </label>
-                <Input
-                  type="time"
-                  step={60}
-                  value={transactionTime}
-                  onChange={(e) => setTransactionTime(e.target.value)}
-                  disabled={!includeTime}
-                  className="ml-auto w-[130px] border-none focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
-                />
+                <div className="flex items-end gap-2">
+                  <div className="grid gap-1 text-center">
+                    <Label htmlFor="hours" className="text-xs">
+                      Hours
+                    </Label>
+                    <TimePickerInput
+                      picker="hours"
+                      date={transactionDate}
+                      setDate={(date) => date && setTransactionDate(date)}
+                      disabled={!includeTime}
+                      ref={hourRef}
+                      onRightFocus={() => minuteRef.current?.focus()}
+                    />
+                  </div>
+                  <div className="grid gap-1 text-center">
+                    <Label htmlFor="minutes" className="text-xs">
+                      Minutes
+                    </Label>
+                    <TimePickerInput
+                      picker="minutes"
+                      date={transactionDate}
+                      setDate={(date) => date && setTransactionDate(date)}
+                      disabled={!includeTime}
+                      ref={minuteRef}
+                      onLeftFocus={() => hourRef.current?.focus()}
+                      onRightFocus={() => secondRef.current?.focus()}
+                    />
+                  </div>
+                  <div className="grid gap-1 text-center">
+                    <Label htmlFor="seconds" className="text-xs">
+                      Seconds
+                    </Label>
+                    <TimePickerInput
+                      picker="seconds"
+                      date={transactionDate}
+                      setDate={(date) => date && setTransactionDate(date)}
+                      disabled={!includeTime}
+                      ref={secondRef}
+                      onLeftFocus={() => minuteRef.current?.focus()}
+                    />
+                  </div>
+                  <div className="flex h-10 items-center">
+                    <Clock className="ml-2 h-4 w-4" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -564,7 +612,7 @@ function FormContent({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t pt-3">
         <Button
           type="submit"
           className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
