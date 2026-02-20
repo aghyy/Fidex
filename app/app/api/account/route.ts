@@ -8,22 +8,12 @@ const account = (prisma as unknown as { account: AccountDelegate }).account;
 
 export const runtime = "nodejs";
 
-function toJsonSafe<T>(value: T): T {
-    if (value === null || value === undefined) return value;
-    if (typeof value === "bigint") return (value.toString() as unknown) as T;
-    if (Array.isArray(value)) return (value.map((v) => toJsonSafe(v)) as unknown) as T;
-    if (typeof value === "object") {
-        const maybeDecimal = value as unknown as { toJSON?: () => unknown; toString?: () => string };
-        if (typeof maybeDecimal?.toJSON === "function") {
-            return (maybeDecimal.toJSON() as unknown) as T;
-        }
-        const result: Record<string, unknown> = {};
-        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-            result[k] = toJsonSafe(v);
-        }
-        return (result as unknown) as T;
+function normalizeAccount<T extends { balance?: number | bigint }>(record: T): T {
+    if (!record || typeof record !== "object") return record;
+    if (typeof record.balance === "bigint") {
+        return { ...record, balance: Number(record.balance) };
     }
-    return value;
+    return record;
 }
 
 export async function GET() {
@@ -38,7 +28,7 @@ export async function GET() {
             orderBy: { name: "asc" },
             select: { id: true, name: true, accountNumber: true, color: true, icon: true, balance: true, currency: true },
         });
-        return NextResponse.json({ accounts: toJsonSafe(accounts) });
+        return NextResponse.json({ accounts: accounts.map((item) => normalizeAccount(item)) });
     } catch (error) {
         console.error("Error fetching accounts:", error);
         return NextResponse.json({ error: "Failed to fetch accounts" }, { status: 500 });
@@ -73,8 +63,8 @@ export async function POST(request: Request) {
         } as const;
         
         const created = await account.create({ data });
-        
-        return NextResponse.json({ account: toJsonSafe(created) }, { status: 201 });
+
+        return NextResponse.json({ account: normalizeAccount(created) }, { status: 201 });
     } catch (error: unknown) {
         const e = error as { code?: string } | undefined;
         if (e?.code === "P2002") {

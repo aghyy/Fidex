@@ -153,14 +153,14 @@ function FormContent({
   function combineDateAndOptionalTime(baseDate: Date, timeValue: string, include: boolean) {
     const combined = new Date(baseDate);
     if (!include || !timeValue) {
-      combined.setHours(12, 0, 0, 0);
+      combined.setHours(0, 0, 0, 0);
       return combined;
     }
     const [hours, minutes] = timeValue.split(":").map((part) => Number(part));
     if (Number.isFinite(hours) && Number.isFinite(minutes)) {
       combined.setHours(hours, minutes, 0, 0);
     } else {
-      combined.setHours(12, 0, 0, 0);
+      combined.setHours(0, 0, 0, 0);
     }
     return combined;
   }

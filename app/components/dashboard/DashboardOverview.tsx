@@ -34,7 +34,6 @@ type DashboardTransaction = {
 };
 
 type PeriodMode = "month" | "year";
-const BALANCE_DISPLAY_DIVISOR = 10;
 
 function parseAmount(value: string | number): number {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
@@ -43,7 +42,7 @@ function parseAmount(value: string | number): number {
 }
 
 function formatDisplayedBalance(value: number): string {
-  return (value / BALANCE_DISPLAY_DIVISOR).toLocaleString(undefined, {
+  return value.toLocaleString(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
@@ -109,8 +108,6 @@ export default function DashboardOverview() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<DashboardTransaction[]>([]);
-  const [transactionsAfterCutoff, setTransactionsAfterCutoff] = useState<DashboardTransaction[]>([]);
-  const [pendingTransactionsUntilCutoff, setPendingTransactionsUntilCutoff] = useState<DashboardTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllSpendingCategories, setShowAllSpendingCategories] = useState(false);
@@ -141,43 +138,26 @@ export default function DashboardOverview() {
           to: balanceCutoff.toISOString(),
           includePending: String(includePending),
         });
-        const afterCutoffParams = new URLSearchParams({
-          from: new Date(balanceCutoff.getTime() + 1).toISOString(),
-          includePending: "false",
-        });
-        const pendingUntilCutoffParams = new URLSearchParams({
-          to: balanceCutoff.toISOString(),
-          pendingOnly: "true",
-        });
-
-        const [accountsRes, categoriesRes, txRes, txAfterCutoffRes, allTxRes, pendingTxRes] = await Promise.all([
+        const [accountsRes, categoriesRes, txRes, allTxRes] = await Promise.all([
           fetch("/api/account", { credentials: "include" }),
           fetch("/api/category", { credentials: "include" }),
           fetch(`/api/transaction?${txParams.toString()}`, { credentials: "include" }),
-          fetch(`/api/transaction?${afterCutoffParams.toString()}`, { credentials: "include" }),
           fetch(`/api/transaction?${new URLSearchParams({ includePending: String(includePending) }).toString()}`, { credentials: "include" }),
-          includePending
-            ? fetch(`/api/transaction?${pendingUntilCutoffParams.toString()}`, { credentials: "include" })
-            : Promise.resolve(new Response(JSON.stringify({ transactions: [] }), { status: 200 })),
         ]);
 
-        if (!accountsRes.ok || !categoriesRes.ok || !txRes.ok || !txAfterCutoffRes.ok || !allTxRes.ok || !pendingTxRes.ok) {
+        if (!accountsRes.ok || !categoriesRes.ok || !txRes.ok || !allTxRes.ok) {
           throw new Error("Failed to load dashboard data");
         }
 
         const accountsData = await accountsRes.json();
         const categoriesData = await categoriesRes.json();
         const txData = await txRes.json();
-        const txAfterCutoffData = await txAfterCutoffRes.json();
         const allTxData = await allTxRes.json();
-        const pendingTxData = await pendingTxRes.json();
 
         setAccounts(accountsData.accounts ?? []);
         setCategories(categoriesData.categories ?? []);
         setTransactions(txData.transactions ?? []);
-        setTransactionsAfterCutoff(txAfterCutoffData.transactions ?? []);
         setAllTransactions(allTxData.transactions ?? []);
-        setPendingTransactionsUntilCutoff(pendingTxData.transactions ?? []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard data");
       } finally {
@@ -391,68 +371,13 @@ export default function DashboardOverview() {
       }
     }
 
-    const balanceAdjustments = new Map<string, number>();
-    for (const tx of transactionsAfterCutoff) {
-      const amount = parseAmount(tx.amount);
-      if (tx.type === "EXPENSE") {
-        balanceAdjustments.set(
-          tx.originAccountId,
-          (balanceAdjustments.get(tx.originAccountId) ?? 0) + amount
-        );
-      } else if (tx.type === "INCOME") {
-        balanceAdjustments.set(
-          tx.originAccountId,
-          (balanceAdjustments.get(tx.originAccountId) ?? 0) - amount
-        );
-      } else {
-        balanceAdjustments.set(
-          tx.originAccountId,
-          (balanceAdjustments.get(tx.originAccountId) ?? 0) + amount
-        );
-        balanceAdjustments.set(
-          tx.targetAccountId,
-          (balanceAdjustments.get(tx.targetAccountId) ?? 0) - amount
-        );
-      }
-    }
-
-    const pendingAdjustments = new Map<string, number>();
-    if (includePending) {
-      for (const tx of pendingTransactionsUntilCutoff) {
-        const amount = parseAmount(tx.amount);
-        if (tx.type === "EXPENSE") {
-          pendingAdjustments.set(
-            tx.originAccountId,
-            (pendingAdjustments.get(tx.originAccountId) ?? 0) - amount
-          );
-        } else if (tx.type === "INCOME") {
-          pendingAdjustments.set(
-            tx.originAccountId,
-            (pendingAdjustments.get(tx.originAccountId) ?? 0) + amount
-          );
-        } else {
-          pendingAdjustments.set(
-            tx.originAccountId,
-            (pendingAdjustments.get(tx.originAccountId) ?? 0) - amount
-          );
-          pendingAdjustments.set(
-            tx.targetAccountId,
-            (pendingAdjustments.get(tx.targetAccountId) ?? 0) + amount
-          );
-        }
-      }
-    }
-
     return Array.from(stats.values())
       .map((row) => ({
         ...row,
-        displayedBalance:
-          row.account.balance +
-          (balanceAdjustments.get(row.account.id) ?? 0) +
-          (pendingAdjustments.get(row.account.id) ?? 0),
+        displayedBalance: row.account.balance,
       }))
       .sort((a, b) => a.account.name.localeCompare(b.account.name));
-  }, [accounts, transactions, transactionsAfterCutoff, includePending, pendingTransactionsUntilCutoff]);
+  }, [accounts, transactions]);
 
   if (loading) {
     return <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">Loading dashboard...</div>;
@@ -566,7 +491,7 @@ export default function DashboardOverview() {
                   <p className={`text-sm font-semibold ${row.displayedBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
                     EUR {formatDisplayedBalance(row.displayedBalance)}
                   </p>
-                  <p className="text-xs text-muted-foreground">As of {balanceCutoff.toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground">Current balance</p>
                 </div>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
