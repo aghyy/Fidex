@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/skeleton";
 import TransactionsManager from "@/components/transactions/TransactionsManager";
 import TransactionFAB from "@/components/transactions/TransactionFAB";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PeriodFilterPopover from "@/components/filters/PeriodFilterPopover";
 
 type PeriodMode = "month" | "year";
 type Tx = { occurredAt?: string; createdAt: string };
@@ -86,7 +85,6 @@ export default function TransactionsPage() {
     [allTransactions]
   );
   const selectedMonthPart = selectedMonth.split("-")[1] ?? "";
-  const monthOptionsForSelectedYear = periodOptions.monthsByYear[selectedYear] ?? [];
   const range = useMemo(
     () => getRange(periodMode, selectedMonth, selectedYear),
     [periodMode, selectedMonth, selectedYear]
@@ -133,72 +131,25 @@ export default function TransactionsPage() {
   return (
     <>
       <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold mb-6">Transactions</h1>
-        <p className="mb-4 text-sm text-muted-foreground">Currently only EUR is available.</p>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="inline-flex rounded-lg border bg-background p-1">
-            <Button
-              type="button"
-              variant={periodMode === "month" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setPeriodMode("month")}
-            >
-              Month
-            </Button>
-            <Button
-              type="button"
-              variant={periodMode === "year" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setPeriodMode("year")}
-            >
-              Year
-            </Button>
+        <div className="mb-6 flex items-center">
+          <h1 className="text-2xl font-bold">Transactions</h1>
+          <div className="ml-auto">
+            <PeriodFilterPopover
+              appliedMode={periodMode}
+              appliedYear={selectedYear}
+              appliedMonth={selectedMonth}
+              years={periodOptions.years}
+              monthsByYear={periodOptions.monthsByYear}
+              triggerAriaLabel="Open transaction filters"
+              onApply={({ mode, year, month }) => {
+                setPeriodMode(mode);
+                setSelectedYear(year);
+                setSelectedMonth(month);
+              }}
+            />
           </div>
-          {periodMode === "month" ? (
-            <div className="flex gap-2">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {periodOptions.years.map((y) => (
-                    <SelectItem key={y} value={y}>
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedMonthPart}
-                onValueChange={(month) => setSelectedMonth(`${selectedYear}-${month}`)}
-              >
-                <SelectTrigger className="h-10 w-[180px] bg-background" disabled={monthOptionsForSelectedYear.length === 0}>
-                  <SelectValue placeholder="Select month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptionsForSelectedYear.map((month) => (
-                    <SelectItem key={month} value={month}>
-                      {new Date(2000, Number(month) - 1, 1).toLocaleString(undefined, { month: "long" })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="h-10 w-[140px] bg-background" disabled={periodOptions.years.length === 0}>
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
-              <SelectContent>
-                {periodOptions.years.map((y) => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
         </div>
+        <p className="mb-4 text-sm text-muted-foreground">Currently only EUR is available.</p>
         <TransactionsManager from={range.start.toISOString()} to={effectiveTo.toISOString()} />
       </div>
       <TransactionFAB />
