@@ -149,7 +149,6 @@ export default function TransactionsPage() {
             />
           </div>
         </div>
-        <p className="mb-4 text-sm text-muted-foreground">Currently only EUR is available.</p>
         <TransactionsManager from={range.start.toISOString()} to={effectiveTo.toISOString()} />
       </div>
       <TransactionFAB />
