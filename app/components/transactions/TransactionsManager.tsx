@@ -1,8 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, Calendar, ArrowRight } from "lucide-react";
+import { Trash2, Calendar, ArrowRight, FileImage, FileText, ExternalLink } from "lucide-react";
 import EditTransactionDialog from "@/components/transactions/EditTransactionDialog";
+import {
+  MorphingDialog,
+  MorphingDialogContainer,
+  MorphingDialogContent,
+  MorphingDialogDescription,
+  MorphingDialogTitle,
+  MorphingDialogTrigger,
+  useMorphingDialog,
+} from "@/components/motion-primitives/morphing-dialog";
 
 interface Transaction {
   id: string;
@@ -18,6 +27,14 @@ interface Transaction {
   createdAt: string;
   expires: string;
 }
+
+type LinkedDocument = {
+  id: string;
+  title: string | null;
+  originalFileName: string | null;
+  mimeType: string | null;
+  url: string | null;
+};
 
 interface Account {
   id: string;
@@ -37,6 +54,172 @@ interface TransactionsManagerProps {
   accountFilter?: string;
   from?: string;
   to?: string;
+}
+
+function formatDateTime(dateString?: string): string {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function TransactionDetailsDialog({
+  transaction,
+  accounts,
+  categories,
+}: {
+  transaction: Transaction;
+  accounts: Account[];
+  categories: Category[];
+}) {
+  const { isOpen } = useMorphingDialog();
+  const [linkedDocuments, setLinkedDocuments] = useState<LinkedDocument[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+
+  const originAccountName = accounts.find((a) => a.id === transaction.originAccountId)?.name ?? "Unknown account";
+  const targetAccountName = accounts.find((a) => a.id === transaction.targetAccountId)?.name ?? "Unknown account";
+  const categoryName = categories.find((c) => c.id === transaction.category)?.name ?? "Unknown category";
+  const transactionTitle =
+    (transaction.notes ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.length > 0) ?? categoryName;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setLoadingDocuments(true);
+    setDocumentsError(null);
+    void (async () => {
+      try {
+        const res = await fetch(`/api/transaction/${transaction.id}/documents`, { credentials: "include" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Failed to fetch linked documents");
+        if (!cancelled) {
+          setLinkedDocuments((data.documents ?? []) as LinkedDocument[]);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setLinkedDocuments([]);
+          setDocumentsError(err instanceof Error ? err.message : "Failed to fetch linked documents");
+        }
+      } finally {
+        if (!cancelled) setLoadingDocuments(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, transaction.id]);
+
+  return (
+    <>
+      <MorphingDialogTrigger
+        className="absolute inset-0 z-10 rounded-xl"
+        aria-label={`View transaction ${transactionTitle}`}
+      >
+        <span className="sr-only">Open transaction details</span>
+      </MorphingDialogTrigger>
+      <MorphingDialogContainer>
+        <MorphingDialogContent className="w-full max-w-2xl rounded-2xl border bg-background p-5 shadow-xl" style={{ overflow: "visible" }}>
+          <MorphingDialogTitle className="text-xl">Transaction Details</MorphingDialogTitle>
+          <MorphingDialogDescription className="text-sm text-muted-foreground">
+            Read-only transaction information.
+          </MorphingDialogDescription>
+
+          <div className="mt-4 max-h-[70vh] space-y-4 overflow-y-auto pr-1 no-scrollbar">
+            <div className="rounded-lg border p-3">
+              <p className="text-base font-semibold">{transactionTitle}</p>
+              <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                <p>
+                  <span className="text-muted-foreground">Amount:</span>{" "}
+                  <span className={transaction.type === "EXPENSE" ? "text-red-500" : transaction.type === "INCOME" ? "text-green-500" : "text-blue-500"}>
+                    EUR {Number(transaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Type:</span> {transaction.type}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Category:</span> {categoryName}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Pending:</span> {transaction.pending ? "Yes" : "No"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Interval:</span> {transaction.interval}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Occurred:</span> {formatDateTime(transaction.occurredAt || transaction.createdAt)}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Created:</span> {formatDateTime(transaction.createdAt)}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Expires:</span> {formatDateTime(transaction.expires)}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border p-3 text-sm">
+              <p className="text-muted-foreground">Accounts</p>
+              <p className="mt-1">
+                {originAccountName}
+                {transaction.type === "TRANSFER" ? ` -> ${targetAccountName}` : ""}
+              </p>
+            </div>
+
+            <div className="rounded-lg border p-3 text-sm">
+              <p className="text-muted-foreground">Notes</p>
+              <p className="mt-1 whitespace-pre-wrap">{transaction.notes?.trim() ? transaction.notes : "-"}</p>
+            </div>
+
+            <div className="rounded-lg border p-3">
+              <p className="text-sm text-muted-foreground">Linked documents</p>
+              {loadingDocuments ? (
+                <p className="mt-2 text-sm text-muted-foreground">Loading linked documents...</p>
+              ) : documentsError ? (
+                <p className="mt-2 text-sm text-red-500">{documentsError}</p>
+              ) : linkedDocuments.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">No linked documents.</p>
+              ) : (
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {linkedDocuments.map((doc) => {
+                    const isImage = doc.mimeType?.startsWith("image/");
+                    return (
+                      <a
+                        key={doc.id}
+                        href={doc.url ?? `/documents/${doc.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 rounded-md border p-2 text-sm hover:bg-accent/40"
+                      >
+                        {isImage ? (
+                          <FileImage className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <span className="min-w-0 flex-1 truncate">{doc.title || doc.originalFileName || "Untitled document"}</span>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </MorphingDialogContent>
+      </MorphingDialogContainer>
+    </>
+  );
 }
 
 export default function TransactionsManager({
@@ -210,73 +393,74 @@ export default function TransactionsManager({
   return (
     <div className="space-y-3">
       {transactions.map((transaction) => (
-        <div
-          key={transaction.id}
-          className="rounded-xl border bg-background p-4 hover:bg-accent/50 transition-colors"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{getTransactionTitle(transaction)}</span>
-                {transaction.pending ? (
-                  <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
-                    Pending
-                  </span>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                <span className={`font-semibold ${getTypeColor(transaction.type)}`}>
-                  EUR {formatAmount(transaction.amount)}
-                </span>
-                <span>•</span>
-                <span>
-                  {getAccountName(transaction.originAccountId)}
-                  {transaction.type === "TRANSFER" ? (
-                    <>
-                      {" "}
-                      <ArrowRight className="inline h-3 w-3 align-middle text-muted-foreground" />{" "}
-                      {getAccountName(transaction.targetAccountId)}
-                    </>
-                  ) : null}
-                </span>
-                <span>•</span>
-                <span className="capitalize">{transaction.type.toLowerCase()}</span>
-                {transaction.interval !== "ONCE" && (
-                  <>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {transaction.interval}
+        <MorphingDialog key={transaction.id}>
+          <div className="relative rounded-xl border bg-background p-4 transition-colors hover:bg-accent/50">
+            <TransactionDetailsDialog transaction={transaction} accounts={accounts} categories={categories} />
+
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{getTransactionTitle(transaction)}</span>
+                  {transaction.pending ? (
+                    <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
+                      Pending
                     </span>
-                  </>
+                  ) : null}
+                </div>
+                <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className={`font-semibold ${getTypeColor(transaction.type)}`}>
+                    EUR {formatAmount(transaction.amount)}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {getAccountName(transaction.originAccountId)}
+                    {transaction.type === "TRANSFER" ? (
+                      <>
+                        {" "}
+                        <ArrowRight className="inline h-3 w-3 align-middle text-muted-foreground" />{" "}
+                        {getAccountName(transaction.targetAccountId)}
+                      </>
+                    ) : null}
+                  </span>
+                  <span>•</span>
+                  <span className="capitalize">{transaction.type.toLowerCase()}</span>
+                  {transaction.interval !== "ONCE" && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {transaction.interval}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {transaction.notes && (
+                  <p className="mt-2 text-sm text-muted-foreground">{transaction.notes}</p>
                 )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {formatDate(transaction.occurredAt || transaction.createdAt)}
+                </p>
               </div>
-              {transaction.notes && (
-                <p className="text-sm text-muted-foreground mt-2">{transaction.notes}</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {formatDate(transaction.occurredAt || transaction.createdAt)}
-              </p>
-            </div>
-            <div className="ml-4 flex items-center gap-1">
-              <EditTransactionDialog
-                transaction={transaction}
-                accounts={accounts}
-                categories={categories}
-                onUpdated={(updated) =>
-                  setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-                }
-              />
-              <button
-                onClick={() => handleDelete(transaction.id)}
-                className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors"
-                aria-label="Delete transaction"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <div className="relative z-20 ml-4 flex items-center gap-1">
+                <EditTransactionDialog
+                  transaction={transaction}
+                  accounts={accounts}
+                  categories={categories}
+                  onUpdated={(updated) =>
+                    setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+                  }
+                />
+                <button
+                  onClick={() => handleDelete(transaction.id)}
+                  className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
+                  aria-label="Delete transaction"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </MorphingDialog>
       ))}
     </div>
   );
