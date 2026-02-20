@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DocumentItem, DocumentKind } from "@/types/documents";
 
 type LinkedTransaction = {
@@ -248,12 +249,11 @@ export default function DocumentDetailPage() {
                 ) : (
                   allTransactions.map((tx) => (
                     <label key={tx.id} className="flex items-start gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={selectedTransactionIds.includes(tx.id)}
-                        onChange={(e) => {
+                        onCheckedChange={(checked) => {
                           setSelectedTransactionIds((prev) =>
-                            e.target.checked ? [...prev, tx.id] : prev.filter((id) => id !== tx.id)
+                            checked === true ? [...prev, tx.id] : prev.filter((id) => id !== tx.id)
                           );
                         }}
                       />
