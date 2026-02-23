@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { flushSync } from "react-dom"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { useAtom } from "jotai"
-import { themeAtom, type ThemeMode } from "@/state/theme"
+import { themePaletteAtom, type ThemePalette } from "@/state/theme"
 
 interface AnimatedThemeTogglerProps
   extends React.ComponentPropsWithoutRef<"button"> {
@@ -17,26 +17,15 @@ export const AnimatedThemeToggler = ({
   ...props
 }: AnimatedThemeTogglerProps) => {
   const selectRef = useRef<HTMLButtonElement>(null)
-  const [theme, setTheme] = useAtom(themeAtom)
+  const [palette, setPalette] = useAtom(themePaletteAtom)
   const [isSelectOpen, setIsSelectOpen] = useState(false)
 
-  const applyTheme = useCallback((t: ThemeMode) => {
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-    const isDark = t === "dark" || (t === "system" && prefersDark)
-    document.documentElement.classList.toggle("dark", isDark)
-  }, [])
-
-  useEffect(() => {
-    applyTheme(theme)
-  }, [applyTheme, theme])
-
-  const toggleTheme = useCallback(async (next: ThemeMode) => {
+  const toggleTheme = useCallback(async (next: ThemePalette) => {
     if (!selectRef.current) return
 
     await document.startViewTransition(() => {
       flushSync(() => {
-        applyTheme(next)
-        setTheme(next)
+        setPalette(next)
       })
     }).ready
 
@@ -61,16 +50,16 @@ export const AnimatedThemeToggler = ({
         pseudoElement: "::view-transition-new(root)",
       }
     )
-  }, [duration, applyTheme, setTheme])
+  }, [duration, setPalette])
 
-  function handleChange(value: ThemeMode) {
+  function handleChange(value: ThemePalette) {
     toggleTheme(value)
   }
 
   return (
     <Select
-      value={theme}
-      onValueChange={(v) => handleChange(v as ThemeMode)}
+      value={palette}
+      onValueChange={(v) => handleChange(v as ThemePalette)}
       open={isSelectOpen}
       onOpenChange={(open) => {
         setIsSelectOpen(open)
@@ -83,9 +72,10 @@ export const AnimatedThemeToggler = ({
         <SelectValue placeholder="Select a theme" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="light">Light</SelectItem>
-        <SelectItem value="dark">Dark</SelectItem>
-        <SelectItem value="system">System</SelectItem>
+        <SelectItem value="fidex">Fidex</SelectItem>
+        <SelectItem value="forest">Forest</SelectItem>
+        <SelectItem value="sunset">Sunset</SelectItem>
+        <SelectItem value="mono">Mono</SelectItem>
       </SelectContent>
     </Select>
   )

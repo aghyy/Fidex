@@ -6,6 +6,10 @@ export type ThemeMode = "light" | "dark" | "system";
 
 export const themeAtom = atom<ThemeMode>("system");
 
+export type ThemePalette = "fidex" | "forest" | "sunset" | "mono";
+
+export const themePaletteAtom = atom<ThemePalette>("fidex");
+
 // Derived atom for whether dark class should be applied
 export const isDarkAtom = atom((get) => {
   const mode = get(themeAtom);
