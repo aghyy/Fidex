@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  Area,
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
+  ComposedChart,
   XAxis,
   YAxis,
+  ResponsiveContainer,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Tooltip as RechartsTooltip,
+  Legend as RechartsLegend,
 } from "recharts";
 import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
@@ -22,6 +27,14 @@ import { renderIconByName } from "@/utils/icons";
 import { useAtomValue } from "jotai";
 import { profileAtom } from "@/state/profile";
 import PeriodFilterPopover from "@/components/filters/PeriodFilterPopover";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 
 type DashboardTransaction = {
   id: string;
@@ -34,6 +47,30 @@ type DashboardTransaction = {
 };
 
 type PeriodMode = "month" | "year";
+
+const cashflowChartConfig = {
+  income: {
+    label: "Income",
+  },
+  expense: {
+    label: "Expense",
+  },
+  net: {
+    label: "Net",
+  },
+} satisfies ChartConfig;
+
+const spendingChartConfig = {
+  spent: {
+    label: "Spent (EUR)",
+  },
+} satisfies ChartConfig;
+
+const earningChartConfig = {
+  earned: {
+    label: "Earned (EUR)",
+  },
+} satisfies ChartConfig;
 
 function parseAmount(value: string | number): number {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
@@ -112,6 +149,8 @@ export default function DashboardOverview() {
   const [error, setError] = useState<string | null>(null);
   const [showAllSpendingCategories, setShowAllSpendingCategories] = useState(false);
   const [showAllEarningCategories, setShowAllEarningCategories] = useState(false);
+  const [activeChartIndex, setActiveChartIndex] = useState(0);
+  const chartsContainerRef = useRef<HTMLDivElement | null>(null);
   const profile = useAtomValue(profileAtom);
   const includePending = Boolean(profile?.bookAllTransactions);
 
@@ -312,6 +351,76 @@ export default function DashboardOverview() {
     return Array.from(incomeMap.values()).sort((a, b) => b.earned - a.earned);
   }, [transactions, categoryById]);
 
+  const expenseStackedData = useMemo(() => {
+    const result: Array<Record<string, number | string>> = [];
+    const buckets = new Map<string, Record<string, number | string>>();
+
+    const topCategoryIds = categorySpendData.slice(0, 5).map((c) => c.categoryId);
+    const topCategoryIdSet = new Set(topCategoryIds);
+
+    for (const tx of transactions) {
+      if (tx.type !== "EXPENSE") continue;
+      const d = new Date(tx.occurredAt);
+      if (Number.isNaN(d.getTime())) continue;
+
+      let bucketKey: string;
+      let label: string;
+
+      if (appliedPeriodMode === "month") {
+        const day = d.getDate();
+        bucketKey = String(day);
+        label = String(day);
+      } else {
+        const month = d.getMonth();
+        bucketKey = String(month);
+        label = new Date(range.start.getFullYear(), month, 1).toLocaleString(undefined, {
+          month: "short",
+        });
+      }
+
+      const existing = buckets.get(bucketKey) ?? { label };
+      const amount = parseAmount(tx.amount);
+      const category = categoryById.get(tx.category);
+      const categoryName = topCategoryIdSet.has(tx.category) ? (category?.name ?? "Other") : "Other";
+
+      const currentValue = typeof existing[categoryName] === "number" ? (existing[categoryName] as number) : 0;
+      existing[categoryName] = currentValue + amount;
+      buckets.set(bucketKey, existing);
+    }
+
+    for (const value of buckets.values()) {
+      result.push(value);
+    }
+
+    return result;
+  }, [transactions, appliedPeriodMode, range.start, categorySpendData, categoryById]);
+
+  const expenseStackKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const row of expenseStackedData) {
+      Object.keys(row).forEach((key) => {
+        if (key !== "label") keys.add(key);
+      });
+    }
+    return Array.from(keys);
+  }, [expenseStackedData]);
+
+  const stackedCategoryColors = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const row of categorySpendData) {
+      if (row.color) {
+        map.set(row.category, row.color);
+      }
+    }
+    map.set("Other", "#6b7280");
+    return map;
+  }, [categorySpendData]);
+
+  const radarSpendData = useMemo(
+    () => categorySpendData.slice(0, 8),
+    [categorySpendData]
+  );
+
   const visibleSpendCategories = useMemo(
     () =>
       showAllSpendingCategories
@@ -384,6 +493,43 @@ export default function DashboardOverview() {
       .sort((a, b) => a.account.name.localeCompare(b.account.name));
   }, [accounts, transactions]);
 
+  const categoryTooltipFormatter = (
+    value: number | string,
+    name: string
+  ) => {
+    const numeric =
+      typeof value === "number" ? value : Number(value ?? 0);
+    return (
+      <div className="flex w-full items-center justify-between gap-2">
+        <span className="text-muted-foreground">{name}</span>
+        <span className="font-mono font-medium tabular-nums text-foreground">
+          {Number.isFinite(numeric) ? numeric.toLocaleString() : value}
+        </span>
+      </div>
+    );
+  };
+
+  const handleChartsScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
+    if (!target) return;
+    const width = target.clientWidth || 1;
+    const index = Math.round(target.scrollLeft / width);
+    const clamped = Math.max(0, Math.min(2, index));
+    if (clamped !== activeChartIndex) {
+      setActiveChartIndex(clamped);
+    }
+  };
+
+  const scrollToChart = (index: number) => {
+    const container = chartsContainerRef.current;
+    if (!container) return;
+    const width = container.clientWidth;
+    container.scrollTo({
+      left: width * index,
+      behavior: "smooth",
+    });
+  };
+
   if (loading) {
     return <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">Loading dashboard...</div>;
   }
@@ -445,30 +591,127 @@ export default function DashboardOverview() {
       </div>
 
       <div className="rounded-2xl border bg-card p-4 sm:p-6">
-        <h3 className="mb-1 text-base font-semibold">Cashflow Trend</h3>
-        <p className="mb-4 text-xs text-muted-foreground">Income vs expense and net flow in selected timespan.</p>
-        <div className="h-[260px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={cashflowChartData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background) / 0.55)",
-                  border: "1px solid hsl(var(--foreground) / 0.2)",
-                  borderRadius: "var(--radius)",
-                  boxShadow: "0 8px 24px hsl(var(--foreground) / 0.08)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                }}
-              />
-              <Legend />
-              <Line type="monotone" dataKey="income" name="Income" stroke="#16a34a" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="expense" name="Expense" stroke="#dc2626" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="net" name="Net" stroke="#2563eb" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+        <h3 className="mb-1 text-base font-semibold">Cashflow & categories</h3>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Swipe to explore cashflow, stacked spending, and radar view.
+        </p>
+
+        <div
+          ref={chartsContainerRef}
+          onScroll={handleChartsScroll}
+          className="relative flex w-full snap-x snap-mandatory overflow-x-auto no-scrollbar"
+        >
+          {/* Page 1 – cashflow areas */}
+          <div className="min-w-full shrink-0 snap-center">
+            <ChartContainer config={cashflowChartConfig} className="h-[260px] w-full">
+              <ComposedChart data={cashflowChartData}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="label" />
+                <YAxis />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  name="Income"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  fill="#16a34a"
+                  fillOpacity={0.12}
+                  isAnimationActive={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  name="Expense"
+                  stroke="#dc2626"
+                  strokeWidth={2}
+                  fill="#dc2626"
+                  fillOpacity={0.18}
+                  isAnimationActive={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="net"
+                  name="Net"
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                  fill="#2563eb"
+                  fillOpacity={0.08}
+                  isAnimationActive={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+              </ComposedChart>
+            </ChartContainer>
+          </div>
+
+          {/* Page 2 – stacked expenses per bucket (day/month) */}
+          <div className="min-w-full shrink-0 snap-center">
+            <div className="h-[260px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={expenseStackedData}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <RechartsLegend />
+                  {expenseStackKeys.map((key) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      stackId="expenses"
+                      fill={stackedCategoryColors.get(key) ?? "#6b7280"}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Page 3 – radar chart of spending by category */}
+          <div className="min-w-full shrink-0 snap-center">
+            <div className="h-[260px] w-full flex items-center justify-center">
+              {radarSpendData.filter((c) => c.spent > 0).length < 3 ? (
+                <p className="text-xs text-muted-foreground text-center px-6">
+                  Not enough category data for a meaningful radar chart in the selected period.
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarSpendData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
+                    <PolarRadiusAxis />
+                    <Radar
+                      name="Spent (EUR)"
+                      dataKey="spent"
+                      stroke="#dc2626"
+                      fill="#dc2626"
+                      fillOpacity={0.25}
+                    />
+                    <RechartsTooltip />
+                    <RechartsLegend />
+                  </RadarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* iOS-style dots */}
+        <div className="mt-3 flex items-center justify-center gap-2">
+          {[0, 1, 2].map((index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => scrollToChart(index)}
+              className={
+                index === activeChartIndex
+                  ? "h-2.5 w-5 rounded-full bg-foreground transition-all"
+                  : "h-2 w-2 rounded-full bg-muted-foreground/40 transition-all"
+              }
+              aria-label={`Go to chart ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
 
@@ -517,27 +760,31 @@ export default function DashboardOverview() {
         <div className="rounded-2xl border bg-card p-4 sm:p-6">
           <h3 className="mb-1 text-base font-semibold">Spending by Category</h3>
           <p className="mb-4 text-xs text-muted-foreground">Only expense transactions are included.</p>
-          <div className="h-[260px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categorySpendData}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="category" tick={false} tickLine={false} axisLine={false} />
-                <YAxis />
-                <Tooltip
-                  cursor={false}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background) / 0.55)",
-                    border: "1px solid hsl(var(--foreground) / 0.2)",
-                    borderRadius: "var(--radius)",
-                    boxShadow: "0 8px 24px hsl(var(--foreground) / 0.08)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                  }}
-                />
-                <Bar dataKey="spent" name="Spent (EUR)" fill="#dc2626" radius={[6, 6, 0, 0]} activeBar={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartContainer config={spendingChartConfig} className="h-[260px] w-full">
+            <BarChart data={categorySpendData}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="category" tick={false} tickLine={false} axisLine={false} />
+              <YAxis />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    nameKey="category"
+                    formatter={(value, name) =>
+                      categoryTooltipFormatter(value as number, String(name))
+                    }
+                  />
+                }
+                cursor={false}
+              />
+              <Bar
+                dataKey="spent"
+                name="Spent (EUR)"
+                fill="#dc2626"
+                radius={[6, 6, 0, 0]}
+                activeBar={false}
+              />
+            </BarChart>
+          </ChartContainer>
           <div className="mt-4 space-y-2">
             {visibleSpendCategories.map((row) => (
               <Link
@@ -579,27 +826,31 @@ export default function DashboardOverview() {
         <div className="rounded-2xl border bg-card p-4 sm:p-6">
           <h3 className="mb-1 text-base font-semibold">Earnings by Category</h3>
           <p className="mb-4 text-xs text-muted-foreground">Only income transactions are included.</p>
-          <div className="h-[260px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryIncomeData}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="category" tick={false} tickLine={false} axisLine={false} />
-                <YAxis />
-                <Tooltip
-                  cursor={false}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background) / 0.55)",
-                    border: "1px solid hsl(var(--foreground) / 0.2)",
-                    borderRadius: "var(--radius)",
-                    boxShadow: "0 8px 24px hsl(var(--foreground) / 0.08)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                  }}
-                />
-                <Bar dataKey="earned" name="Earned (EUR)" fill="#22c55e" radius={[6, 6, 0, 0]} activeBar={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartContainer config={earningChartConfig} className="h-[260px] w-full">
+            <BarChart data={categoryIncomeData}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="category" tick={false} tickLine={false} axisLine={false} />
+              <YAxis />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    nameKey="category"
+                    formatter={(value, name) =>
+                      categoryTooltipFormatter(value as number, String(name))
+                    }
+                  />
+                }
+                cursor={false}
+              />
+              <Bar
+                dataKey="earned"
+                name="Earned (EUR)"
+                fill="#22c55e"
+                radius={[6, 6, 0, 0]}
+                activeBar={false}
+              />
+            </BarChart>
+          </ChartContainer>
           <div className="mt-4 space-y-2">
             {visibleIncomeCategories.map((row) => (
               <Link

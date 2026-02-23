@@ -6,26 +6,26 @@
 
 **Your finances and documents, organized with trust and clarity.**
 
-Fidex is a full‑stack Next.js application that helps you stay in control of your money and important documents.  
+Fidex is a full‑stack Next.js application that helps you stay in control of your money and important documents.
 It is designed for individuals and professionals who care about structure, privacy, and long‑term traceability of their records.
 
 ---
 
 ### What Fidex Does
 
-- **Track transactions and balances**  
+- **Track transactions and balances**
   Manually manage accounts, incomes, expenses, and transfers with a clean ledger and dashboards.
 
-- **Organize and link documents**  
+- **Organize and link documents**
   Store contracts, receipts, bills, and other files and link them to transactions for a complete audit trail.
 
-- **Category‑based insights**  
+- **Category‑based insights**
   Categorize spending and earnings and get monthly / yearly overviews of where your money goes.
 
-- **Manual account monitoring**  
+- **Manual account monitoring**
   No screen‑scraping or automatic bank connections: you control exactly what data is stored.
 
-- **Themed, multi‑palette UI**  
+- **Themed, multi‑palette UI**
   Light/dark modes plus multiple color palettes, switchable from the avatar morphing dialog.
 
 ---
@@ -103,22 +103,22 @@ Then open `http://localhost:3000` in your browser.
 
 The core models are defined in `app/prisma/schema.prisma`:
 
-- **User**  
+- **User**
   Basic identity, optional password, theme preference, and WebAuthn authenticators.
 
-- **Account**  
+- **Account**
   User‑owned accounts (name, number, color, icon, currency, balance).
 
-- **Category**  
+- **Category**
   Per‑user categories with optional color and icon, used for transactions and documents.
 
-- **Transaction**  
+- **Transaction**
   Incomes, expenses, and transfers with interval, pending flag, category, and links to documents.
 
-- **Document**  
+- **Document**
   Metadata for uploaded or stored documents (title, notes, kind, storage key, URL, size, mime type).
 
-- **DocumentTransaction**  
+- **DocumentTransaction**
   Join table linking documents to one or more transactions.
 
 Authentication‑related tables (sessions, OAuth accounts, tokens, authenticators) are also defined there and used by NextAuth.
@@ -174,5 +174,5 @@ Fidex/
 
 ---
 
-**Fidex — Where your finances and documents find structure.**  
+**Fidex — Where your finances and documents find structure.**
 If something in this README ever diverges from the actual behavior, treat the code as canonical.
