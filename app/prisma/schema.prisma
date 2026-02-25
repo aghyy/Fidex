@@ -26,6 +26,7 @@ model User {
   categories     Category[]
   documents      Document[]
   Account        Account[]
+  budgets        Budget[]
 }
 
 model OAuthAccount {
@@ -122,8 +123,20 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgets   Budget[]
 
   @@unique([userId, name])
+}
+
+model Budget {
+  id                String    @id @default(cuid())
+  userId            String
+  name              String?
+  targetAmount      BigInt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories        Category[]
 }
 
 model Document {
