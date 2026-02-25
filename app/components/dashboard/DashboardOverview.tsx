@@ -455,6 +455,11 @@ export default function DashboardOverview() {
     [categorySpendData]
   );
 
+  const radarIncomeData = useMemo(
+    () => categoryIncomeData.slice(0, 8),
+    [categoryIncomeData]
+  );
+
   const radarSpendBucketData = useMemo(() => {
     const buckets = new Map<string, { label: string; spent: number }>();
 
@@ -748,22 +753,23 @@ export default function DashboardOverview() {
             </ChartContainer>
           </div>
 
-          {/* Page 3 – radar chart of spending by category */}
+          {/* Page 3 – radar charts */}
           <div className="min-w-full shrink-0 snap-center">
             <div className="h-[260px] w-full flex items-center justify-center">
               {radarSpendData.filter((c) => c.spent > 0).length < 3 &&
-              radarSpendBucketData.filter((b) => b.spent > 0).length < 3 ? (
+              radarSpendBucketData.filter((b) => b.spent > 0).length < 3 &&
+              radarIncomeData.filter((c) => c.earned > 0).length < 3 ? (
                 <p className="text-xs text-muted-foreground text-center px-6">
                   Not enough data for meaningful radar charts in the selected period.
                 </p>
               ) : (
                 <div className="flex h-full w-full gap-4">
                   {radarSpendData.filter((c) => c.spent > 0).length >= 3 && (
-                    <ChartContainer config={spendingChartConfig} className="h-full w-1/2">
+                    <ChartContainer config={spendingChartConfig} className="h-full w-1/3">
                       <RadarChart data={radarSpendData}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
-                        <PolarRadiusAxis tick={false} />
+                        <PolarRadiusAxis tick={false} axisLine={false} />
                         <Radar
                           name="Spent (EUR)"
                           dataKey="spent"
@@ -777,16 +783,34 @@ export default function DashboardOverview() {
                     </ChartContainer>
                   )}
                   {radarSpendBucketData.filter((b) => b.spent > 0).length >= 3 && (
-                    <ChartContainer config={spendingChartConfig} className="h-full w-1/2">
+                    <ChartContainer config={spendingChartConfig} className="h-full w-1/3">
                       <RadarChart data={radarSpendBucketData}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="label" tick={{ fontSize: 10 }} />
-                        <PolarRadiusAxis tick={false} />
+                        <PolarRadiusAxis tick={false} axisLine={false} />
                         <Radar
                           name="Spent (EUR)"
                           dataKey="spent"
                           stroke="#dc2626"
                           fill="#dc2626"
+                          fillOpacity={0.25}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RadarChart>
+                    </ChartContainer>
+                  )}
+                  {radarIncomeData.filter((c) => c.earned > 0).length >= 3 && (
+                    <ChartContainer config={earningChartConfig} className="h-full w-1/3">
+                      <RadarChart data={radarIncomeData}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
+                        <PolarRadiusAxis tick={false} axisLine={false} />
+                        <Radar
+                          name="Earned (EUR)"
+                          dataKey="earned"
+                          stroke="#22c55e"
+                          fill="#22c55e"
                           fillOpacity={0.25}
                         />
                         <ChartTooltip content={<ChartTooltipContent />} />
