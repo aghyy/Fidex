@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, ChevronDown, Pencil } from "lucide-react";
+import { IconCheck, IconChevronDown, IconPencil } from "@tabler/icons-react";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -13,11 +13,11 @@ import {
 } from "@/components/motion-primitives/morphing-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Budget } from "@/types/budgets";
 import type { Category } from "@/types/categories";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 function CategoryMultiSelect({
   value,
@@ -52,7 +52,7 @@ function CategoryMultiSelect({
   return (
     <Popover
       open={open}
-      onOpenChange={(o) => {
+      onOpenChange={(o: boolean) => {
         setOpen(o);
         if (o) document.body.dataset.radixSelectOpen = "true";
         else delete document.body.dataset.radixSelectOpen;
@@ -66,7 +66,7 @@ function CategoryMultiSelect({
           className="w-full justify-between font-normal focus-visible:ring-0 focus-visible:ring-offset-0"
         >
           <span className="truncate">{label}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          <IconChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -74,19 +74,33 @@ function CategoryMultiSelect({
           {categories.map((cat) => {
             const selected = value.includes(cat.id);
             return (
-              <button
+              <div
                 key={cat.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => toggle(cat.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggle(cat.id);
+                  }
+                }}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent",
+                  "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent",
                   selected && "bg-accent"
                 )}
               >
-                <Checkbox checked={selected} onCheckedChange={() => toggle(cat.id)} className="pointer-events-none" />
+                <div
+                  className={cn(
+                    "grid h-4 w-4 shrink-0 place-content-center rounded-sm border border-primary shadow",
+                    selected && "bg-primary text-primary-foreground"
+                  )}
+                >
+                  {selected ? <IconCheck className="h-3 w-3" /> : null}
+                </div>
                 <span className="truncate">{cat.name}</span>
-                {selected ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}
-              </button>
+                {selected ? <IconCheck className="h-4 w-4 shrink-0 text-primary" /> : null}
+              </div>
             );
           })}
         </div>
@@ -104,27 +118,30 @@ type EditBudgetDialogProps = {
 function EditBudgetForm({ budget, categories, onUpdated }: EditBudgetDialogProps) {
   const { setIsOpen } = useMorphingDialog();
   const [name, setName] = useState(budget.name ?? "");
-  const [targetEuros, setTargetEuros] = useState((budget.targetAmount / 100).toFixed(2));
+  const [targetEuros, setTargetEuros] = useState(() =>
+    typeof budget.targetAmount === "number" ? String(budget.targetAmount) : ""
+  );
   const [categoryIds, setCategoryIds] = useState<string[]>(budget.categoryIds);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     setName(budget.name ?? "");
-    setTargetEuros((budget.targetAmount / 100).toFixed(2));
+    setTargetEuros(typeof budget.targetAmount === "number" ? String(budget.targetAmount) : "");
     setCategoryIds(budget.categoryIds);
   }, [budget.id, budget.name, budget.targetAmount, budget.categoryIds]);
 
-  const targetCents = (() => {
+  const targetEur = (() => {
     const n = parseFloat(targetEuros.replace(",", "."));
-    return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
+    return Number.isFinite(n) && n >= 0 ? n : null;
   })();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (targetCents === null || targetCents < 0) {
+    if (targetEur === null || targetEur < 0) {
       setError("Enter a valid target amount.");
       return;
     }
@@ -140,7 +157,7 @@ function EditBudgetForm({ budget, categories, onUpdated }: EditBudgetDialogProps
         credentials: "include",
         body: JSON.stringify({
           name: name.trim() || null,
-          targetAmountCents: targetCents,
+          targetAmount: targetEur,
           categoryIds,
         }),
       });
@@ -155,8 +172,7 @@ function EditBudgetForm({ budget, categories, onUpdated }: EditBudgetDialogProps
     }
   }
 
-  async function handleDelete() {
-    if (!confirm("Delete this budget? This cannot be undone.")) return;
+  async function performDelete() {
     setError(null);
     setDeleting(true);
     try {
@@ -198,7 +214,7 @@ function EditBudgetForm({ budget, categories, onUpdated }: EditBudgetDialogProps
           inputMode="decimal"
           value={targetEuros}
           onChange={(e) => setTargetEuros(e.target.value)}
-          placeholder="0.00"
+          placeholder="0"
           className="focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
@@ -220,16 +236,27 @@ function EditBudgetForm({ budget, categories, onUpdated }: EditBudgetDialogProps
           type="button"
           variant="destructive"
           size="sm"
-          onClick={handleDelete}
+          onClick={() => setShowDeleteConfirm(true)}
           disabled={saving || deleting}
           className="mr-auto"
         >
-          {deleting ? "Deleting…" : "Delete"}
+          Delete
         </Button>
-        <Button type="submit" disabled={saving || targetCents === null || categoryIds.length === 0}>
+        <Button type="submit" disabled={saving || targetEur === null || categoryIds.length === 0}>
           {saving ? "Saving…" : "Save"}
         </Button>
       </div>
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete budget"
+        description="Are you sure you want to delete this budget? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={performDelete}
+        loading={deleting}
+      />
     </form>
   );
 }
@@ -241,7 +268,7 @@ export default function EditBudgetDialog({ budget, categories, onUpdated }: Edit
         className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         aria-label="Edit budget"
       >
-        <Pencil className="h-4 w-4" />
+        <IconPencil className="h-4 w-4" />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">

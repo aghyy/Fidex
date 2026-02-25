@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
 import { getActualSpent } from "../../../lib/budget";
+import type { BudgetDelegate } from "@/types/budgets";
+
+const budget = (prisma as unknown as { budget: BudgetDelegate }).budget;
 
 export const runtime = "nodejs";
 
@@ -25,7 +28,7 @@ export async function GET(request: Request) {
   const validTo = to && !Number.isNaN(to.getTime()) ? to : undefined;
 
   try {
-    const budgets = await prisma.budget.findMany({
+    const budgets = await budget.findMany({
       where: { userId: session.user.id },
       include: { categories: { select: { id: true } } },
       orderBy: { updatedAt: "desc" },
@@ -41,9 +44,9 @@ export async function GET(request: Request) {
         return {
           id: b.id,
           name: b.name,
-          targetAmountCents: toNumber(b.targetAmount),
+          targetAmount: toNumber(b.targetAmount),
           categoryIds,
-          actualAmountCents: toNumber(actual),
+          actualAmount: toNumber(actual),
           createdAt: b.createdAt,
           updatedAt: b.updatedAt,
         };
@@ -106,7 +109,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const budget = await prisma.budget.create({
+    const created = await budget.create({
       data: {
         userId: session.user.id,
         name: name ?? undefined,
@@ -118,13 +121,13 @@ export async function POST(request: Request) {
 
     const actual = await getActualSpent(session.user.id, categoryIdsUnique);
     const response = {
-      id: budget.id,
-      name: budget.name,
-      targetAmount: toNumber(budget.targetAmount),
-      categoryIds: budget.categories.map((c) => c.id),
+      id: created.id,
+      name: created.name,
+      targetAmount: toNumber(created.targetAmount),
+      categoryIds: created.categories.map((c) => c.id),
       actualAmount: toNumber(actual),
-      createdAt: budget.createdAt,
-      updatedAt: budget.updatedAt,
+      createdAt: created.createdAt,
+      updatedAt: created.updatedAt,
     };
 
     return NextResponse.json({ budget: response }, { status: 201 });

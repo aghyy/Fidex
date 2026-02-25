@@ -3,6 +3,9 @@ import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
 import { getActualSpent } from "../../../../lib/budget";
 import type { RouteContext } from "@/types/api";
+import type { BudgetDelegate } from "@/types/budgets";
+
+const budget = (prisma as unknown as { budget: BudgetDelegate }).budget;
 
 export const runtime = "nodejs";
 
@@ -18,17 +21,17 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const budget = await prisma.budget.findFirst({
+  const budgetRow = await budget.findFirst({
     where: { id, userId: session.user.id },
     include: { categories: { select: { id: true } } },
   });
 
-  if (!budget) {
+  if (!budgetRow) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   try {
-    const categoryIds = budget.categories.map((c) => c.id);
+    const categoryIds = budgetRow.categories.map((c) => c.id);
     const url = new URL(_request.url);
     const fromParam = url.searchParams.get("from");
     const toParam = url.searchParams.get("to");
@@ -44,13 +47,13 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json({
       budget: {
-        id: budget.id,
-        name: budget.name,
-        targetAmount: toNumber(budget.targetAmount),
+        id: budgetRow.id,
+        name: budgetRow.name,
+        targetAmount: toNumber(budgetRow.targetAmount),
         categoryIds,
         actualAmount: toNumber(actual),
-        createdAt: budget.createdAt,
-        updatedAt: budget.updatedAt,
+        createdAt: budgetRow.createdAt,
+        updatedAt: budgetRow.updatedAt,
       },
     });
   } catch (error) {
@@ -67,7 +70,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const existing = await prisma.budget.findFirst({
+  const existing = await budget.findFirst({
     where: { id, userId: session.user.id },
     include: { categories: { select: { id: true } } },
   });
@@ -121,24 +124,24 @@ export async function PATCH(request: Request, context: RouteContext) {
       updates.categories = { set: categoryIdsUnique.map((id) => ({ id })) };
     }
 
-    const budget = await prisma.budget.update({
+    const updatedRow = await budget.update({
       where: { id },
       data: updates,
       include: { categories: { select: { id: true } } },
     });
 
-    const categoryIds = budget.categories.map((c) => c.id);
+    const categoryIds = updatedRow.categories.map((c) => c.id);
     const actual = await getActualSpent(session.user.id, categoryIds);
 
     return NextResponse.json({
       budget: {
-        id: budget.id,
-        name: budget.name,
-        targetAmount: toNumber(budget.targetAmount),
+        id: updatedRow.id,
+        name: updatedRow.name,
+        targetAmount: toNumber(updatedRow.targetAmount),
         categoryIds,
         actualAmount: toNumber(actual),
-        createdAt: budget.createdAt,
-        updatedAt: budget.updatedAt,
+        createdAt: updatedRow.createdAt,
+        updatedAt: updatedRow.updatedAt,
       },
     });
   } catch (error) {
@@ -155,7 +158,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const existing = await prisma.budget.findFirst({
+  const existing = await budget.findFirst({
     where: { id, userId: session.user.id },
   });
 
@@ -164,7 +167,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   }
 
   try {
-    await prisma.budget.delete({ where: { id } });
+    await budget.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete budget error:", error);

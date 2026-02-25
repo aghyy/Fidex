@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trash2 } from "lucide-react";
+import { IconTrash } from "@tabler/icons-react";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -14,19 +14,20 @@ import {
 import type { Budget } from "@/types/budgets";
 import type { Category } from "@/types/categories";
 import EditBudgetDialog from "./EditBudgetDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export type BudgetsManagerProps = {
   from?: string;
   to?: string;
 };
 
-function formatCurrency(cents: number): string {
+function formatCurrency(eur: number): string {
   return new Intl.NumberFormat(undefined, {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(cents / 100);
+  }).format(eur);
 }
 
 function BudgetDetailsDialog({
@@ -36,7 +37,7 @@ function BudgetDetailsDialog({
   budget: Budget;
   categories: Category[];
 }) {
-  const { isOpen } = useMorphingDialog();
+  useMorphingDialog();
   const categoryNames = budget.categoryIds
     .map((id) => categories.find((c) => c.id === id)?.name ?? id)
     .filter(Boolean);
@@ -106,6 +107,7 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmBudget, setDeleteConfirmBudget] = useState<Budget | null>(null);
 
   const fetchBudgets = useCallback(async () => {
     setLoading(true);
@@ -151,19 +153,14 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
     };
   }, [fetchBudgets]);
 
-  async function handleDelete(budget: Budget) {
-    if (!confirm("Delete this budget?")) return;
-    try {
-      const res = await fetch(`/api/budget/${budget.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Failed to delete");
-      setBudgets((prev) => prev.filter((b) => b.id !== budget.id));
-      window.dispatchEvent(new CustomEvent("budget:deleted", { detail: { id: budget.id } }));
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to delete budget");
-    }
+  async function performDelete(budget: Budget) {
+    const res = await fetch(`/api/budget/${budget.id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error((await res.json()).error ?? "Failed to delete");
+    setBudgets((prev) => prev.filter((b) => b.id !== budget.id));
+    window.dispatchEvent(new CustomEvent("budget:deleted", { detail: { id: budget.id } }));
   }
 
   if (loading) {
@@ -244,17 +241,17 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
                   <EditBudgetDialog
                     budget={budget}
                     categories={categories}
-                    onUpdated={(updated) =>
+                    onUpdated={(updated: Budget) =>
                       setBudgets((prev) => prev.map((b) => (b.id === updated.id ? updated : b)))
                     }
                   />
                   <button
                     type="button"
-                    onClick={() => handleDelete(budget)}
+                    onClick={() => setDeleteConfirmBudget(budget)}
                     className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
                     aria-label="Delete budget"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <IconTrash className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -262,6 +259,18 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
           </MorphingDialog>
         );
       })}
+      <ConfirmDialog
+        open={deleteConfirmBudget !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmBudget(null)}
+        title="Delete budget"
+        description="Are you sure you want to delete this budget? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={async () => {
+          if (deleteConfirmBudget) await performDelete(deleteConfirmBudget);
+        }}
+      />
     </div>
   );
 }

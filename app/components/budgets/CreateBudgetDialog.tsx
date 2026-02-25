@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { IconCheck, IconChevronDown, IconPlus } from "@tabler/icons-react";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -13,7 +13,6 @@ import {
 } from "@/components/motion-primitives/morphing-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types/categories";
@@ -51,7 +50,7 @@ function CategoryMultiSelect({
   return (
     <Popover
       open={open}
-      onOpenChange={(o) => {
+      onOpenChange={(o: boolean) => {
         setOpen(o);
         if (o) document.body.dataset.radixSelectOpen = "true";
         else delete document.body.dataset.radixSelectOpen;
@@ -65,7 +64,7 @@ function CategoryMultiSelect({
           className="w-full justify-between font-normal focus-visible:ring-0 focus-visible:ring-offset-0"
         >
           <span className="truncate">{label}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          <IconChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -73,19 +72,33 @@ function CategoryMultiSelect({
           {categories.map((cat) => {
             const selected = value.includes(cat.id);
             return (
-              <button
+              <div
                 key={cat.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => toggle(cat.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggle(cat.id);
+                  }
+                }}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent",
+                  "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent",
                   selected && "bg-accent"
                 )}
               >
-                <Checkbox checked={selected} onCheckedChange={() => toggle(cat.id)} className="pointer-events-none" />
+                <div
+                  className={cn(
+                    "grid h-4 w-4 shrink-0 place-content-center rounded-sm border border-primary shadow",
+                    selected && "bg-primary text-primary-foreground"
+                  )}
+                >
+                  {selected ? <IconCheck className="h-3 w-3" /> : null}
+                </div>
                 <span className="truncate">{cat.name}</span>
-                {selected ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}
-              </button>
+                {selected ? <IconCheck className="h-4 w-4 shrink-0 text-primary" /> : null}
+              </div>
             );
           })}
         </div>
@@ -110,15 +123,15 @@ function CreateBudgetForm() {
       .catch(() => setCategories([]));
   }, []);
 
-  const targetCents = (() => {
+  const targetEur = (() => {
     const n = parseFloat(targetEuros.replace(",", "."));
-    return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
+    return Number.isFinite(n) && n >= 0 ? n : null;
   })();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (targetCents === null || targetCents < 0) {
+    if (targetEur === null || targetEur < 0) {
       setError("Enter a valid target amount.");
       return;
     }
@@ -134,7 +147,7 @@ function CreateBudgetForm() {
         credentials: "include",
         body: JSON.stringify({
           name: name.trim() || null,
-          targetAmountCents: targetCents,
+          targetAmount: targetEur,
           categoryIds,
         }),
       });
@@ -176,7 +189,7 @@ function CreateBudgetForm() {
           inputMode="decimal"
           value={targetEuros}
           onChange={(e) => setTargetEuros(e.target.value)}
-          placeholder="0.00"
+          placeholder="0"
           className="focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
@@ -194,7 +207,7 @@ function CreateBudgetForm() {
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <div className="flex justify-end gap-2 border-t pt-3">
-        <Button type="submit" disabled={submitting || targetCents === null || categoryIds.length === 0}>
+        <Button type="submit" disabled={submitting || targetEur === null || categoryIds.length === 0}>
           {submitting ? "Creating…" : "Create budget"}
         </Button>
       </div>
@@ -209,7 +222,7 @@ export default function CreateBudgetDialog() {
         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/25 text-white shadow-md backdrop-blur-md transition-colors hover:bg-white/35 dark:border-white/30 dark:bg-white/10 dark:hover:bg-white/20"
         aria-label="Create budget"
       >
-        <Plus className="h-5 w-5" />
+        <IconPlus className="h-5 w-5" />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">

@@ -1,7 +1,8 @@
 import { prisma } from "./prisma";
 
 /**
- * Sum of expense amounts (in smallest unit, e.g. cents) for the given user and categories.
+ * Sum of expense amounts for the given user and categories.
+ * Returns the sum in EUR (transaction.amount is stored in EUR in this app).
  * Optionally filter by date range (occurredAt).
  */
 export async function getActualSpent(
