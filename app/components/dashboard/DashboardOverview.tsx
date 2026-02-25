@@ -10,14 +10,11 @@ import {
   ComposedChart,
   XAxis,
   YAxis,
-  ResponsiveContainer,
   RadarChart,
   Radar,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  Tooltip as RechartsTooltip,
-  Legend as RechartsLegend,
 } from "recharts";
 import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
@@ -63,12 +60,14 @@ const cashflowChartConfig = {
 const spendingChartConfig = {
   spent: {
     label: "Spent (EUR)",
+    color: "#dc2626",
   },
 } satisfies ChartConfig;
 
 const earningChartConfig = {
   earned: {
     label: "Earned (EUR)",
+    color: "#22c55e",
   },
 } satisfies ChartConfig;
 
@@ -358,27 +357,38 @@ export default function DashboardOverview() {
     const topCategoryIds = categorySpendData.slice(0, 5).map((c) => c.categoryId);
     const topCategoryIdSet = new Set(topCategoryIds);
 
+    if (appliedPeriodMode === "month") {
+      const daysInMonth = new Date(range.start.getFullYear(), range.start.getMonth() + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const key = String(day);
+        buckets.set(key, { label: key });
+      }
+    } else {
+      for (let month = 0; month < 12; month += 1) {
+        const label = new Date(range.start.getFullYear(), month, 1).toLocaleString(undefined, {
+          month: "short",
+        });
+        buckets.set(String(month), { label });
+      }
+    }
+
     for (const tx of transactions) {
       if (tx.type !== "EXPENSE") continue;
       const d = new Date(tx.occurredAt);
       if (Number.isNaN(d.getTime())) continue;
 
       let bucketKey: string;
-      let label: string;
 
       if (appliedPeriodMode === "month") {
         const day = d.getDate();
         bucketKey = String(day);
-        label = String(day);
       } else {
         const month = d.getMonth();
         bucketKey = String(month);
-        label = new Date(range.start.getFullYear(), month, 1).toLocaleString(undefined, {
-          month: "short",
-        });
       }
 
-      const existing = buckets.get(bucketKey) ?? { label };
+      const existing = buckets.get(bucketKey);
+      if (!existing) continue;
       const amount = parseAmount(tx.amount);
       const category = categoryById.get(tx.category);
       const categoryName = topCategoryIdSet.has(tx.category) ? (category?.name ?? "Other") : "Other";
@@ -388,8 +398,18 @@ export default function DashboardOverview() {
       buckets.set(bucketKey, existing);
     }
 
-    for (const value of buckets.values()) {
-      result.push(value);
+    if (appliedPeriodMode === "month") {
+      const keys = Array.from(buckets.keys()).map(Number).sort((a, b) => a - b);
+      for (const key of keys) {
+        const value = buckets.get(String(key));
+        if (value) result.push(value);
+      }
+    } else {
+      const keys = Array.from(buckets.keys()).map(Number).sort((a, b) => a - b);
+      for (const key of keys) {
+        const value = buckets.get(String(key));
+        if (value) result.push(value);
+      }
     }
 
     return result;
@@ -416,10 +436,72 @@ export default function DashboardOverview() {
     return map;
   }, [categorySpendData]);
 
+  const expenseStackChartConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        expenseStackKeys.map((key) => [
+          key,
+          {
+            label: key,
+            color: stackedCategoryColors.get(key) ?? "#6b7280",
+          },
+        ])
+      ) as ChartConfig,
+    [expenseStackKeys, stackedCategoryColors]
+  );
+
   const radarSpendData = useMemo(
     () => categorySpendData.slice(0, 8),
     [categorySpendData]
   );
+
+  const radarSpendBucketData = useMemo(() => {
+    const buckets = new Map<string, { label: string; spent: number }>();
+
+    if (appliedPeriodMode === "month") {
+      const daysInMonth = new Date(range.start.getFullYear(), range.start.getMonth() + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const key = String(day);
+        buckets.set(key, { label: key, spent: 0 });
+      }
+    } else {
+      for (let month = 0; month < 12; month += 1) {
+        const label = new Date(range.start.getFullYear(), month, 1).toLocaleString(undefined, {
+          month: "short",
+        });
+        buckets.set(String(month), { label, spent: 0 });
+      }
+    }
+
+    for (const tx of transactions) {
+      if (tx.type !== "EXPENSE") continue;
+      const d = new Date(tx.occurredAt);
+      if (Number.isNaN(d.getTime())) continue;
+
+      let bucketKey: string;
+      if (appliedPeriodMode === "month") {
+        const day = d.getDate();
+        bucketKey = String(day);
+      } else {
+        const month = d.getMonth();
+        bucketKey = String(month);
+      }
+
+      const existing = buckets.get(bucketKey);
+      if (!existing) continue;
+      const amount = parseAmount(tx.amount);
+      existing.spent += amount;
+      buckets.set(bucketKey, existing);
+    }
+
+    const orderedKeys = Array.from(buckets.keys())
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    return orderedKeys
+      .map((key) => buckets.get(String(key)))
+      .filter((value): value is { label: string; spent: number } => Boolean(value));
+  }, [transactions, appliedPeriodMode, range.start]);
 
   const visibleSpendCategories = useMemo(
     () =>
@@ -646,52 +728,73 @@ export default function DashboardOverview() {
 
           {/* Page 2 – stacked expenses per bucket (day/month) */}
           <div className="min-w-full shrink-0 snap-center">
-            <div className="h-[260px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={expenseStackedData}>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                  <XAxis dataKey="label" />
-                  <YAxis />
-                  <RechartsTooltip />
-                  <RechartsLegend />
-                  {expenseStackKeys.map((key) => (
-                    <Bar
-                      key={key}
-                      dataKey={key}
-                      stackId="expenses"
-                      fill={stackedCategoryColors.get(key) ?? "#6b7280"}
-                      radius={[4, 4, 0, 0]}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer config={expenseStackChartConfig} className="h-[260px] w-full">
+              <BarChart data={expenseStackedData}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="label" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                {expenseStackKeys.map((key) => (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="expenses"
+                    fill={stackedCategoryColors.get(key) ?? "#6b7280"}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ))}
+              </BarChart>
+            </ChartContainer>
           </div>
 
           {/* Page 3 – radar chart of spending by category */}
           <div className="min-w-full shrink-0 snap-center">
             <div className="h-[260px] w-full flex items-center justify-center">
-              {radarSpendData.filter((c) => c.spent > 0).length < 3 ? (
+              {radarSpendData.filter((c) => c.spent > 0).length < 3 &&
+              radarSpendBucketData.filter((b) => b.spent > 0).length < 3 ? (
                 <p className="text-xs text-muted-foreground text-center px-6">
-                  Not enough category data for a meaningful radar chart in the selected period.
+                  Not enough data for meaningful radar charts in the selected period.
                 </p>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarSpendData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
-                    <PolarRadiusAxis />
-                    <Radar
-                      name="Spent (EUR)"
-                      dataKey="spent"
-                      stroke="#dc2626"
-                      fill="#dc2626"
-                      fillOpacity={0.25}
-                    />
-                    <RechartsTooltip />
-                    <RechartsLegend />
-                  </RadarChart>
-                </ResponsiveContainer>
+                <div className="flex h-full w-full gap-4">
+                  {radarSpendData.filter((c) => c.spent > 0).length >= 3 && (
+                    <ChartContainer config={spendingChartConfig} className="h-full w-1/2">
+                      <RadarChart data={radarSpendData}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
+                        <PolarRadiusAxis tick={false} />
+                        <Radar
+                          name="Spent (EUR)"
+                          dataKey="spent"
+                          stroke="#dc2626"
+                          fill="#dc2626"
+                          fillOpacity={0.25}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RadarChart>
+                    </ChartContainer>
+                  )}
+                  {radarSpendBucketData.filter((b) => b.spent > 0).length >= 3 && (
+                    <ChartContainer config={spendingChartConfig} className="h-full w-1/2">
+                      <RadarChart data={radarSpendBucketData}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="label" tick={{ fontSize: 10 }} />
+                        <PolarRadiusAxis tick={false} />
+                        <Radar
+                          name="Spent (EUR)"
+                          dataKey="spent"
+                          stroke="#dc2626"
+                          fill="#dc2626"
+                          fillOpacity={0.25}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RadarChart>
+                    </ChartContainer>
+                  )}
+                </div>
               )}
             </div>
           </div>
