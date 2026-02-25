@@ -1,0 +1,11 @@
+"use client";
+
+import CreateBudgetDialog from "./CreateBudgetDialog";
+
+export default function BudgetFAB() {
+  return (
+    <div className="fixed bottom-6 right-6 z-50">
+      <CreateBudgetDialog />
+    </div>
+  );
+}

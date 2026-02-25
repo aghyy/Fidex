@@ -1,3 +1,4 @@
+/** Shape returned by GET /api/budget and /api/budget/[id] */
 export type Budget = {
   id: string;
   name: string | null;
