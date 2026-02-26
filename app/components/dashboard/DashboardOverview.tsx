@@ -15,6 +15,7 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  Rectangle,
 } from "recharts";
 import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
@@ -640,6 +641,27 @@ export default function DashboardOverview() {
     );
   };
 
+  const StackedBarSegment = (
+    props: any & { stackKeys: string[] }
+  ) => {
+    const { stackKeys, payload, dataKey } = props;
+    const keyIndex = stackKeys.indexOf(String(dataKey));
+    // Determine if this segment is the topmost non-zero segment for this x-value.
+    const isTopForThisX =
+      keyIndex === stackKeys.length - 1 ||
+      stackKeys
+        .slice(keyIndex + 1)
+        .every((key) => {
+          const v = payload?.[key];
+          const n = typeof v === "number" ? v : Number(v ?? 0);
+          return !Number.isFinite(n) || n <= 0;
+        });
+
+    const radius = isTopForThisX ? [4, 4, 0, 0] : [0, 0, 0, 0];
+
+    return <Rectangle {...props} radius={radius} />;
+  };
+
   const handleChartsScroll = (event: React.UIEvent<HTMLDivElement>) => {
     if (loading || isFilterChangeInProgress.current) return;
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -829,7 +851,12 @@ export default function DashboardOverview() {
                     dataKey={key}
                     stackId="expenses"
                     fill={stackedCategoryColors.get(key) ?? "#6b7280"}
-                    radius={[4, 4, 0, 0]}
+                    shape={(barProps) => (
+                      <StackedBarSegment
+                        {...barProps}
+                        stackKeys={expenseStackKeys}
+                      />
+                    )}
                   />
                 ))}
               </BarChart>
@@ -990,7 +1017,6 @@ export default function DashboardOverview() {
                     }
                   />
                 }
-                cursor={false}
               />
               <Bar
                 dataKey="spent"
@@ -1056,7 +1082,6 @@ export default function DashboardOverview() {
                     }
                   />
                 }
-                cursor={false}
               />
               <Bar
                 dataKey="earned"
