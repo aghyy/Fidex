@@ -65,10 +65,12 @@ export default function ManageAccountsPage() {
             </svg>
           </button>
           <h1 className="text-2xl font-bold flex-1">Manage Accounts</h1>
-          <CreateAccountDialog />
         </div>
 
         <AccountsManager />
+      </div>
+      <div className="fixed bottom-6 right-6 z-50">
+        <CreateAccountDialog />
       </div>
     </>
   );

@@ -55,10 +55,12 @@ export default function ManageCategoriesPage() {
             </svg>
           </button>
           <h1 className="text-2xl font-bold flex-1">Manage Categories</h1>
-          <CreateCategoryDialog />
         </div>
 
         <CategoriesManager />
+      </div>
+      <div className="fixed bottom-6 right-6 z-50">
+        <CreateCategoryDialog />
       </div>
     </>
   );

@@ -89,7 +89,7 @@ export default function BudgetsPage() {
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-wrap items-center gap-4">
           <h1 className="text-2xl font-bold">Budgets</h1>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="fixed right-6 top-6 z-40 flex items-center gap-2">
             <PeriodFilterPopover
               appliedMode={appliedPeriodMode}
               appliedYear={appliedSelectedYear}
