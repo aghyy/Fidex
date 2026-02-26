@@ -17,6 +17,7 @@ import {
   PolarRadiusAxis,
   Rectangle,
 } from "recharts";
+import type { RectangleProps } from "recharts";
 import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
 import { TransactionType } from "@/types/transactions";
@@ -151,7 +152,6 @@ export default function DashboardOverview() {
   const [showAllEarningCategories, setShowAllEarningCategories] = useState(false);
   const [activeChartIndex, setActiveChartIndex] = useState(0);
   const [hasLoadedChartIndex, setHasLoadedChartIndex] = useState(false);
-  const isProgrammaticScroll = useRef(false);
   const isFilterChangeInProgress = useRef(false);
   const pendingChartIndex = useRef<number | null>(null);
   const scrollSuppressUntil = useRef(0);
@@ -641,9 +641,13 @@ export default function DashboardOverview() {
     );
   };
 
-  const StackedBarSegment = (
-    props: any & { stackKeys: string[] }
-  ) => {
+  type StackedBarShapeProps = RectangleProps & {
+    stackKeys: string[];
+    payload: Record<string, unknown>;
+    dataKey: string | number;
+  };
+
+  const StackedBarSegment = (props: StackedBarShapeProps) => {
     const { stackKeys, payload, dataKey } = props;
     const keyIndex = stackKeys.indexOf(String(dataKey));
     // Determine if this segment is the topmost non-zero segment for this x-value.
@@ -657,7 +661,9 @@ export default function DashboardOverview() {
           return !Number.isFinite(n) || n <= 0;
         });
 
-    const radius = isTopForThisX ? [4, 4, 0, 0] : [0, 0, 0, 0];
+    const radius: [number, number, number, number] = isTopForThisX
+      ? [4, 4, 0, 0]
+      : [0, 0, 0, 0];
 
     return <Rectangle {...props} radius={radius} />;
   };
@@ -685,7 +691,6 @@ export default function DashboardOverview() {
     // don't immediately get interpreted as user scrolls.
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();
     scrollSuppressUntil.current = now + 400;
-    isProgrammaticScroll.current = true;
     container.scrollTo({
       left: width * index,
       behavior: "auto",
@@ -851,9 +856,12 @@ export default function DashboardOverview() {
                     dataKey={key}
                     stackId="expenses"
                     fill={stackedCategoryColors.get(key) ?? "#6b7280"}
-                    shape={(barProps) => (
+                    shape={(barProps: unknown) => (
                       <StackedBarSegment
-                        {...barProps}
+                        {...(barProps as RectangleProps & {
+                          payload: Record<string, unknown>;
+                          dataKey: string | number;
+                        })}
                         stackKeys={expenseStackKeys}
                       />
                     )}
