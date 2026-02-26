@@ -149,6 +149,12 @@ export default function DashboardOverview() {
   const [showAllSpendingCategories, setShowAllSpendingCategories] = useState(false);
   const [showAllEarningCategories, setShowAllEarningCategories] = useState(false);
   const [activeChartIndex, setActiveChartIndex] = useState(0);
+  const [hasLoadedChartIndex, setHasLoadedChartIndex] = useState(false);
+  const isProgrammaticScroll = useRef(false);
+  const isFilterChangeInProgress = useRef(false);
+  const pendingChartIndex = useRef<number | null>(null);
+  const scrollSuppressUntil = useRef(0);
+  const [hasLoadedPeriodFilter, setHasLoadedPeriodFilter] = useState(false);
   const chartsContainerRef = useRef<HTMLDivElement | null>(null);
   const profile = useAtomValue(profileAtom);
   const includePending = Boolean(profile?.bookAllTransactions);
@@ -165,6 +171,34 @@ export default function DashboardOverview() {
     const now = new Date();
     return range.end.getTime() > now.getTime() ? now : range.end;
   }, [range.end]);
+
+  // Restore last used period filter from previous sessions.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedMode = window.localStorage.getItem("dashboardPeriodMode") as PeriodMode | null;
+    const storedYear = window.localStorage.getItem("dashboardPeriodYear");
+    const storedMonth = window.localStorage.getItem("dashboardPeriodMonth");
+
+    if (storedMode === "month" || storedMode === "year") {
+      setAppliedPeriodMode(storedMode);
+    }
+    if (storedYear) {
+      setAppliedSelectedYear(storedYear);
+    }
+    if (storedMonth) {
+      setAppliedSelectedMonth(storedMonth);
+    }
+
+    setHasLoadedPeriodFilter(true);
+  }, []);
+
+  // Persist period filter so it's remembered across reloads.
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasLoadedPeriodFilter) return;
+    window.localStorage.setItem("dashboardPeriodMode", appliedPeriodMode);
+    window.localStorage.setItem("dashboardPeriodYear", appliedSelectedYear);
+    window.localStorage.setItem("dashboardPeriodMonth", appliedSelectedMonth);
+  }, [appliedPeriodMode, appliedSelectedYear, appliedSelectedMonth, hasLoadedPeriodFilter]);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -205,6 +239,16 @@ export default function DashboardOverview() {
 
     void loadDashboardData();
   }, [range.start, balanceCutoff, includePending]);
+
+  // When data finishes reloading after a filter change, allow scroll-sync again.
+  useEffect(() => {
+    if (!loading && isFilterChangeInProgress.current) {
+      isFilterChangeInProgress.current = false;
+      // Ensure we stay on the same chart index after filter changes.
+      scrollToChart(pendingChartIndex.current ?? activeChartIndex);
+      pendingChartIndex.current = null;
+    }
+  }, [loading, activeChartIndex]);
 
   useEffect(() => {
     if (periodOptions.years.length === 0) return;
@@ -597,6 +641,9 @@ export default function DashboardOverview() {
   };
 
   const handleChartsScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    if (loading || isFilterChangeInProgress.current) return;
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now < scrollSuppressUntil.current) return;
     const target = event.currentTarget;
     if (!target) return;
     const width = target.clientWidth || 1;
@@ -611,11 +658,44 @@ export default function DashboardOverview() {
     const container = chartsContainerRef.current;
     if (!container) return;
     const width = container.clientWidth;
+    if (!width) return;
+    // Suppress scroll-sync for a short window so programmatic scrolls
+    // don't immediately get interpreted as user scrolls.
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    scrollSuppressUntil.current = now + 400;
+    isProgrammaticScroll.current = true;
     container.scrollTo({
       left: width * index,
-      behavior: "smooth",
+      behavior: "auto",
     });
   };
+
+  // Restore last viewed chart from previous sessions.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("dashboardActiveChartIndex");
+    if (stored != null) {
+      const parsed = Number(stored);
+      if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 2) {
+        setActiveChartIndex(parsed);
+      }
+    }
+    setHasLoadedChartIndex(true);
+  }, []);
+
+  // After initial load (and reloads), ensure we snap to the restored chart once.
+  useEffect(() => {
+    if (!hasLoadedChartIndex || loading) return;
+    requestAnimationFrame(() => {
+      scrollToChart(activeChartIndex);
+    });
+  }, [hasLoadedChartIndex, loading, activeChartIndex]);
+
+  // Persist active chart index so it's remembered across reloads.
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasLoadedChartIndex) return;
+    window.localStorage.setItem("dashboardActiveChartIndex", String(activeChartIndex));
+  }, [activeChartIndex, hasLoadedChartIndex]);
 
   if (loading) {
     return <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">Loading dashboard...</div>;
@@ -636,6 +716,9 @@ export default function DashboardOverview() {
           monthsByYear={periodOptions.monthsByYear}
           triggerAriaLabel="Open dashboard filters"
           onApply={({ mode, year, month }) => {
+            // Remember current chart across filter changes.
+            isFilterChangeInProgress.current = true;
+            pendingChartIndex.current = activeChartIndex;
             setAppliedPeriodMode(mode);
             setAppliedSelectedYear(year);
             setAppliedSelectedMonth(month);
@@ -757,7 +840,7 @@ export default function DashboardOverview() {
           <div className="min-w-full shrink-0 snap-center">
             <div className="h-[260px] w-full flex items-center justify-center">
               {radarSpendData.filter((c) => c.spent > 0).length < 3 &&
-              radarSpendBucketData.filter((b) => b.spent > 0).length < 3 &&
+              radarSpendBucketData.filter((b) => b.spent > 0).length < 1 &&
               radarIncomeData.filter((c) => c.earned > 0).length < 3 ? (
                 <p className="text-xs text-muted-foreground text-center px-6">
                   Not enough data for meaningful radar charts in the selected period.
@@ -782,7 +865,7 @@ export default function DashboardOverview() {
                       </RadarChart>
                     </ChartContainer>
                   )}
-                  {radarSpendBucketData.filter((b) => b.spent > 0).length >= 3 && (
+                  {radarSpendBucketData.filter((b) => b.spent > 0).length >= 1 && (
                     <ChartContainer config={spendingChartConfig} className="h-full w-1/3">
                       <RadarChart data={radarSpendBucketData}>
                         <PolarGrid />
@@ -830,7 +913,13 @@ export default function DashboardOverview() {
             <button
               key={index}
               type="button"
-              onClick={() => scrollToChart(index)}
+              onClick={() => {
+                // Directly set the active index for immediate visual feedback,
+                // then perform a programmatic scroll (which is ignored by the
+                // scroll handler via the isProgrammaticScroll flag).
+                setActiveChartIndex(index);
+                scrollToChart(index);
+              }}
               className={
                 index === activeChartIndex
                   ? "h-2.5 w-5 rounded-full bg-foreground transition-all"

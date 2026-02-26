@@ -117,6 +117,19 @@ export default function PeriodFilterPopover({
     setIsOpen(false);
   };
 
+  const setToCurrentPeriod = () => {
+    const now = new Date();
+    const currentYear = String(now.getFullYear());
+    const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+
+    if (draftMode === "month") {
+      setDraftYear(currentYear);
+      setDraftMonth(`${currentYear}-${currentMonth}`);
+    } else {
+      setDraftYear(currentYear);
+    }
+  };
+
   return (
     <div className={className}>
       <MorphingPopover open={isOpen} onOpenChange={setIsOpen}>
@@ -191,18 +204,28 @@ export default function PeriodFilterPopover({
                 ))}
               </SafePopoverSelect>
             )}
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex items-center justify-between gap-2 pt-1">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={() => setIsOpen(false)}
+                onClick={setToCurrentPeriod}
               >
-                Cancel
+                {draftMode === "month" ? "Current month" : "Current year"}
               </Button>
-              <Button type="button" size="sm" onClick={applyDraftFilters}>
-                Apply filters
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="button" size="sm" onClick={applyDraftFilters}>
+                  Apply filters
+                </Button>
+              </div>
             </div>
           </div>
         </MorphingPopoverContent>
