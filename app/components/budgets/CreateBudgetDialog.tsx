@@ -68,13 +68,25 @@ function CategoryMultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <div className="max-h-60 overflow-y-auto p-1">
-          {categories.map((cat) => {
+        <div
+          className="max-h-60 overflow-y-auto p-1"
+          role="listbox"
+          aria-multiselectable="true"
+          aria-label="Select categories"
+        >
+          {categories.map((cat, index) => {
             const selected = value.includes(cat.id);
+            const prevSelected =
+              index > 0 && value.includes(categories[index - 1]?.id ?? "");
+            const nextSelected =
+              index < categories.length - 1 &&
+              value.includes(categories[index + 1]?.id ?? "");
+
             return (
               <div
                 key={cat.id}
-                role="button"
+                role="option"
+                aria-selected={selected}
                 tabIndex={0}
                 onClick={() => toggle(cat.id)}
                 onKeyDown={(e) => {
@@ -84,20 +96,23 @@ function CategoryMultiSelect({
                   }
                 }}
                 className={cn(
-                  "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent",
+                  "flex w-full cursor-pointer items-center gap-2 px-2 py-2 text-left text-sm transition-colors hover:bg-accent",
+                  !selected && "rounded-md",
+                  selected && !prevSelected && !nextSelected && "rounded-md",
+                  selected && !prevSelected && nextSelected && "rounded-t-md",
+                  selected && prevSelected && !nextSelected && "rounded-b-md",
                   selected && "bg-accent"
                 )}
               >
                 <div
                   className={cn(
-                    "grid h-4 w-4 shrink-0 place-content-center rounded-sm border border-primary shadow",
+                    "grid h-4 w-4 shrink-0 place-content-center rounded-sm border border-muted-foreground/40",
                     selected && "bg-primary text-primary-foreground"
                   )}
                 >
                   {selected ? <IconCheck className="h-3 w-3" /> : null}
                 </div>
                 <span className="truncate">{cat.name}</span>
-                {selected ? <IconCheck className="h-4 w-4 shrink-0 text-primary" /> : null}
               </div>
             );
           })}
