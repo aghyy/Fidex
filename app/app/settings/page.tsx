@@ -5,7 +5,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/skeleton";
 import Link from "next/link";
-import { IconUser, IconCategory, IconWallet, IconLogout, IconAdjustmentsHorizontal } from "@tabler/icons-react";
+import { IconUser, IconCategory, IconWallet, IconLogout, IconAdjustmentsHorizontal, IconFileExport } from "@tabler/icons-react";
 
 export default function SettingsPage() {
   const { status } = useSession();
@@ -71,6 +71,16 @@ export default function SettingsPage() {
               <div>
                 <h2 className="text-base font-semibold">Manage Categories</h2>
                 <p className="text-sm text-muted-foreground">Create, edit, and organize your categories.</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/settings/financial-statement" className="rounded-xl border bg-background p-5 hover:bg-accent hover:text-accent-foreground transition-colors">
+            <div className="flex items-start gap-3">
+              <IconFileExport className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <h2 className="text-base font-semibold">Finanzübersicht (PDF)</h2>
+                <p className="text-sm text-muted-foreground">Generate a financial statement PDF for your tax advisor or Finanzamt.</p>
               </div>
             </div>
           </Link>
