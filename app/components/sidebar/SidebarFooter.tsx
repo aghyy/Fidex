@@ -66,7 +66,6 @@ export default function SidebarFooter({
 
   // TODO: dont allow change username more than 3 times in 30 days but one can always change to old username for 14 days (new table for reserved usernames)
   // TODO: allow change email but with verification email (new table for email verification tokens)
-  // TODO: change theme like vercel? toggle with 3 options (liquid glass? animations? blur?)
 
   useEffect(() => {
     // no-op: dialog now shows read-only info
@@ -161,7 +160,10 @@ export default function SidebarFooter({
               </div>
 
               <div className="border-t pt-4 space-y-3">
-                <AnimatedThemeToggler />
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs leading-none uppercase font-semibold text-muted-foreground">Theme</span>
+                  <AnimatedThemeToggler />
+                </div>
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: "/auth/signin" })}

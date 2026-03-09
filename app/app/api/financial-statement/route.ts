@@ -19,11 +19,11 @@ type TxRecord = {
 
 function formatAmount(value: bigint | number): string {
   const n = typeof value === "bigint" ? Number(value) : value;
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatDate(d: Date): string {
-  return new Date(d).toLocaleDateString("de-DE", {
+  return new Date(d).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -39,6 +39,20 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
+  const accountIdsParam = searchParams.get("accounts");
+  const categoryIdsParam = searchParams.get("categories");
+  const includePending = searchParams.get("includePending") === "true";
+  const includePersonalInfo = searchParams.get("includePersonalInfo") !== "false";
+  const includeTransactionList = searchParams.get("includeTransactionList") !== "false";
+
+  const accountIdsFilter =
+    accountIdsParam !== null && accountIdsParam !== undefined
+      ? accountIdsParam.split(",").map((id) => id.trim()).filter(Boolean)
+      : null;
+  const categoryIdsFilter =
+    categoryIdsParam !== null && categoryIdsParam !== undefined
+      ? categoryIdsParam.split(",").map((id) => id.trim()).filter(Boolean)
+      : null;
 
   const now = new Date();
   const from = fromParam ? new Date(fromParam) : new Date(now.getFullYear(), 0, 1);
@@ -49,7 +63,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [user, accounts, categories, transactions] = await Promise.all([
+    const [user, allAccounts, categories, allTransactions] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
         select: { firstName: true, lastName: true, email: true },
@@ -67,7 +81,7 @@ export async function GET(request: Request) {
         where: {
           userId: session.user.id,
           occurredAt: { gte: from, lte: to },
-          pending: false,
+          ...(includePending ? {} : { pending: false }),
         },
         orderBy: { occurredAt: "asc" },
         select: {
@@ -83,6 +97,21 @@ export async function GET(request: Request) {
         },
       }),
     ]);
+
+    const accounts = accountIdsFilter
+      ? allAccounts.filter((a) => accountIdsFilter.includes(a.id))
+      : allAccounts;
+
+    let transactions = allTransactions as TxRecord[];
+    if (accountIdsFilter && accountIdsFilter.length > 0) {
+      transactions = transactions.filter(
+        (tx) =>
+          accountIdsFilter.includes(tx.originAccountId) || accountIdsFilter.includes(tx.targetAccountId)
+      );
+    }
+    if (categoryIdsFilter && categoryIdsFilter.length > 0) {
+      transactions = transactions.filter((tx) => categoryIdsFilter.includes(tx.category));
+    }
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -135,20 +164,22 @@ export async function GET(request: Request) {
     const generatedAt = formatDate(new Date());
     const periodStr = `${formatDate(from)} – ${formatDate(to)}`;
 
-    drawText("Finanzübersicht", { bold: true, size: 18 });
+    drawText("Financial Statement", { bold: true, size: 18 });
     y -= 8;
-    drawText(`Erstellt am: ${generatedAt}`);
-    drawText(`Zeitraum: ${periodStr}`);
+    drawText(`Generated on: ${generatedAt}`);
+    drawText(`Period: ${periodStr}`);
     y -= 8;
 
-    drawSection("Angaben zur Person", () => {
-      drawText(`Name: ${userName}`);
-      drawText(`E-Mail: ${user.email || "—"}`);
-    });
+    if (includePersonalInfo) {
+      drawSection("Personal Information", () => {
+        drawText(`Name: ${userName}`);
+        drawText(`Email: ${user.email || "—"}`);
+      });
+    }
 
-    drawSection("Kontostände (aktueller Stand zum Erstellungsdatum)", () => {
+    drawSection("Account Balances (as of report date)", () => {
       if (accounts.length === 0) {
-        drawText("Keine Konten vorhanden.");
+        drawText("No accounts available.");
         return;
       }
       let total = BigInt(0);
@@ -157,7 +188,7 @@ export async function GET(request: Request) {
         total += bal;
         drawText(`${a.name} (${a.accountNumber}): ${formatAmount(bal)} ${a.currency}`);
       }
-      drawText(`Gesamt: ${formatAmount(total)} EUR`);
+      drawText(`Total: ${formatAmount(total)} EUR`);
     });
 
     const incomeByCat = new Map<string, number>();
@@ -172,9 +203,9 @@ export async function GET(request: Request) {
       }
     }
 
-    drawSection("Einnahmen nach Kategorie", () => {
+    drawSection("Income by Category", () => {
       if (incomeByCat.size === 0) {
-        drawText("Keine Einnahmen im Zeitraum.");
+        drawText("No income in period.");
         return;
       }
       let total = 0;
@@ -182,12 +213,12 @@ export async function GET(request: Request) {
         total += amt;
         drawText(`${cat}: ${formatAmount(amt)} EUR`);
       }
-      drawText(`Summe Einnahmen: ${formatAmount(total)} EUR`);
+      drawText(`Total Income: ${formatAmount(total)} EUR`);
     });
 
-    drawSection("Ausgaben nach Kategorie", () => {
+    drawSection("Expenses by Category", () => {
       if (expenseByCat.size === 0) {
-        drawText("Keine Ausgaben im Zeitraum.");
+        drawText("No expenses in period.");
         return;
       }
       let total = 0;
@@ -195,18 +226,19 @@ export async function GET(request: Request) {
         total += amt;
         drawText(`${cat}: ${formatAmount(amt)} EUR`);
       }
-      drawText(`Summe Ausgaben: ${formatAmount(total)} EUR`);
+      drawText(`Total Expenses: ${formatAmount(total)} EUR`);
     });
 
-    drawSection("Transaktionsliste", () => {
-      if (transactions.length === 0) {
-        drawText("Keine Transaktionen im Zeitraum.");
-        return;
-      }
-      const rows = (transactions as TxRecord[]).map((tx) => {
+    if (includeTransactionList) {
+      drawSection("Transaction List", () => {
+        if (transactions.length === 0) {
+          drawText("No transactions in period.");
+          return;
+        }
+        const rows = transactions.map((tx) => {
         const amt = Number(tx.amount);
         const catName = categoryMap.get(tx.category) ?? tx.category;
-        const typeLabel = tx.type === "INCOME" ? "Einnahme" : tx.type === "EXPENSE" ? "Ausgabe" : "Umbuchung";
+        const typeLabel = tx.type === "INCOME" ? "Income" : tx.type === "EXPENSE" ? "Expense" : "Transfer";
         const sign = tx.type === "INCOME" ? "+" : "-";
         const note = (tx.notes || "—").replace(/\n/g, " ").slice(0, 60);
         return {
@@ -221,7 +253,7 @@ export async function GET(request: Request) {
         if (y < margin + 40) {
           page = pdfDoc.addPage([595, 842]);
           y = page.getSize().height - margin;
-          page.drawText("(Fortsetzung)", { x: margin, y, size: smallFont, font, color: rgb(0.4, 0.4, 0.4) });
+          page.drawText("(continued)", { x: margin, y, size: smallFont, font, color: rgb(0.4, 0.4, 0.4) });
           y -= lineHeight;
         }
         page.drawText(`${r.date} | ${r.note} | ${r.category} | ${r.type} | ${r.amount}`, {
@@ -234,9 +266,10 @@ export async function GET(request: Request) {
         y -= lineHeight;
       }
     });
+    }
 
     const pdfBytes = await pdfDoc.save();
-    const filename = `Finanzuebersicht_${formatDate(from).replace(/\./g, "-")}_bis_${formatDate(to).replace(/\./g, "-")}.pdf`;
+    const filename = `Financial_Statement_${formatDate(from).replace(/\//g, "-")}_to_${formatDate(to).replace(/\//g, "-")}.pdf`;
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,

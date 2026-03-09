@@ -79,8 +79,8 @@ export default function SettingsPage() {
             <div className="flex items-start gap-3">
               <IconFileExport className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <h2 className="text-base font-semibold">Finanzübersicht (PDF)</h2>
-                <p className="text-sm text-muted-foreground">Generate a financial statement PDF for your tax advisor or Finanzamt.</p>
+                <h2 className="text-base font-semibold">Financial Statement (PDF)</h2>
+                <p className="text-sm text-muted-foreground">Generate a financial statement PDF for your tax advisor or accountant.</p>
               </div>
             </div>
           </Link>
