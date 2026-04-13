@@ -3,22 +3,47 @@ export function roundMoney(value: number): number {
 }
 
 export function toMoneyNumber(value: unknown): number {
-  if (typeof value === "number") return roundMoney(value);
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? roundMoney(parsed) : 0;
-  }
-  if (value && typeof value === "object") {
-    const maybeDecimal = value as { toNumber?: () => number; toString?: () => string };
+  const parse = (input: unknown, depth: number): number | null => {
+    if (depth > 3) return null;
+    if (typeof input === "number") return Number.isFinite(input) ? roundMoney(input) : null;
+    if (typeof input === "string") {
+      const parsed = Number(input);
+      return Number.isFinite(parsed) ? roundMoney(parsed) : null;
+    }
+    if (!input || typeof input !== "object") return null;
+
+    const maybeDecimal = input as {
+      value?: unknown;
+      toNumber?: () => number;
+      toJSON?: () => unknown;
+      toString?: () => string;
+      valueOf?: () => unknown;
+    };
+
+    if (maybeDecimal.value !== undefined) {
+      const parsed = parse(maybeDecimal.value, depth + 1);
+      if (parsed !== null) return parsed;
+    }
     if (typeof maybeDecimal.toNumber === "function") {
-      return roundMoney(maybeDecimal.toNumber());
+      const parsed = maybeDecimal.toNumber();
+      if (Number.isFinite(parsed)) return roundMoney(parsed);
+    }
+    if (typeof maybeDecimal.toJSON === "function") {
+      const parsed = parse(maybeDecimal.toJSON(), depth + 1);
+      if (parsed !== null) return parsed;
+    }
+    if (typeof maybeDecimal.valueOf === "function") {
+      const parsed = parse(maybeDecimal.valueOf(), depth + 1);
+      if (parsed !== null) return parsed;
     }
     if (typeof maybeDecimal.toString === "function") {
       const parsed = Number(maybeDecimal.toString());
-      return Number.isFinite(parsed) ? roundMoney(parsed) : 0;
+      if (Number.isFinite(parsed)) return roundMoney(parsed);
     }
-  }
-  return 0;
+    return null;
+  };
+
+  return parse(value, 0) ?? 0;
 }
 
 export function parseMoneyInput(

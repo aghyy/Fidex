@@ -22,6 +22,12 @@ export const metadata: Metadata = {
   description: "Where your finances and documents find structure",
 };
 
+// TODO: Cron Jobs for repeating transactions
+// TODO: Login image
+// TODO: UI/UX
+// TODO: future transactions
+// TODO: check mobile responsiveness
+
 export default function RootLayout({
   children,
 }: Readonly<{
