@@ -4,14 +4,11 @@ import { auth } from "../../../../auth";
 import { getActualSpent } from "../../../../lib/budget";
 import type { RouteContext } from "@/types/api";
 import type { BudgetDelegate } from "@/types/budgets";
+import { parseMoneyInput, toMoneyNumber } from "@/lib/money";
 
 const budget = (prisma as unknown as { budget: BudgetDelegate }).budget;
 
 export const runtime = "nodejs";
-
-function toNumber(value: bigint): number {
-  return Number(value);
-}
 
 /** GET /api/budget/[id] – get one budget with actual spent. Query: from, to for period. */
 export async function GET(_request: Request, context: RouteContext) {
@@ -49,9 +46,9 @@ export async function GET(_request: Request, context: RouteContext) {
       budget: {
         id: budgetRow.id,
         name: budgetRow.name,
-        targetAmount: toNumber(budgetRow.targetAmount),
+        targetAmount: toMoneyNumber(budgetRow.targetAmount),
         categoryIds,
-        actualAmount: toNumber(actual),
+        actualAmount: toMoneyNumber(actual),
         createdAt: budgetRow.createdAt,
         updatedAt: budgetRow.updatedAt,
       },
@@ -83,20 +80,22 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = await request.json();
     const updates: {
       name?: string | null;
-      targetAmount?: bigint;
+      targetAmount?: number;
       categories?: { set: { id: string }[] };
     } = {};
 
     if (body?.name !== undefined) {
       updates.name = typeof body.name === "string" ? body.name.trim() || null : null;
     }
-    if (
-      body?.targetAmount !== undefined &&
-      typeof body.targetAmount === "number" &&
-      Number.isFinite(body.targetAmount) &&
-      body.targetAmount >= 0
-    ) {
-      updates.targetAmount = BigInt(Math.round(body.targetAmount));
+    if (body?.targetAmount !== undefined) {
+      const parsedTargetAmount = parseMoneyInput(body.targetAmount, { min: 0 });
+      if (parsedTargetAmount === null) {
+        return NextResponse.json(
+          { error: "targetAmount must be a non-negative number" },
+          { status: 400 }
+        );
+      }
+      updates.targetAmount = parsedTargetAmount;
     }
     if (Array.isArray(body?.categoryIds)) {
       const categoryIds = (body.categoryIds as unknown[]).filter(
@@ -137,9 +136,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       budget: {
         id: updatedRow.id,
         name: updatedRow.name,
-        targetAmount: toNumber(updatedRow.targetAmount),
+        targetAmount: toMoneyNumber(updatedRow.targetAmount),
         categoryIds,
-        actualAmount: toNumber(actual),
+        actualAmount: toMoneyNumber(actual),
         createdAt: updatedRow.createdAt,
         updatedAt: updatedRow.updatedAt,
       },

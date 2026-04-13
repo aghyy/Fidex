@@ -335,7 +335,7 @@ export default function TransactionsManager({
 
   function formatAmount(amount: string): string {
     const num = parseFloat(amount);
-    return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   function formatDate(dateString: string): string {

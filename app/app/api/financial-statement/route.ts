@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../auth";
 import { prisma } from "../../../lib/prisma";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { toMoneyNumber } from "@/lib/money";
 
 export const runtime = "nodejs";
 
 type TxRecord = {
   id: string;
-  amount: bigint;
+  amount: unknown;
   type: string;
   category: string;
   notes: string;
@@ -17,8 +18,8 @@ type TxRecord = {
   pending: boolean;
 };
 
-function formatAmount(value: bigint | number): string {
-  const n = typeof value === "bigint" ? Number(value) : value;
+function formatAmount(value: number): string {
+  const n = value;
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -102,7 +103,7 @@ export async function GET(request: Request) {
       ? allAccounts.filter((a) => accountIdsFilter.includes(a.id))
       : allAccounts;
 
-    let transactions = allTransactions as TxRecord[];
+    let transactions = allTransactions as unknown as TxRecord[];
     if (accountIdsFilter && accountIdsFilter.length > 0) {
       transactions = transactions.filter(
         (tx) =>
@@ -182,9 +183,9 @@ export async function GET(request: Request) {
         drawText("No accounts available.");
         return;
       }
-      let total = BigInt(0);
+      let total = 0;
       for (const a of accounts) {
-        const bal = typeof a.balance === "bigint" ? a.balance : BigInt(Math.round(Number(a.balance)));
+        const bal = toMoneyNumber(a.balance);
         total += bal;
         drawText(`${a.name} (${a.accountNumber}): ${formatAmount(bal)} ${a.currency}`);
       }
@@ -194,7 +195,7 @@ export async function GET(request: Request) {
     const incomeByCat = new Map<string, number>();
     const expenseByCat = new Map<string, number>();
     for (const tx of transactions as TxRecord[]) {
-      const amt = Number(tx.amount);
+      const amt = toMoneyNumber(tx.amount);
       const catName = categoryMap.get(tx.category) ?? tx.category;
       if (tx.type === "INCOME") {
         incomeByCat.set(catName, (incomeByCat.get(catName) ?? 0) + amt);
@@ -236,7 +237,7 @@ export async function GET(request: Request) {
           return;
         }
         const rows = transactions.map((tx) => {
-        const amt = Number(tx.amount);
+        const amt = toMoneyNumber(tx.amount);
         const catName = categoryMap.get(tx.category) ?? tx.category;
         const typeLabel = tx.type === "INCOME" ? "Income" : tx.type === "EXPENSE" ? "Expense" : "Transfer";
         const sign = tx.type === "INCOME" ? "+" : "-";

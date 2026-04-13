@@ -31,7 +31,7 @@ export type BudgetDelegate = {
     Array<{
       id: string;
       name: string | null;
-      targetAmount: bigint;
+      targetAmount: number;
       createdAt: Date;
       updatedAt: Date;
       categories: { id: string }[];
@@ -41,14 +41,14 @@ export type BudgetDelegate = {
     data: {
       userId: string;
       name?: string;
-      targetAmount: bigint;
+      targetAmount: number;
       categories: { connect: { id: string }[] };
     };
     include?: { categories: { select: { id: true } } };
   }) => Promise<{
     id: string;
     name: string | null;
-    targetAmount: bigint;
+    targetAmount: number;
     createdAt: Date;
     updatedAt: Date;
     categories: { id: string }[];
@@ -59,7 +59,7 @@ export type BudgetDelegate = {
   }) => Promise<{
     id: string;
     name: string | null;
-    targetAmount: bigint;
+    targetAmount: number;
     createdAt: Date;
     updatedAt: Date;
     categories: { id: string }[];
@@ -68,14 +68,14 @@ export type BudgetDelegate = {
     where: { id: string };
     data: {
       name?: string | null;
-      targetAmount?: bigint;
+      targetAmount?: number;
       categories?: { set: { id: string }[] };
     };
     include?: { categories: { select: { id: true } } };
   }) => Promise<{
     id: string;
     name: string | null;
-    targetAmount: bigint;
+    targetAmount: number;
     createdAt: Date;
     updatedAt: Date;
     categories: { id: string }[];

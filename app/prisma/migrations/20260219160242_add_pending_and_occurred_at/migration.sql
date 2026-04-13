@@ -1,5 +1,5 @@
 -- DropIndex
-DROP INDEX "public"."Transaction_userId_occurredAt_idx";
+DROP INDEX IF EXISTS "public"."Transaction_userId_occurredAt_idx";
 
 -- DropIndex
-DROP INDEX "public"."Transaction_userId_pending_idx";
+DROP INDEX IF EXISTS "public"."Transaction_userId_pending_idx";

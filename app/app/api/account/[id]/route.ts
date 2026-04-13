@@ -4,6 +4,7 @@ import { auth } from "../../../../auth";
 import { AccountDelegate, AccountRecord } from "@/types/accounts";
 import { RouteContext } from "@/types/api";
 import { Currency } from "@/types/currencies";
+import { parseMoneyInput, toMoneyNumber } from "@/lib/money";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ const account = (prisma as unknown as { account: AccountDelegate }).account;
 
 function normalizeAccount(record: AccountRecord) {
     const { id, name, accountNumber, color, icon, balance, currency } = record as AccountRecord & {
-        balance: number | bigint;
+        balance: number | string;
     };
     return {
         id,
@@ -19,7 +20,7 @@ function normalizeAccount(record: AccountRecord) {
         accountNumber,
         color,
         icon,
-        balance: typeof balance === "bigint" ? Number(balance) : balance,
+        balance: toMoneyNumber(balance),
         currency,
     };
 }
@@ -58,7 +59,13 @@ export async function PATCH(request: Request, context: RouteContext) {
         if (typeof body?.accountNumber === "string") data.accountNumber = body.accountNumber.trim();
         if (typeof body?.color === "string") data.color = body.color.trim();
         if (typeof body?.icon === "string") data.icon = body.icon.trim();
-        if (typeof body?.balance === "number") data.balance = Math.round(body.balance);
+        if (body?.balance !== undefined) {
+            const parsedBalance = parseMoneyInput(body.balance, { min: 0 });
+            if (parsedBalance === null) {
+                return NextResponse.json({ error: "Valid balance is required" }, { status: 400 });
+            }
+            data.balance = parsedBalance;
+        }
         if (typeof body?.currency === "string" && body.currency !== "EUR") {
             return NextResponse.json({ error: "Currently only EUR is available" }, { status: 400 });
         }

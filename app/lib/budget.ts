@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { toMoneyNumber } from "./money";
 
 /**
  * Sum of expense amounts for the given user and categories.
@@ -9,8 +10,8 @@ export async function getActualSpent(
   userId: string,
   categoryIds: string[],
   options?: { from?: Date; to?: Date }
-): Promise<bigint> {
-  if (categoryIds.length === 0) return BigInt(0);
+): Promise<number> {
+  if (categoryIds.length === 0) return 0;
 
   const where: {
     userId: string;
@@ -34,5 +35,5 @@ export async function getActualSpent(
     _sum: { amount: true },
   });
 
-  return result._sum.amount ?? BigInt(0);
+  return toMoneyNumber(result._sum.amount ?? 0);
 }

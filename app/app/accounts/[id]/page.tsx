@@ -182,6 +182,8 @@ function EditAccountForm({
         <input
           id={`account-balance-${account.id}`}
           type="number"
+          step="0.01"
+          inputMode="decimal"
           value={balance}
           onChange={(e) => setBalance(Number(e.target.value))}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2"

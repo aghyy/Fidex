@@ -3,14 +3,11 @@ import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
 import { getActualSpent } from "../../../lib/budget";
 import type { BudgetDelegate } from "@/types/budgets";
+import { parseMoneyInput, toMoneyNumber } from "@/lib/money";
 
 const budget = (prisma as unknown as { budget: BudgetDelegate }).budget;
 
 export const runtime = "nodejs";
-
-function toNumber(value: bigint): number {
-  return Number(value);
-}
 
 /** GET /api/budget – list all budgets for the current user, with actual spent. */
 export async function GET(request: Request) {
@@ -44,9 +41,9 @@ export async function GET(request: Request) {
         return {
           id: b.id,
           name: b.name,
-          targetAmount: toNumber(b.targetAmount),
+          targetAmount: toMoneyNumber(b.targetAmount),
           categoryIds,
-          actualAmount: toNumber(actual),
+          actualAmount: toMoneyNumber(actual),
           createdAt: b.createdAt,
           updatedAt: b.updatedAt,
         };
@@ -70,16 +67,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const name = body?.name != null ? String(body.name).trim() || null : null;
-    const targetAmount = body?.targetAmount;
+    const targetAmount = parseMoneyInput(body?.targetAmount, { min: 0 });
     const categoryIds = Array.isArray(body?.categoryIds)
       ? (body.categoryIds as unknown[]).filter((id): id is string => typeof id === "string")
       : [];
 
     if (
-      targetAmount == null ||
-      typeof targetAmount !== "number" ||
-      !Number.isFinite(targetAmount) ||
-      targetAmount < 0
+      targetAmount === null
     ) {
       return NextResponse.json(
         { error: "targetAmount must be a non-negative number" },
@@ -113,7 +107,7 @@ export async function POST(request: Request) {
       data: {
         userId: session.user.id,
         name: name ?? undefined,
-        targetAmount: BigInt(Math.round(targetAmount)),
+        targetAmount,
         categories: { connect: categoryIdsUnique.map((id) => ({ id })) },
       },
       include: { categories: { select: { id: true } } },
@@ -123,9 +117,9 @@ export async function POST(request: Request) {
     const response = {
       id: created.id,
       name: created.name,
-      targetAmount: toNumber(created.targetAmount),
+      targetAmount: toMoneyNumber(created.targetAmount),
       categoryIds: created.categories.map((c) => c.id),
-      actualAmount: toNumber(actual),
+      actualAmount: toMoneyNumber(actual),
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
     };

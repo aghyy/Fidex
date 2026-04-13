@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
 import { TransactionInterval, TransactionType } from "@/types/transactions";
+import { parseMoneyInput, roundMoney, toMoneyNumber } from "@/lib/money";
 
 export const runtime = "nodejs";
 
@@ -133,10 +134,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Account is required" }, { status: 400 });
         }
 
-        if (amount === undefined || amount === null || typeof amount !== "number" || amount <= 0) {
-            return NextResponse.json({ error: "Valid amount is required" }, { status: 400 });
-        }
-
         if (!category || typeof category !== "string") {
             return NextResponse.json({ error: "Category is required" }, { status: 400 });
         }
@@ -145,7 +142,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Target account is required for transfer" }, { status: 400 });
         }
 
-        const amountBigInt = BigInt(Math.round(amount));
+        const parsedAmount = parseMoneyInput(amount, { min: 0.01 });
+        if (parsedAmount === null) {
+            return NextResponse.json({ error: "Valid amount is required" }, { status: 400 });
+        }
         const expiresDate = expires
             ? new Date(expires)
             : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
@@ -159,8 +159,8 @@ export async function POST(request: Request) {
         const db = prisma as unknown as {
             $transaction: <T>(fn: (tx: {
                 account: {
-                    findFirst: (args: { where: { id: string; userId: string } }) => Promise<{ id: string; balance: bigint | number; currency: string } | null>;
-                    update: (args: { where: { id: string }; data: { balance: bigint } }) => Promise<unknown>;
+                    findFirst: (args: { where: { id: string; userId: string } }) => Promise<{ id: string; balance: number | string; currency: string } | null>;
+                    update: (args: { where: { id: string }; data: { balance: number } }) => Promise<unknown>;
                 };
                 category: {
                     findFirst: (args: { where: { id: string; userId: string } }) => Promise<{ id: string } | null>;
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
                             userId: string;
                             originAccountId: string;
                             targetAccountId: string;
-                            amount: bigint;
+                            amount: number;
                             notes: string;
                             interval: TransactionInterval;
                             type: TransactionType;
@@ -206,15 +206,15 @@ export async function POST(request: Request) {
             if (!target) throw new Error("Target account not found");
             if (target.currency !== "EUR") throw new Error("Only EUR accounts are currently supported");
 
-            const originBalance = typeof origin.balance === "bigint" ? origin.balance : BigInt(origin.balance);
-            const targetBalance = typeof target.balance === "bigint" ? target.balance : BigInt(target.balance);
+            const originBalance = toMoneyNumber(origin.balance);
+            const targetBalance = toMoneyNumber(target.balance);
 
             const createdTx = await tx.transaction.create({
                 data: {
                     userId: session.user.id,
                     originAccountId: originId,
                     targetAccountId: resolvedTargetId,
-                    amount: amountBigInt,
+                    amount: parsedAmount,
                     notes: notes ? String(notes).trim() : "",
                     interval: (interval as TransactionInterval) ?? "ONCE",
                     type: normalizedType,
@@ -229,21 +229,21 @@ export async function POST(request: Request) {
                 if (normalizedType === "EXPENSE") {
                     await tx.account.update({
                         where: { id: originId },
-                        data: { balance: originBalance - amountBigInt },
+                        data: { balance: roundMoney(originBalance - parsedAmount) },
                     });
                 } else if (normalizedType === "INCOME") {
                     await tx.account.update({
                         where: { id: originId },
-                        data: { balance: originBalance + amountBigInt },
+                        data: { balance: roundMoney(originBalance + parsedAmount) },
                     });
                 } else {
                     await tx.account.update({
                         where: { id: originId },
-                        data: { balance: originBalance - amountBigInt },
+                        data: { balance: roundMoney(originBalance - parsedAmount) },
                     });
                     await tx.account.update({
                         where: { id: resolvedTargetId },
-                        data: { balance: targetBalance + amountBigInt },
+                        data: { balance: roundMoney(targetBalance + parsedAmount) },
                     });
                 }
             }

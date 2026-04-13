@@ -3,6 +3,7 @@ import { prisma } from "../../../../lib/prisma";
 import { auth } from "../../../../auth";
 import { TransactionInterval, TransactionType } from "@/types/transactions";
 import { RouteContext } from "@/types/api";
+import { parseMoneyInput, roundMoney, toMoneyNumber } from "@/lib/money";
 
 export const runtime = "nodejs";
 
@@ -45,7 +46,7 @@ export async function GET(
                     userId: string;
                     originAccountId: string;
                     targetAccountId: string;
-                    amount: bigint | number;
+                    amount: number | string;
                     type: TransactionType;
                     occurredAt: Date;
                     pending: boolean;
@@ -82,154 +83,83 @@ export async function PATCH(
     }
 
     try {
-        const {
-            originAccountId,
-            targetAccountId,
-            amount,
-            notes,
-            interval,
-            type,
-            category,
-            expires,
-            occurredAt,
-            pending,
-        } = await request.json();
+        const { originAccountId, targetAccountId, amount, notes, interval, type, category, expires, occurredAt, pending } =
+            await request.json();
 
-        const db = prisma as unknown as {
-            $transaction: <T>(fn: (tx: {
-                transaction: {
-                    findUnique: (args: { where: { id: string } }) => Promise<{
-                        id: string;
-                        userId: string;
-                        originAccountId: string;
-                        targetAccountId: string;
-                        amount: bigint | number;
-                        notes: string;
-                        interval: TransactionInterval;
-                        type: TransactionType;
-                        category: string;
-                        occurredAt: Date;
-                        pending: boolean;
-                        expires: Date;
-                    } | null>;
-                    update: (args: {
-                        where: { id: string };
-                        data: {
-                            originAccountId: string;
-                            targetAccountId: string;
-                            amount: bigint;
-                            notes: string;
-                            interval: TransactionInterval;
-                            type: TransactionType;
-                            category: string;
-                            occurredAt: Date;
-                            pending: boolean;
-                            expires: Date;
-                        };
-                    }) => Promise<unknown>;
-                };
-                account: {
-                    findFirst: (args: { where: { id: string; userId: string } }) => Promise<{ id: string; balance: bigint | number; currency: string } | null>;
-                    update: (args: { where: { id: string }; data: { balance: bigint } }) => Promise<unknown>;
-                };
-                category: {
-                    findFirst: (args: { where: { id: string; userId: string } }) => Promise<{ id: string } | null>;
-                };
-            }) => Promise<T>) => Promise<T>;
-        };
+        const updated = await prisma.$transaction(async (tx) => {
+            const existing = await tx.transaction.findUnique({ where: { id } });
+            if (!existing) throw new Error("Transaction not found");
+            if (existing.userId !== session.user.id) throw new Error("Forbidden");
 
-        const updated = await db.$transaction(async (tx) => {
-            const existing = await tx.transaction.findUnique({
-                where: { id },
-            });
-
-            if (!existing) {
-                throw new Error("Transaction not found");
-            }
-            if (existing.userId !== session.user.id) {
-                throw new Error("Forbidden");
-            }
-
-            const existingAmount = typeof existing.amount === "bigint" ? existing.amount : BigInt(existing.amount);
-
-            const oldOrigin = await tx.account.findFirst({
-                where: { id: existing.originAccountId, userId: session.user.id },
-            });
+            const existingAmount = toMoneyNumber(existing.amount);
+            const oldOrigin = await tx.account.findFirst({ where: { id: existing.originAccountId, userId: session.user.id } });
             if (!oldOrigin) throw new Error("Origin account not found");
-            const oldOriginBalance = typeof oldOrigin.balance === "bigint" ? oldOrigin.balance : BigInt(oldOrigin.balance);
+            const oldOriginBalance = toMoneyNumber(oldOrigin.balance);
 
-            let oldTargetBalance: bigint | null = null;
+            let oldTargetBalance = 0;
             if (existing.type === "TRANSFER") {
                 const oldTarget = await tx.account.findFirst({
                     where: { id: existing.targetAccountId, userId: session.user.id },
                 });
                 if (!oldTarget) throw new Error("Target account not found");
-                oldTargetBalance =
-                    typeof oldTarget.balance === "bigint" ? oldTarget.balance : BigInt(oldTarget.balance);
+                oldTargetBalance = toMoneyNumber(oldTarget.balance);
             }
 
-            // Revert existing transaction impact first, but only if already booked.
             if (!existing.pending) {
                 if (existing.type === "EXPENSE") {
                     await tx.account.update({
                         where: { id: existing.originAccountId },
-                        data: { balance: oldOriginBalance + existingAmount },
+                        data: { balance: roundMoney(oldOriginBalance + existingAmount) },
                     });
                 } else if (existing.type === "INCOME") {
                     await tx.account.update({
                         where: { id: existing.originAccountId },
-                        data: { balance: oldOriginBalance - existingAmount },
+                        data: { balance: roundMoney(oldOriginBalance - existingAmount) },
                     });
                 } else {
                     await tx.account.update({
                         where: { id: existing.originAccountId },
-                        data: { balance: oldOriginBalance + existingAmount },
+                        data: { balance: roundMoney(oldOriginBalance + existingAmount) },
                     });
                     await tx.account.update({
                         where: { id: existing.targetAccountId },
-                        data: { balance: (oldTargetBalance as bigint) - existingAmount },
+                        data: { balance: roundMoney(oldTargetBalance - existingAmount) },
                     });
                 }
             }
 
             const normalizedType = (type as TransactionType | undefined) ?? existing.type;
-            const nextOriginId =
-                originAccountId !== undefined ? String(originAccountId).trim() : existing.originAccountId;
-            const requestedTargetId =
-                targetAccountId !== undefined ? String(targetAccountId).trim() : existing.targetAccountId;
+            const nextOriginId = originAccountId !== undefined ? String(originAccountId).trim() : existing.originAccountId;
+            const requestedTargetId = targetAccountId !== undefined ? String(targetAccountId).trim() : existing.targetAccountId;
             const nextTargetId = normalizedType === "TRANSFER" ? requestedTargetId : nextOriginId;
             const nextAmount =
                 amount !== undefined && amount !== null
-                    ? BigInt(Math.round(Number(amount)))
+                    ? parseMoneyInput(amount, { min: 0.01 })
                     : existingAmount;
-            const nextCategoryId =
-                category !== undefined ? String(category).trim() : existing.category;
+            if (nextAmount === null) throw new Error("Valid amount is required");
+
+            const nextCategoryId = category !== undefined ? String(category).trim() : existing.category;
             const nextNotes = notes !== undefined ? String(notes).trim() : existing.notes;
             const nextInterval = (interval as TransactionInterval | undefined) ?? existing.interval;
             const nextExpires = expires !== undefined ? new Date(expires) : existing.expires;
             const nextOccurredAt = occurredAt !== undefined ? new Date(occurredAt) : existing.occurredAt;
             const nextPending = pending !== undefined ? Boolean(pending) : existing.pending;
+
             if (Number.isNaN(nextExpires.getTime()) || Number.isNaN(nextOccurredAt.getTime())) {
                 throw new Error("Invalid transaction date values");
             }
-
             if (normalizedType === "TRANSFER" && (!nextTargetId || nextTargetId.length === 0)) {
                 throw new Error("Target account is required for transfer");
             }
 
-            const nextOrigin = await tx.account.findFirst({
-                where: { id: nextOriginId, userId: session.user.id },
-            });
+            const nextOrigin = await tx.account.findFirst({ where: { id: nextOriginId, userId: session.user.id } });
             if (!nextOrigin) throw new Error("Origin account not found");
             if (nextOrigin.currency !== "EUR") throw new Error("Only EUR accounts are currently supported");
 
             const nextTarget =
                 normalizedType === "TRANSFER"
-                    ? await tx.account.findFirst({
-                          where: { id: nextTargetId, userId: session.user.id },
-                      })
+                    ? await tx.account.findFirst({ where: { id: nextTargetId, userId: session.user.id } })
                     : nextOrigin;
-
             if (!nextTarget) throw new Error("Target account not found");
             if (nextTarget.currency !== "EUR") throw new Error("Only EUR accounts are currently supported");
 
@@ -238,31 +168,28 @@ export async function PATCH(
             });
             if (!categoryItem) throw new Error("Category not found");
 
-            const nextOriginBalance =
-                typeof nextOrigin.balance === "bigint" ? nextOrigin.balance : BigInt(nextOrigin.balance);
-            const nextTargetBalance =
-                typeof nextTarget.balance === "bigint" ? nextTarget.balance : BigInt(nextTarget.balance);
+            const nextOriginBalance = toMoneyNumber(nextOrigin.balance);
+            const nextTargetBalance = toMoneyNumber(nextTarget.balance);
 
-            // Apply new transaction impact only if it should be booked.
             if (!nextPending) {
                 if (normalizedType === "EXPENSE") {
                     await tx.account.update({
                         where: { id: nextOriginId },
-                        data: { balance: nextOriginBalance - nextAmount },
+                        data: { balance: roundMoney(nextOriginBalance - nextAmount) },
                     });
                 } else if (normalizedType === "INCOME") {
                     await tx.account.update({
                         where: { id: nextOriginId },
-                        data: { balance: nextOriginBalance + nextAmount },
+                        data: { balance: roundMoney(nextOriginBalance + nextAmount) },
                     });
                 } else {
                     await tx.account.update({
                         where: { id: nextOriginId },
-                        data: { balance: nextOriginBalance - nextAmount },
+                        data: { balance: roundMoney(nextOriginBalance - nextAmount) },
                     });
                     await tx.account.update({
                         where: { id: nextTargetId },
-                        data: { balance: nextTargetBalance + nextAmount },
+                        data: { balance: roundMoney(nextTargetBalance + nextAmount) },
                     });
                 }
             }
@@ -314,28 +241,7 @@ export async function DELETE(
     }
 
     try {
-        const db = prisma as unknown as {
-            $transaction: <T>(fn: (tx: {
-                transaction: {
-                    findUnique: (args: { where: { id: string } }) => Promise<{
-                        id: string;
-                        userId: string;
-                        originAccountId: string;
-                        targetAccountId: string;
-                        amount: bigint | number;
-                        type: TransactionType;
-                        pending: boolean;
-                    } | null>;
-                    delete: (args: { where: { id: string } }) => Promise<unknown>;
-                };
-                account: {
-                    findFirst: (args: { where: { id: string; userId: string } }) => Promise<{ id: string; balance: bigint | number } | null>;
-                    update: (args: { where: { id: string }; data: { balance: bigint } }) => Promise<unknown>;
-                };
-            }) => Promise<T>) => Promise<T>;
-        };
-
-        await db.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx) => {
             const existing = await tx.transaction.findUnique({
                 where: { id },
             });
@@ -348,39 +254,39 @@ export async function DELETE(
                 throw new Error("Forbidden");
             }
 
-            const amount = typeof existing.amount === "bigint" ? existing.amount : BigInt(existing.amount);
+            const amount = toMoneyNumber(existing.amount);
 
             const origin = await tx.account.findFirst({
                 where: { id: existing.originAccountId, userId: session.user.id },
             });
             if (!origin) throw new Error("Origin account not found");
-            const originBalance = typeof origin.balance === "bigint" ? origin.balance : BigInt(origin.balance);
+            const originBalance = toMoneyNumber(origin.balance);
 
             if (!existing.pending) {
                 if (existing.type === "EXPENSE") {
                     await tx.account.update({
                         where: { id: existing.originAccountId },
-                        data: { balance: originBalance + amount },
+                        data: { balance: roundMoney(originBalance + amount) },
                     });
                 } else if (existing.type === "INCOME") {
                     await tx.account.update({
                         where: { id: existing.originAccountId },
-                        data: { balance: originBalance - amount },
+                        data: { balance: roundMoney(originBalance - amount) },
                     });
                 } else {
                     const target = await tx.account.findFirst({
                         where: { id: existing.targetAccountId, userId: session.user.id },
                     });
                     if (!target) throw new Error("Target account not found");
-                    const targetBalance = typeof target.balance === "bigint" ? target.balance : BigInt(target.balance);
+                    const targetBalance = toMoneyNumber(target.balance);
 
                     await tx.account.update({
                         where: { id: existing.originAccountId },
-                        data: { balance: originBalance + amount },
+                        data: { balance: roundMoney(originBalance + amount) },
                     });
                     await tx.account.update({
                         where: { id: existing.targetAccountId },
-                        data: { balance: targetBalance - amount },
+                        data: { balance: roundMoney(targetBalance - amount) },
                     });
                 }
             }

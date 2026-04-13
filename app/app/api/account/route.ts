@@ -3,15 +3,16 @@ import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
 import { AccountDelegate } from "@/types/accounts";
 import { Currency } from "@/types/currencies";
+import { parseMoneyInput, toMoneyNumber } from "@/lib/money";
 
 const account = (prisma as unknown as { account: AccountDelegate }).account;
 
 export const runtime = "nodejs";
 
-function normalizeAccount<T extends { balance?: number | bigint }>(record: T): T {
+function normalizeAccount<T extends { balance?: unknown }>(record: T): T {
     if (!record || typeof record !== "object") return record;
-    if (typeof record.balance === "bigint") {
-        return { ...record, balance: Number(record.balance) };
+    if (record.balance !== undefined) {
+        return { ...record, balance: toMoneyNumber(record.balance) };
     }
     return record;
 }
@@ -52,13 +53,19 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Account number is required" }, { status: 400 });
         }
 
+        const parsedBalance =
+            balance !== undefined && balance !== null ? parseMoneyInput(balance, { min: 0 }) : undefined;
+        if (balance !== undefined && balance !== null && parsedBalance === null) {
+            return NextResponse.json({ error: "Valid balance is required" }, { status: 400 });
+        }
+
         const data = {
             userId: session.user.id,
             name: String(name).trim(),
             accountNumber: String(accountNumber).trim(),
             color: color ? String(color).trim() : undefined,
             icon: icon ? String(icon).trim() : undefined,
-            balance: balance !== undefined && balance !== null ? Math.round(Number(balance)) : undefined,
+            balance: parsedBalance ?? undefined,
             currency: "EUR" as Currency,
         } as const;
         

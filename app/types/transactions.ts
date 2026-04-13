@@ -36,7 +36,7 @@ export type TransactionRecord = {
   userId: string;
   originAccountId: string;
   targetAccountId: string;
-  amount: bigint;
+  amount: number;
   notes: string;
   interval: TransactionInterval;
   type: TransactionType;
@@ -73,7 +73,7 @@ export type TransactionDelegate = {
       userId: string;
       originAccountId: string;
       targetAccountId: string;
-      amount: bigint;
+      amount: number;
       notes: string;
       interval?: TransactionInterval;
       type?: TransactionType;
@@ -93,7 +93,7 @@ export type TransactionDelegate = {
     data: {
       originAccountId?: string;
       targetAccountId?: string;
-      amount?: bigint;
+      amount?: number;
       notes?: string;
       interval?: TransactionInterval;
       type?: TransactionType;
