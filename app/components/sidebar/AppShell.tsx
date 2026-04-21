@@ -144,7 +144,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main
         className="flex-1 min-w-0 lg:my-2 mr-0 md:mr-2 lg:rounded-[1.2rem] bg-popover text-popover-foreground overflow-y-auto relative pb-20 md:pb-2"
         // style={{
-        //   backgroundImage: "url('/backgrounds/m4.png')",
+        //   backgroundImage: "url('/backgrounds/test.png')",
         //   backgroundSize: "cover",
         //   backgroundPosition: "center",
         //   backgroundRepeat: "no-repeat",

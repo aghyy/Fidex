@@ -23,7 +23,6 @@ export const metadata: Metadata = {
 };
 
 // TODO: Cron Jobs for repeating transactions
-// TODO: Login image
 // TODO: UI/UX
 // TODO: future transactions
 // TODO: check mobile responsiveness
