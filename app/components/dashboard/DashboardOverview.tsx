@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
   Area,
@@ -22,6 +23,7 @@ import { Account } from "@/types/accounts";
 import { Category } from "@/types/categories";
 import { TransactionType } from "@/types/transactions";
 import { Button } from "@/components/ui/button";
+import Skeleton from "@/components/ui/skeleton";
 import { renderIconByName } from "@/utils/icons";
 import { useAtomValue } from "jotai";
 import { profileAtom } from "@/state/profile";
@@ -132,7 +134,98 @@ function getRange(mode: PeriodMode, monthValue: string, yearValue: string) {
   };
 }
 
+export function DashboardOverviewSkeleton() {
+  return (
+    <div className="relative space-y-6">
+      <div className="fixed right-6 top-6 z-40">
+        <Skeleton className="h-9 w-36 rounded-lg" />
+      </div>
+
+      <div className="rounded-2xl glass-card p-4 sm:p-6">
+        <Skeleton className="h-5 w-48 max-w-full sm:max-w-none" />
+        <Skeleton className="mt-2 h-4 w-64 max-w-full" />
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2 rounded-xl glass-tile p-3">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-6 w-[70%]" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl glass-card p-4 sm:p-6">
+        <Skeleton className="h-5 w-56 max-w-full" />
+        <Skeleton className="mt-1 h-3 w-full max-w-md" />
+        <Skeleton className="mt-4 h-[260px] w-full rounded-lg" />
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <Skeleton className="h-2.5 w-5 rounded-full" />
+          <Skeleton className="h-2 w-2 rounded-full" />
+          <Skeleton className="h-2 w-2 rounded-full" />
+        </div>
+      </div>
+
+      <div className="rounded-2xl glass-card p-4 sm:p-6">
+        <Skeleton className="h-5 w-40 mb-3" />
+        <div className="space-y-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-lg glass-tile p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <div className="space-y-2 text-right">
+                  <Skeleton className="ml-auto h-4 w-20" />
+                  <Skeleton className="ml-auto h-3 w-28" />
+                </div>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+        {[0, 1].map((col) => (
+          <div key={col} className="rounded-2xl glass-card p-4 sm:p-6">
+            <Skeleton className="h-5 w-48 max-w-full" />
+            <Skeleton className="mt-1 h-3 w-full max-w-sm" />
+            <Skeleton className="mt-4 h-[260px] w-full rounded-lg" />
+            <div className="mt-4 space-y-2">
+              {[0, 1, 2, 3].map((row) => (
+                <div
+                  key={row}
+                  className="flex items-center justify-between rounded-lg glass-tile p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-16 shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardOverview() {
+  const { status: sessionStatus } = useSession();
   const categoryListDefaultLimit = 5;
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -202,6 +295,8 @@ export default function DashboardOverview() {
   }, [appliedPeriodMode, appliedSelectedYear, appliedSelectedMonth, hasLoadedPeriodFilter]);
 
   useEffect(() => {
+    if (sessionStatus !== "authenticated") return;
+
     async function loadDashboardData() {
       setLoading(true);
       setError(null);
@@ -239,7 +334,7 @@ export default function DashboardOverview() {
     }
 
     void loadDashboardData();
-  }, [range.start, balanceCutoff, includePending]);
+  }, [sessionStatus, range.start, balanceCutoff, includePending]);
 
   // When data finishes reloading after a filter change, allow scroll-sync again.
   useEffect(() => {
@@ -724,8 +819,16 @@ export default function DashboardOverview() {
     window.localStorage.setItem("dashboardActiveChartIndex", String(activeChartIndex));
   }, [activeChartIndex, hasLoadedChartIndex]);
 
+  if (sessionStatus === "loading") {
+    return <DashboardOverviewSkeleton />;
+  }
+
+  if (sessionStatus === "unauthenticated") {
+    return null;
+  }
+
   if (loading) {
-    return <div className="rounded-2xl glass-card p-6 text-sm text-muted-foreground">Loading dashboard...</div>;
+    return <DashboardOverviewSkeleton />;
   }
 
   if (error) {

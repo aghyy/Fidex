@@ -38,7 +38,7 @@ html, body {
   }
   .dark {
     /* Dark mode - neutral dark grays */
-    --background: 0 0% 9%;          /* near-black neutral shell */
+    --background: 0 0% 11%;          /* near-black neutral shell */
     --foreground: 0 0% 96%;
     --card: 0 0% 13%;
     --card-foreground: 0 0% 96%;

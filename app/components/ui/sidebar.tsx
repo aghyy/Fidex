@@ -129,10 +129,13 @@ export const DesktopSidebar = ({
     <>
       <motion.div
         className={cn(
-          "min-h-screen h-full px-4 py-4 hidden md:flex md:flex-col bg-background text-card-foreground w-[300px] shrink-0 relative",
+          "min-h-screen h-full px-4 py-4 hidden md:flex md:flex-col bg-background text-card-foreground shrink-0 relative overflow-hidden",
           !open && "cursor-pointer",
           className
         )}
+        initial={{
+          width: animate ? (open ? "250px" : "65px") : "250px",
+        }}
         animate={{
           width: animate ? (open ? "250px" : "65px") : "250px",
         }}
