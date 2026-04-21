@@ -81,7 +81,7 @@ function SafeDialogSelect({
         }
       }}
     >
-      <SelectTrigger id={id} className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0">
+      <SelectTrigger id={id} className="glass-form-trigger">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>{children}</SelectContent>
@@ -307,7 +307,7 @@ function FormContent({
                   }
                 }}
                 placeholder="0.00"
-                className="pr-12 text-base font-medium tabular-nums focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
+                className="glass-form-trigger pr-12 text-base font-medium tabular-nums"
                 required
               />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
@@ -391,11 +391,10 @@ function FormContent({
 
           <div className="space-y-2 lg:col-span-2">
             <label className="text-sm text-muted-foreground">Booking</label>
-            <label className="flex items-center gap-3 rounded-md border px-3 py-2">
+            <label className="glass-dialog-strip flex cursor-pointer items-center gap-3">
               <Checkbox
                 checked={pending}
                 onCheckedChange={(checked) => setPending(checked === true)}
-                className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
               />
               <span className="text-sm font-medium">Mark as pending</span>
             </label>
@@ -418,8 +417,8 @@ function FormContent({
                 <PopoverTrigger asChild>
                   <Button
                     type="button"
-                    variant="outline"
-                    className="h-10 w-full justify-start text-left font-normal focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
+                    variant="glass"
+                    className="h-10 w-full justify-start text-left font-normal"
                   >
                     <CalendarIcon className="h-4 w-4" />
                     {formatTransactionDateLabel(transactionDate)}
@@ -439,7 +438,7 @@ function FormContent({
                 </PopoverContent>
               </Popover>
 
-              <div className="flex h-10 items-center gap-3 rounded-md border px-3 py-2">
+              <div className="glass-dialog-strip flex h-10 items-center gap-3">
                 <Checkbox
                   id={`edit-transaction-include-time-${transaction.id}`}
                   checked={includeTime}
@@ -448,7 +447,6 @@ function FormContent({
                     setIncludeTime(isChecked);
                     if (!isChecked) setTransactionTime("");
                   }}
-                  className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
                 />
                 <label
                   htmlFor={`edit-transaction-include-time-${transaction.id}`}
@@ -462,7 +460,7 @@ function FormContent({
                   value={transactionTime}
                   onChange={(e) => setTransactionTime(e.target.value)}
                   disabled={!includeTime}
-                  className="ml-auto w-[130px] border-none focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
+                  className="glass-time-input ml-auto h-9 w-[130px] font-mono text-sm tabular-nums"
                 />
               </div>
             </div>
@@ -505,9 +503,9 @@ function FormContent({
                 <PopoverTrigger asChild>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="glass"
                     className={cn(
-                      "w-full justify-start text-left font-normal focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0",
+                      "w-full justify-start text-left font-normal",
                       !expiresDate && "text-muted-foreground"
                     )}
                   >
@@ -545,7 +543,7 @@ function FormContent({
             id={`edit-transaction-notes-${transaction.id}`}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="min-h-[96px] w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
+            className="glass-form-trigger min-h-[96px] w-full resize-y rounded-md px-3 py-2 text-sm placeholder:text-muted-foreground"
             placeholder="Optional notes..."
             rows={4}
           />
@@ -553,7 +551,7 @@ function FormContent({
 
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Linked documents</label>
-          <div className="rounded-xl border bg-muted/20 p-3">
+          <div className="rounded-xl glass-card p-3">
             {documents.length === 0 ? (
               <p className="text-xs text-muted-foreground">No uploaded documents yet.</p>
             ) : (
@@ -571,8 +569,8 @@ function FormContent({
                         );
                       }}
                       className={cn(
-                        "group relative flex flex-col items-center gap-2 rounded-lg border bg-background p-3 text-center transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0",
-                        selected && "border-primary bg-primary/5"
+                        "fidex-focus-ring group relative flex flex-col items-center gap-2 rounded-lg glass-tile p-3 text-center transition-all hover:shadow-sm",
+                        selected && "border-primary bg-primary/10 dark:bg-primary/15"
                       )}
                       title={`${doc.title} (${doc.kind})`}
                     >
@@ -597,20 +595,18 @@ function FormContent({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3">
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={() => setIsOpen(false)}
-            className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
             disabled={saving}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="focus-visible:outline-none focus-visible:ring-0 focus:outline-none ring-0"
             disabled={saving || !originAccountId || (isTransfer && !targetAccountId) || !category || normalizedAmount <= 0}
           >
             {saving ? "Saving..." : "Save"}

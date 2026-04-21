@@ -13,6 +13,7 @@ import {
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { formatEurAmount } from "@/lib/money";
 
 interface Transaction {
   id: string;
@@ -143,7 +144,7 @@ function TransactionDetailsDialog({
                 <p>
                   <span className="text-muted-foreground">Amount:</span>{" "}
                   <span className={transaction.type === "EXPENSE" ? "text-red-500" : transaction.type === "INCOME" ? "text-green-500" : "text-blue-500"}>
-                    EUR {Number(transaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    EUR {formatEurAmount(transaction.amount)}
                   </span>
                 </p>
                 <p>
@@ -333,11 +334,6 @@ export default function TransactionsManager({
     return firstLine ?? getCategoryName(transaction.category);
   }
 
-  function formatAmount(amount: string): string {
-    const num = parseFloat(amount);
-    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
   function formatDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleDateString(undefined, {
@@ -409,7 +405,7 @@ export default function TransactionsManager({
                 </div>
                 <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
                   <span className={`font-semibold ${getTypeColor(transaction.type)}`}>
-                    EUR {formatAmount(transaction.amount)}
+                    EUR {formatEurAmount(transaction.amount)}
                   </span>
                   <span>•</span>
                   <span>

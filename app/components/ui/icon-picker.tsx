@@ -74,7 +74,7 @@ export function IconPicker({
       <MorphingPopoverTrigger
         data-keep-popover-open="true"
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-lg border bg-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "fidex-focus-ring flex h-10 w-10 items-center justify-center rounded-lg border bg-background transition-colors",
           triggerClassName,
         )}
         style={{

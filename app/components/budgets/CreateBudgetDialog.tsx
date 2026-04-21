@@ -59,9 +59,9 @@ function CategoryMultiSelect({
       <PopoverTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="glass"
           id={id}
-          className="w-full justify-between font-normal focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="w-full justify-between font-normal"
         >
           <span className="truncate">{label}</span>
           <IconChevronDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -191,7 +191,6 @@ function CreateBudgetForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Groceries"
-          className="focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
       <div className="space-y-2">
@@ -205,7 +204,6 @@ function CreateBudgetForm() {
           value={targetEuros}
           onChange={(e) => setTargetEuros(e.target.value)}
           placeholder="0"
-          className="focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
       <div className="space-y-2">

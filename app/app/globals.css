@@ -78,13 +78,33 @@ html, body {
   /* Translucent "glass" surfaces layered over the app background image.
      Three tiers for visual hierarchy: outer cards, inner tiles, modal dialogs. */
   .glass-card {
-    @apply bg-white/50 dark:bg-black/40 backdrop-blur-md border border-white/30 dark:border-white/10 text-foreground;
+    /* Light: theme border reads on frosted white; dark: soft light edge */
+    @apply bg-white/50 dark:bg-black/40 backdrop-blur-md border border-border dark:border-white/15 text-foreground;
   }
   .glass-tile {
-    @apply bg-white/35 dark:bg-black/25 backdrop-blur-sm border border-white/25 dark:border-white/5 text-foreground;
+    @apply bg-white/35 dark:bg-black/25 backdrop-blur-sm border border-border dark:border-white/15 text-foreground;
   }
   .glass-dialog {
-    @apply bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/40 dark:border-white/10 text-foreground;
+    @apply bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-border dark:border-white/15 text-foreground;
+  }
+  /* Date popover triggers, Radix selects, and multi-select triggers on glass surfaces */
+  .glass-form-trigger {
+    @apply border border-border bg-white/40 text-foreground shadow-sm backdrop-blur-md
+      hover:bg-white/50
+      dark:border-white/15 dark:bg-black/35 dark:hover:bg-black/45
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring;
+  }
+  /* Frosted strip in glass dialogs (time row, booking / pending, etc.) */
+  .glass-dialog-strip {
+    @apply rounded-md border border-border bg-white/20 px-3 py-2 backdrop-blur-md
+      dark:border-white/15 dark:bg-black/45;
+  }
+  /* H/M/S digit fields inside a glass dialog strip */
+  .glass-time-input {
+    @apply border border-border bg-white/40 text-foreground shadow-sm backdrop-blur-sm
+      focus:bg-white/55 focus:text-foreground
+      dark:border-white/15 dark:bg-black/50 dark:focus:bg-black/60
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring;
   }
   /* Hover variant used on interactive tiles/links */
   .glass-tile-hover {
@@ -104,6 +124,11 @@ html, body {
 }
 
 @layer utilities {
+  /* Shared keyboard focus: inset so rings are never clipped by overflow-y containers */
+  .fidex-focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring;
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

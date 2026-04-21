@@ -139,10 +139,10 @@ export default function PeriodFilterPopover({
         >
           <SlidersHorizontal className="h-4 w-4" />
         </MorphingPopoverTrigger>
-        <MorphingPopoverContent className="right-0 top-0 w-[320px] p-3">
+        <MorphingPopoverContent className="right-0 top-0 w-[320px] border-border bg-white/50 p-3 shadow-lg backdrop-blur-md dark:border-white/15 dark:bg-black/40">
           <div className="space-y-3" data-keep-popover-open="true">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Filters</p>
-            <div className="inline-flex rounded-lg border bg-background p-1">
+            <div className="inline-flex rounded-lg border border-border bg-white/35 p-1 backdrop-blur-sm dark:border-white/15 dark:bg-black/25">
               <Button
                 type="button"
                 variant={draftMode === "month" ? "default" : "ghost"}
@@ -166,7 +166,7 @@ export default function PeriodFilterPopover({
                   value={draftYear}
                   onValueChange={setDraftYear}
                   placeholder="Select year"
-                  className="h-10 bg-background"
+                  className="glass-form-trigger h-10"
                   disabled={years.length === 0}
                 >
                   {years.map((y) => (
@@ -179,7 +179,7 @@ export default function PeriodFilterPopover({
                   value={draftSelectedMonthPart}
                   onValueChange={(month) => setDraftMonth(`${draftYear}-${month}`)}
                   placeholder="Select month"
-                  className="h-10 bg-background"
+                  className="glass-form-trigger h-10"
                   disabled={draftMonthOptionsForSelectedYear.length === 0}
                 >
                   {draftMonthOptionsForSelectedYear.map((month) => (
@@ -194,7 +194,7 @@ export default function PeriodFilterPopover({
                 value={draftYear}
                 onValueChange={setDraftYear}
                 placeholder="Select year"
-                className="h-10 bg-background"
+                className="glass-form-trigger h-10"
                 disabled={years.length === 0}
               >
                 {years.map((y) => (
@@ -207,7 +207,7 @@ export default function PeriodFilterPopover({
             <div className="flex items-center justify-between gap-2 pt-1">
               <Button
                 type="button"
-                variant="outline"
+                variant="glass"
                 size="sm"
                 onClick={setToCurrentPeriod}
               >

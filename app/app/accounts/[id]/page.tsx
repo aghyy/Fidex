@@ -23,6 +23,7 @@ import { ACCOUNT_ICON_OPTIONS, renderIconByName } from "@/utils/icons";
 import { useAtomValue } from "jotai";
 import { profileAtom } from "@/state/profile";
 import PeriodFilterPopover from "@/components/filters/PeriodFilterPopover";
+import { formatEurAmount } from "@/lib/money";
 
 type PeriodMode = "month" | "year";
 
@@ -494,7 +495,7 @@ export default function AccountDetailPage() {
               </div>
               <div>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Balance</p>
-                <p className="font-medium">EUR {(displayedBalance ?? account.balance).toLocaleString()}</p>
+                <p className="font-medium">EUR {formatEurAmount(displayedBalance ?? account.balance)}</p>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>As of {effectiveTo.toLocaleDateString()}</p>
               </div>
               <div>

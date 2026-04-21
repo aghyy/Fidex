@@ -15,6 +15,7 @@ import type { Budget } from "@/types/budgets";
 import type { Category } from "@/types/categories";
 import EditBudgetDialog from "./EditBudgetDialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { formatEurAmount } from "@/lib/money";
 
 export type BudgetsManagerProps = {
   from?: string;
@@ -22,12 +23,7 @@ export type BudgetsManagerProps = {
 };
 
 function formatCurrency(eur: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(eur);
+  return `EUR ${formatEurAmount(eur)}`;
 }
 
 function BudgetDetailsDialog({

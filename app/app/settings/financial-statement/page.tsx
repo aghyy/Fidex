@@ -179,7 +179,7 @@ export default function FinancialStatementPage() {
                 <PopoverTrigger asChild>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="glass"
                     className="w-full justify-start text-left font-normal"
                   >
                     <IconCalendar className="h-4 w-4" />
@@ -208,7 +208,7 @@ export default function FinancialStatementPage() {
                 <PopoverTrigger asChild>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="glass"
                     className="w-full justify-start text-left font-normal"
                   >
                     <IconCalendar className="h-4 w-4" />

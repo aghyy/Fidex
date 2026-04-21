@@ -23,6 +23,7 @@ import { CATEGORY_ICON_OPTIONS, renderIconByName } from "@/utils/icons";
 import { useAtomValue } from "jotai";
 import { profileAtom } from "@/state/profile";
 import PeriodFilterPopover from "@/components/filters/PeriodFilterPopover";
+import { formatEurAmount } from "@/lib/money";
 
 type PeriodMode = "month" | "year";
 
@@ -51,13 +52,6 @@ function parseAmount(value: string | number): number {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function formatCategorySpend(value: number): string {
-  return (value * 10).toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 }
 
 function getContinuousPeriodOptionsFromFirstTransaction(firstTransactionAt: string | null) {
@@ -426,7 +420,7 @@ export default function CategoryDetailPage() {
               </div>
               <div>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>Spent</p>
-                <p className="font-medium">EUR {formatCategorySpend(categorySpend)}</p>
+                <p className="font-medium">EUR {formatEurAmount(categorySpend)}</p>
                 <p className={`text-xs ${mutedHeaderTextClass}`}>{categoryTransactionsCount} transactions</p>
               </div>
             </div>

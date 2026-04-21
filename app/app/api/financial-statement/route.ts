@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../auth";
 import { prisma } from "../../../lib/prisma";
 import { PDFDocument, PDFPage, StandardFonts, rgb } from "pdf-lib";
-import { toMoneyNumber } from "@/lib/money";
+import { formatEurAmount, toMoneyNumber } from "@/lib/money";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -35,11 +35,6 @@ const COLOR_TABLE_HEADER = rgb(0.95, 0.95, 0.95);
 const COLOR_CARD = rgb(0.97, 0.97, 0.97);
 const COLOR_INCOME = rgb(0.07, 0.52, 0.26);
 const COLOR_EXPENSE = rgb(0.66, 0.13, 0.13);
-
-function formatAmount(value: number): string {
-  const normalized = Math.abs(value) < 0.005 ? 0 : value;
-  return normalized.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function formatDate(d: Date): string {
   return new Date(d).toLocaleDateString("en-US", {
@@ -183,7 +178,7 @@ export async function GET(request: Request) {
 
     const accountRows = accounts.map((a) => ({
       name: `${a.name} (${a.accountNumber})`,
-      value: `${formatAmount(a.balance)} ${a.currency}`,
+      value: `${formatEurAmount(a.balance)} ${a.currency}`,
     }));
     const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
 
@@ -400,7 +395,7 @@ export async function GET(request: Request) {
       drawTwoColumnRows(
         rows.map(([label, value]) => ({
           label,
-          value: `${formatAmount(value)} EUR`,
+          value: `${formatEurAmount(value)} EUR`,
         }))
       );
       const total = rows.reduce((acc, [, value]) => acc + value, 0);
@@ -411,7 +406,7 @@ export async function GET(request: Request) {
         font: fontBold,
         color: COLOR_TEXT,
       });
-      const totalText = `${formatAmount(total)} EUR`;
+      const totalText = `${formatEurAmount(total)} EUR`;
       const totalWidth = fontBold.widthOfTextAtSize(totalText, 9);
       page.drawText(totalText, {
         x: PAGE_WIDTH - MARGIN_X - totalWidth,
@@ -479,7 +474,7 @@ export async function GET(request: Request) {
           truncateText((tx.notes || "Transaction").replace(/\n/g, " "), 38),
           truncateText(categoryMap.get(tx.category) ?? "Unknown", 20),
           typeLabel,
-          `${sign}${formatAmount(amount)} EUR`,
+          `${sign}${formatEurAmount(amount)} EUR`,
         ];
 
         let x = tableLeft + 6;
@@ -527,10 +522,10 @@ export async function GET(request: Request) {
     const cardTop = y;
     const cardGap = 8;
     const cardWidth = (PAGE_WIDTH - MARGIN_X * 2 - cardGap * 3) / 4;
-    drawSummaryCard(MARGIN_X, cardTop, cardWidth, "Total Income", `${formatAmount(totalIncome)} EUR`, COLOR_INCOME);
-    drawSummaryCard(MARGIN_X + (cardWidth + cardGap), cardTop, cardWidth, "Total Expense", `${formatAmount(totalExpense)} EUR`, COLOR_EXPENSE);
-    drawSummaryCard(MARGIN_X + (cardWidth + cardGap) * 2, cardTop, cardWidth, "Net", `${formatAmount(net)} EUR`, net >= 0 ? COLOR_INCOME : COLOR_EXPENSE);
-    drawSummaryCard(MARGIN_X + (cardWidth + cardGap) * 3, cardTop, cardWidth, "Account Total", `${formatAmount(totalAccountBalance)} EUR`);
+    drawSummaryCard(MARGIN_X, cardTop, cardWidth, "Total Income", `${formatEurAmount(totalIncome)} EUR`, COLOR_INCOME);
+    drawSummaryCard(MARGIN_X + (cardWidth + cardGap), cardTop, cardWidth, "Total Expense", `${formatEurAmount(totalExpense)} EUR`, COLOR_EXPENSE);
+    drawSummaryCard(MARGIN_X + (cardWidth + cardGap) * 2, cardTop, cardWidth, "Net", `${formatEurAmount(net)} EUR`, net >= 0 ? COLOR_INCOME : COLOR_EXPENSE);
+    drawSummaryCard(MARGIN_X + (cardWidth + cardGap) * 3, cardTop, cardWidth, "Account Total", `${formatEurAmount(totalAccountBalance)} EUR`);
     y -= 68;
 
     drawSectionTitle("Account Balances");
@@ -552,7 +547,7 @@ export async function GET(request: Request) {
         font: fontBold,
         color: COLOR_TEXT,
       });
-      const totalText = `${formatAmount(totalAccountBalance)} EUR`;
+      const totalText = `${formatEurAmount(totalAccountBalance)} EUR`;
       const totalWidth = fontBold.widthOfTextAtSize(totalText, 9);
       page.drawText(totalText, {
         x: PAGE_WIDTH - MARGIN_X - totalWidth,

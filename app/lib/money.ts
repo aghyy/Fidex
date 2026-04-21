@@ -46,6 +46,15 @@ export function toMoneyNumber(value: unknown): number {
   return parse(value, 0) ?? 0;
 }
 
+/** Number part only: always two decimal places, locale-aware grouping (e.g. 2,378.80). */
+export function formatEurAmount(value: number | string): string {
+  const n = toMoneyNumber(value);
+  return n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 export function parseMoneyInput(
   value: unknown,
   options?: { min?: number; max?: number }

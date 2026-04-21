@@ -271,7 +271,7 @@ export const ColorPickerHue = ({
 			<Track className="relative my-0.5 h-3 w-full grow rounded-full bg-[linear-gradient(90deg,#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000)]">
 				<Range className="absolute h-full" />
 			</Track>
-			<Thumb className="block h-4 w-4 rounded-full border-2 border-white shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
+        <Thumb className="fidex-focus-ring block h-4 w-4 rounded-full border-2 border-white shadow transition-colors disabled:pointer-events-none disabled:opacity-50" />
 		</Root>
 	);
 };
@@ -303,7 +303,7 @@ export const ColorPickerAlpha = ({
 				<div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent to-primary/50" />
 				<Range className="absolute h-full rounded-full bg-transparent" />
 			</Track>
-			<Thumb className="block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
+        <Thumb className="fidex-focus-ring block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors disabled:pointer-events-none disabled:opacity-50" />
 		</Root>
 	);
 };
@@ -497,7 +497,7 @@ export const ColorPickerPopover = ({
 			<MorphingPopoverTrigger
 				data-keep-popover-open="true"
 				className={cn(
-					"flex h-6 w-6 items-center justify-center rounded-full border bg-background text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+					"fidex-focus-ring flex h-6 w-6 items-center justify-center rounded-full border bg-background text-base font-semibold transition-colors",
 					isActive ? "ring-2 ring-primary" : "",
 					triggerClassName,
 				)}

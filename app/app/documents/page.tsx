@@ -277,7 +277,7 @@ export default function DocumentsPage() {
             value={filterKind}
             onValueChange={(value) => setFilterKind(value as "ALL" | DocumentKind)}
           >
-            <SelectTrigger className="glass-tile border-white/30 dark:border-white/10 bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm">
+            <SelectTrigger className="glass-tile bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm">
               <SelectValue placeholder="Filter by kind" />
             </SelectTrigger>
             <SelectContent>
@@ -296,7 +296,7 @@ export default function DocumentsPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") void loadDocuments();
             }}
-            className="w-full glass-tile border-white/30 dark:border-white/10 bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm"
+            className="w-full glass-tile bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm"
             placeholder="Search by title, filename, notes..."
           />
           <Button
@@ -305,7 +305,7 @@ export default function DocumentsPage() {
             size="icon"
             onClick={() => void loadDocuments()}
             aria-label="Search documents"
-            className="glass-tile glass-tile-hover h-9 aspect-square border-white/30 dark:border-white/10 bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm"
+            className="glass-tile glass-tile-hover h-9 aspect-square bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm"
           >
             <Search className="h-4 w-4" />
           </Button>

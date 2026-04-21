@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DocumentItem, DocumentKind } from "@/types/documents";
+import { formatEurAmount } from "@/lib/money";
 
 type LinkedTransaction = {
   id: string;
@@ -270,7 +271,7 @@ export default function DocumentDetailPage() {
                         }}
                       />
                       <span className="leading-snug">
-                        {(tx.notes ?? "").split("\n")[0] || "Transaction"} - EUR {Number(tx.amount).toLocaleString()} -{" "}
+                        {(tx.notes ?? "").split("\n")[0] || "Transaction"} - EUR {formatEurAmount(tx.amount)} -{" "}
                         {new Date(tx.createdAt).toLocaleDateString()}
                       </span>
                     </label>

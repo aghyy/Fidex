@@ -36,6 +36,7 @@ import {
   ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { formatEurAmount } from "@/lib/money";
 
 type DashboardTransaction = {
   id: string;
@@ -79,13 +80,6 @@ function parseAmount(value: string | number): number {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function formatDisplayedBalance(value: number): string {
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 }
 
 function getPeriodOptionsFromTransactions(transactions: DashboardTransaction[]) {
@@ -730,7 +724,7 @@ export default function DashboardOverview() {
       <div className="flex w-full items-center justify-between gap-2">
         <span className="text-muted-foreground">{name}</span>
         <span className="font-mono font-medium tabular-nums text-foreground">
-          {Number.isFinite(numeric) ? numeric.toLocaleString() : value}
+          {Number.isFinite(numeric) ? formatEurAmount(numeric) : value}
         </span>
       </div>
     );
@@ -870,21 +864,21 @@ export default function DashboardOverview() {
           <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Net Worth</p>
             <p className={`text-lg font-semibold ${netWorth >= 0 ? "text-green-600" : "text-red-600"}`}>
-              EUR {netWorth.toLocaleString()}
+              EUR {formatEurAmount(netWorth)}
             </p>
           </div>
           <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Income</p>
-            <p className="text-lg font-semibold text-green-600">EUR {totals.income.toLocaleString()}</p>
+            <p className="text-lg font-semibold text-green-600">EUR {formatEurAmount(totals.income)}</p>
           </div>
           <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Expense</p>
-            <p className="text-lg font-semibold text-red-600">EUR {totals.expense.toLocaleString()}</p>
+            <p className="text-lg font-semibold text-red-600">EUR {formatEurAmount(totals.expense)}</p>
           </div>
           <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Net</p>
             <p className={`text-lg font-semibold ${totals.net >= 0 ? "text-green-600" : "text-red-600"}`}>
-              EUR {totals.net.toLocaleString()}
+              EUR {formatEurAmount(totals.net)}
             </p>
           </div>
         </div>
@@ -1093,15 +1087,15 @@ export default function DashboardOverview() {
                 </div>
                 <div className="text-right">
                   <p className={`text-sm font-semibold ${row.displayedBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    EUR {formatDisplayedBalance(row.displayedBalance)}
+                    EUR {formatEurAmount(row.displayedBalance)}
                   </p>
                   <p className="text-xs text-muted-foreground">Current balance</p>
                 </div>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                <p className="text-muted-foreground">Income: EUR {row.income.toLocaleString()}</p>
-                <p className="text-muted-foreground">Expense: EUR {row.expense.toLocaleString()}</p>
-                <p className={row.net >= 0 ? "text-green-600" : "text-red-600"}>Net: EUR {row.net.toLocaleString()}</p>
+                <p className="text-muted-foreground">Income: EUR {formatEurAmount(row.income)}</p>
+                <p className="text-muted-foreground">Expense: EUR {formatEurAmount(row.expense)}</p>
+                <p className={row.net >= 0 ? "text-green-600" : "text-red-600"}>Net: EUR {formatEurAmount(row.net)}</p>
                 <p className="text-muted-foreground">Transactions: {row.txCount}</p>
               </div>
             </Link>
@@ -1157,7 +1151,7 @@ export default function DashboardOverview() {
                     <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
                   </div>
                 </div>
-                <p className="font-semibold text-red-600">EUR {row.spent.toLocaleString()}</p>
+                <p className="font-semibold text-red-600">EUR {formatEurAmount(row.spent)}</p>
               </Link>
             ))}
             {categorySpendData.length === 0 ? (
@@ -1222,7 +1216,7 @@ export default function DashboardOverview() {
                     <p className="text-xs text-muted-foreground">{row.transactions} transactions</p>
                   </div>
                 </div>
-                <p className="font-semibold text-green-600">EUR {row.earned.toLocaleString()}</p>
+                <p className="font-semibold text-green-600">EUR {formatEurAmount(row.earned)}</p>
               </Link>
             ))}
             {categoryIncomeData.length === 0 ? (
