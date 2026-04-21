@@ -26,6 +26,56 @@ import {
   FileUploadItemProgress,
   FileUploadItemDelete,
 } from "@/components/ui/file-upload";
+import Skeleton from "@/components/ui/skeleton";
+
+function DocumentsListSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="rounded-xl glass-tile p-4">
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <Skeleton className="h-5 w-5 shrink-0 rounded" />
+              <Skeleton className="h-5 max-w-[70%] flex-1" />
+            </div>
+            <Skeleton className="h-5 w-14 shrink-0 rounded-md" />
+          </div>
+          <Skeleton className="h-3 w-full max-w-[90%]" />
+          <div className="mt-2 flex items-center justify-between">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DocumentsPageSessionSkeleton() {
+  return (
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-5 w-28" />
+      </div>
+      <div className="mb-6 rounded-xl glass-card p-4 sm:p-5">
+        <Skeleton className="h-36 w-full rounded-lg sm:h-32" />
+        <div className="mt-4 flex justify-end gap-2">
+          <Skeleton className="h-9 w-36" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+      </div>
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Skeleton className="h-9 w-full sm:w-52" />
+        <div className="flex w-full items-center gap-2 sm:max-w-md">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 w-9 shrink-0 rounded-md" />
+        </div>
+      </div>
+      <DocumentsListSkeleton />
+    </div>
+  );
+}
 
 type DocumentListItem = DocumentItem & {
   transactionCount?: number;
@@ -177,12 +227,7 @@ export default function DocumentsPage() {
   }
 
   if (status === "loading" || status === "unauthenticated") {
-    return (
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <h1 className="mb-6 text-2xl font-bold">Documents</h1>
-        <div className="rounded-xl glass-tile p-6 text-sm text-muted-foreground">Loading documents...</div>
-      </div>
-    );
+    return <DocumentsPageSessionSkeleton />;
   }
 
   return (
@@ -313,7 +358,7 @@ export default function DocumentsPage() {
       </div>
 
       {loadingList ? (
-        <div className="rounded-xl glass-tile p-6 text-sm text-muted-foreground">Loading list...</div>
+        <DocumentsListSkeleton />
       ) : listError ? (
         <div className="rounded-xl glass-tile p-6 text-sm text-red-500">{listError}</div>
       ) : documents.length === 0 ? (

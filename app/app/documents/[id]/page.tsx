@@ -8,6 +8,50 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DocumentItem, DocumentKind } from "@/types/documents";
 import { formatEurAmount } from "@/lib/money";
+import Skeleton from "@/components/ui/skeleton";
+
+function DocumentDetailSkeleton() {
+  return (
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Skeleton className="h-9 w-9 shrink-0 rounded-md" />
+          <Skeleton className="h-8 max-w-[min(320px,55vw)] flex-1" />
+        </div>
+        <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+        <div className="rounded-xl glass-card p-4">
+          <Skeleton className="h-[min(70vh,560px)] w-full rounded-md" />
+        </div>
+
+        <div className="rounded-xl glass-card p-4">
+          <div className="grid gap-3">
+            <div>
+              <Skeleton className="mb-1 h-4 w-12" />
+              <Skeleton className="h-9 w-full rounded-md" />
+            </div>
+            <div>
+              <Skeleton className="mb-1 h-4 w-12" />
+              <Skeleton className="h-9 w-full rounded-md" />
+            </div>
+            <div>
+              <Skeleton className="mb-1 h-4 w-14" />
+              <Skeleton className="h-24 w-full rounded-md" />
+            </div>
+            <Skeleton className="h-20 w-full rounded-md" />
+            <Skeleton className="min-h-[120px] w-full rounded-md" />
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-16 rounded-md" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type LinkedTransaction = {
   id: string;
@@ -147,11 +191,7 @@ export default function DocumentDetailPage() {
   }
 
   if (status === "loading" || status === "unauthenticated" || loading) {
-    return (
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="rounded-xl glass-tile p-6 text-sm text-muted-foreground">Loading document...</div>
-      </div>
-    );
+    return <DocumentDetailSkeleton />;
   }
 
   if (!document) {
@@ -213,7 +253,7 @@ export default function DocumentDetailPage() {
                 id="doc-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="glass-form-trigger mt-1 min-h-9 w-full rounded-md px-3 py-2 text-sm"
               />
             </div>
 
@@ -225,7 +265,7 @@ export default function DocumentDetailPage() {
                 id="doc-kind"
                 value={kind}
                 onChange={(e) => setKind(e.target.value as DocumentKind)}
-                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="glass-form-trigger mt-1 min-h-9 w-full rounded-md px-3 py-2 text-sm"
               >
                 <option value="OTHER">Other</option>
                 <option value="CONTRACT">Contract</option>
@@ -243,7 +283,7 @@ export default function DocumentDetailPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
-                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="glass-form-trigger mt-1 min-h-[5.5rem] w-full resize-y rounded-md px-3 py-2 text-sm"
               />
             </div>
 
@@ -256,7 +296,7 @@ export default function DocumentDetailPage() {
 
             <div>
               <p className="text-sm text-muted-foreground">Linked transactions</p>
-              <div className="mt-2 max-h-48 space-y-2 overflow-auto rounded-md border p-2">
+              <div className="mt-2 max-h-48 space-y-2 overflow-auto rounded-md glass-tile p-2">
                 {allTransactions.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No transactions available.</p>
                 ) : (
