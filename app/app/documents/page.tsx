@@ -172,7 +172,7 @@ export default function DocumentsPage() {
     return (
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <h1 className="mb-6 text-2xl font-bold">Documents</h1>
-        <div className="rounded-xl border bg-background p-6 text-sm text-muted-foreground">Loading documents...</div>
+        <div className="rounded-xl glass-tile p-6 text-sm text-muted-foreground">Loading documents...</div>
       </div>
     );
   }
@@ -184,7 +184,7 @@ export default function DocumentsPage() {
         <span className="text-sm text-muted-foreground">{filteredCountLabel}</span>
       </div>
 
-      <div className="mb-6 rounded-xl border bg-background p-4 sm:p-5">
+      <div className="mb-6 rounded-xl glass-card p-4 sm:p-5">
         <FileUpload
           value={uploadQueue}
           onValueChange={handleUploadQueueChange}
@@ -292,11 +292,11 @@ export default function DocumentsPage() {
       </div>
 
       {loadingList ? (
-        <div className="rounded-xl border bg-background p-6 text-sm text-muted-foreground">Loading list...</div>
+        <div className="rounded-xl glass-tile p-6 text-sm text-muted-foreground">Loading list...</div>
       ) : listError ? (
-        <div className="rounded-xl border bg-background p-6 text-sm text-red-500">{listError}</div>
+        <div className="rounded-xl glass-tile p-6 text-sm text-red-500">{listError}</div>
       ) : documents.length === 0 ? (
-        <div className="rounded-xl border bg-background p-6 text-sm text-muted-foreground">
+        <div className="rounded-xl glass-tile p-6 text-sm text-muted-foreground">
           No documents found.
         </div>
       ) : (
@@ -307,7 +307,7 @@ export default function DocumentsPage() {
               <Link
                 key={doc.id}
                 href={`/documents/${doc.id}`}
-                className="rounded-xl border bg-background p-4 transition hover:bg-accent/40"
+                className="rounded-xl glass-tile glass-tile-hover p-4"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">

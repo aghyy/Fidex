@@ -725,11 +725,11 @@ export default function DashboardOverview() {
   }, [activeChartIndex, hasLoadedChartIndex]);
 
   if (loading) {
-    return <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">Loading dashboard...</div>;
+    return <div className="rounded-2xl glass-card p-6 text-sm text-muted-foreground">Loading dashboard...</div>;
   }
 
   if (error) {
-    return <div className="rounded-2xl border bg-card p-6 text-sm text-red-500">{error}</div>;
+    return <div className="rounded-2xl glass-card p-6 text-sm text-red-500">{error}</div>;
   }
 
   return (
@@ -753,7 +753,7 @@ export default function DashboardOverview() {
         />
       </div>
 
-      <div className="rounded-2xl border bg-card p-4 sm:p-6">
+      <div className="rounded-2xl glass-card p-4 sm:p-6">
         <div>
           <div>
             <h2 className="text-lg font-semibold">Financial Overview</h2>
@@ -764,21 +764,21 @@ export default function DashboardOverview() {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="rounded-xl border bg-background p-3">
+          <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Net Worth</p>
             <p className={`text-lg font-semibold ${netWorth >= 0 ? "text-green-600" : "text-red-600"}`}>
               EUR {netWorth.toLocaleString()}
             </p>
           </div>
-          <div className="rounded-xl border bg-background p-3">
+          <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Income</p>
             <p className="text-lg font-semibold text-green-600">EUR {totals.income.toLocaleString()}</p>
           </div>
-          <div className="rounded-xl border bg-background p-3">
+          <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Expense</p>
             <p className="text-lg font-semibold text-red-600">EUR {totals.expense.toLocaleString()}</p>
           </div>
-          <div className="rounded-xl border bg-background p-3">
+          <div className="rounded-xl glass-tile p-3">
             <p className="text-xs text-muted-foreground">Net</p>
             <p className={`text-lg font-semibold ${totals.net >= 0 ? "text-green-600" : "text-red-600"}`}>
               EUR {totals.net.toLocaleString()}
@@ -787,7 +787,7 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card p-4 sm:p-6">
+      <div className="rounded-2xl glass-card p-4 sm:p-6">
         <h3 className="mb-1 text-base font-semibold">Cashflow & categories</h3>
         <p className="mb-4 text-xs text-muted-foreground">
           Swipe to explore cashflow, stacked spending, and radar view.
@@ -966,14 +966,14 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card p-4 sm:p-6">
+      <div className="rounded-2xl glass-card p-4 sm:p-6">
         <h3 className="mb-3 text-base font-semibold">Accounts Overview</h3>
         <div className="space-y-2">
           {accountOverview.map((row) => (
             <Link
               key={row.account.id}
               href={`/accounts/${encodeURIComponent(row.account.id)}`}
-              className="block rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+              className="block rounded-lg glass-tile glass-tile-hover p-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -1008,7 +1008,7 @@ export default function DashboardOverview() {
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border bg-card p-4 sm:p-6">
+        <div className="rounded-2xl glass-card p-4 sm:p-6">
           <h3 className="mb-1 text-base font-semibold">Spending by Category</h3>
           <p className="mb-4 text-xs text-muted-foreground">Only expense transactions are included.</p>
           <ChartContainer config={spendingChartConfig} className="h-[260px] w-full">
@@ -1040,7 +1040,7 @@ export default function DashboardOverview() {
               <Link
                 key={row.categoryId}
                 href={`/categories/${encodeURIComponent(row.categoryId)}`}
-                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+                className="flex items-center justify-between rounded-lg glass-tile glass-tile-hover p-3"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -1073,7 +1073,7 @@ export default function DashboardOverview() {
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card p-4 sm:p-6">
+        <div className="rounded-2xl glass-card p-4 sm:p-6">
           <h3 className="mb-1 text-base font-semibold">Earnings by Category</h3>
           <p className="mb-4 text-xs text-muted-foreground">Only income transactions are included.</p>
           <ChartContainer config={earningChartConfig} className="h-[260px] w-full">
@@ -1105,7 +1105,7 @@ export default function DashboardOverview() {
               <Link
                 key={row.categoryId}
                 href={`/categories/${encodeURIComponent(row.categoryId)}`}
-                className="flex items-center justify-between rounded-lg border bg-background p-3 transition-colors hover:bg-accent/40"
+                className="flex items-center justify-between rounded-lg glass-tile glass-tile-hover p-3"
               >
                 <div className="flex items-center gap-3">
                   <div

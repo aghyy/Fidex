@@ -286,7 +286,7 @@ export default function EditBudgetDialog({ budget, categories, onUpdated }: Edit
         <IconPencil className="h-4 w-4" />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
-        <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
+        <MorphingDialogContent className="w-full max-w-lg rounded-2xl glass-dialog p-5 shadow-xl">
           <MorphingDialogTitle className="text-xl">Edit budget</MorphingDialogTitle>
           <MorphingDialogDescription className="text-sm text-muted-foreground">
             Change target and categories.

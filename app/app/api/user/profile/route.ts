@@ -20,6 +20,7 @@ export async function GET() {
         email: true,
         image: true,
         theme: true,
+        accentColor: true,
         bookAllTransactions: true,
         password: true,
         createdAt: true,
@@ -52,7 +53,18 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const { firstName, lastName, username, image, theme, bookAllTransactions } = body;
+    const { firstName, lastName, username, image, theme, accentColor, bookAllTransactions } = body;
+
+    // Validate accentColor: must be null or a 3/6/8-digit hex string
+    if (accentColor !== undefined && accentColor !== null) {
+      const hexRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+      if (typeof accentColor !== "string" || !hexRegex.test(accentColor)) {
+        return NextResponse.json(
+          { error: "accentColor must be a valid hex color string or null" },
+          { status: 400 }
+        );
+      }
+    }
 
     const currentUsername = 'username' in session.user ? (session.user as { username?: string }).username : undefined;
     if (username !== undefined && username !== currentUsername) {
@@ -83,6 +95,7 @@ export async function PATCH(request: Request) {
         ...(theme !== undefined && theme !== null && {
           theme: theme === 'light' ? 'LIGHT' : theme === 'dark' ? 'DARK' : 'SYSTEM',
         }),
+        ...(accentColor !== undefined && { accentColor }),
         ...(bookAllTransactions !== undefined && {
           bookAllTransactions: Boolean(bookAllTransactions),
         }),
@@ -95,6 +108,7 @@ export async function PATCH(request: Request) {
         email: true,
         image: true,
         theme: true,
+        accentColor: true,
         bookAllTransactions: true,
       },
     });

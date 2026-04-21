@@ -148,7 +148,7 @@ export default function DocumentDetailPage() {
   if (status === "loading" || status === "unauthenticated" || loading) {
     return (
       <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="rounded-xl border bg-background p-6 text-sm text-muted-foreground">Loading document...</div>
+        <div className="rounded-xl glass-tile p-6 text-sm text-muted-foreground">Loading document...</div>
       </div>
     );
   }
@@ -156,7 +156,7 @@ export default function DocumentDetailPage() {
   if (!document) {
     return (
       <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="rounded-xl border bg-background p-6 text-sm text-red-500">{error ?? "Document not found."}</div>
+        <div className="rounded-xl glass-tile p-6 text-sm text-red-500">{error ?? "Document not found."}</div>
       </div>
     );
   }
@@ -176,21 +176,21 @@ export default function DocumentDetailPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-        <div className="rounded-xl border bg-background p-4">
+        <div className="rounded-xl glass-card p-4">
           {isImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={document.url} alt={document.title} className="max-h-[70vh] w-full rounded-md object-contain" />
           ) : isPdf ? (
             <iframe src={document.url} className="h-[70vh] w-full rounded-md border" title={document.title} />
           ) : (
-            <div className="flex h-[50vh] flex-col items-center justify-center rounded-md border bg-muted/30 text-center">
+            <div className="flex h-[50vh] flex-col items-center justify-center rounded-md glass-tile text-center">
               <p className="text-sm font-medium">Preview not available for this file type.</p>
               <p className="mt-1 text-xs text-muted-foreground">Use Open original to download/view it.</p>
             </div>
           )}
         </div>
 
-        <div className="rounded-xl border bg-background p-4">
+        <div className="rounded-xl glass-card p-4">
           <div className="grid gap-3">
             <div>
               <label className="text-sm text-muted-foreground" htmlFor="doc-title">
@@ -234,7 +234,7 @@ export default function DocumentDetailPage() {
               />
             </div>
 
-            <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+            <div className="rounded-md glass-tile p-3 text-xs text-muted-foreground">
               <p>{document.originalFileName}</p>
               <p>{document.mimeType}</p>
               <p>{formatBytes(document.sizeBytes)}</p>

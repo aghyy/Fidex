@@ -25,12 +25,12 @@ export default function ManageCategoriesPage() {
           <Skeleton className="h-7 w-64" />
         </div>
         <div className="space-y-6">
-          <div className="rounded-xl border bg-background p-6">
+          <div className="rounded-xl glass-tile p-6">
             <Skeleton className="h-5 w-40 mb-3" />
             <Skeleton className="h-4 w-full mb-2" />
             <Skeleton className="h-4 w-2/3" />
           </div>
-          <div className="rounded-xl border bg-background p-6">
+          <div className="rounded-xl glass-tile p-6">
             <Skeleton className="h-5 w-40 mb-3" />
             <Skeleton className="h-4 w-full mb-2" />
             <Skeleton className="h-4 w-1/2" />

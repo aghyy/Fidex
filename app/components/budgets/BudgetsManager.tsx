@@ -55,7 +55,7 @@ function BudgetDetailsDialog({
         <span className="sr-only">Open budget details</span>
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
-        <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
+        <MorphingDialogContent className="w-full max-w-lg rounded-2xl glass-dialog p-5 shadow-xl">
           <MorphingDialogTitle className="text-xl">
             {budget.name ?? "Unnamed budget"}
           </MorphingDialogTitle>
@@ -167,7 +167,7 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border bg-background p-4 animate-pulse">
+          <div key={i} className="rounded-xl glass-tile p-4 animate-pulse">
             <div className="h-5 w-40 bg-muted rounded" />
             <div className="mt-2 flex items-center justify-between">
               <div className="h-4 w-24 bg-muted rounded" />
@@ -182,7 +182,7 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
 
   if (error) {
     return (
-      <div className="rounded-xl border bg-background p-4 text-red-500">
+      <div className="rounded-xl glass-tile p-4 text-red-500">
         {error}
       </div>
     );
@@ -190,7 +190,7 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
 
   if (budgets.length === 0) {
     return (
-      <div className="rounded-xl border bg-background p-8 text-center text-muted-foreground">
+      <div className="rounded-xl glass-tile p-8 text-center text-muted-foreground">
         <p>No budgets yet.</p>
         <p className="mt-2 text-sm">Create one using the + button.</p>
       </div>
@@ -210,7 +210,7 @@ export default function BudgetsManager({ from, to }: BudgetsManagerProps) {
 
         return (
           <MorphingDialog key={budget.id}>
-            <div className="relative rounded-xl border bg-background p-4 transition-colors hover:bg-accent/50">
+            <div className="relative rounded-xl glass-tile glass-tile-hover p-4">
               <BudgetDetailsDialog budget={budget} categories={categories} />
 
               <div className="flex items-start justify-between">

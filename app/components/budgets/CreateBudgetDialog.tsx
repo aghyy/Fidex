@@ -240,7 +240,7 @@ export default function CreateBudgetDialog() {
         <IconPlus className="h-5 w-5" />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
-        <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
+        <MorphingDialogContent className="w-full max-w-lg rounded-2xl glass-dialog p-5 shadow-xl">
           <MorphingDialogTitle className="text-xl">Create budget</MorphingDialogTitle>
           <MorphingDialogDescription className="text-sm text-muted-foreground">
             Set a spending target for one or more categories.

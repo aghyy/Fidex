@@ -118,7 +118,7 @@ export default function CategoriesManager() {
       {state === "loading" && categories.length === 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-lg border p-3">
+            <div key={i} className="rounded-lg glass-tile p-3">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-5 w-5 rounded-full" />
                 <Skeleton className="h-5 w-40" />
@@ -176,7 +176,7 @@ function CategoryDialogTrigger({ category }: CategoryDialogTriggerProps) {
         isOpen ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
-      <div className="relative w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent/40">
+      <div className="relative w-full rounded-lg glass-tile glass-tile-hover p-3 text-left">
         <div className="flex items-center gap-3">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-full border p-2"
@@ -254,7 +254,7 @@ function CategoryDialogContent({ category, onSave, onDelete }: CategoryDialogCon
 
   return (
     <MorphingDialogContent
-      className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
+      className="w-full max-w-lg rounded-2xl glass-dialog p-5 shadow-xl"
       style={{ overflow: "visible" }}
     >
       <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>

@@ -209,7 +209,7 @@ function EditCategoryDialog({
         <IconPencil className="h-4 w-4" />
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
-        <MorphingDialogContent className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl" style={{ overflow: "visible" }}>
+        <MorphingDialogContent className="w-full max-w-lg rounded-2xl glass-dialog p-5 shadow-xl" style={{ overflow: "visible" }}>
           <MorphingDialogTitle className="text-xl">Edit Category</MorphingDialogTitle>
           <MorphingDialogDescription className="text-sm text-muted-foreground">
             Update category details.

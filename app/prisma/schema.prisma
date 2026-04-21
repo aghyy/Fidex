@@ -18,6 +18,7 @@ model User {
   image          String?
   password       String?
   theme          ThemePreference @default(SYSTEM)
+  accentColor    String?
   bookAllTransactions Boolean    @default(false)
   updatedAt      DateTime        @default(now()) @updatedAt
   accounts       OAuthAccount[]

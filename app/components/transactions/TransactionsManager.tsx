@@ -129,7 +129,7 @@ function TransactionDetailsDialog({
         <span className="sr-only">Open transaction details</span>
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
-        <MorphingDialogContent className="w-full max-w-2xl rounded-2xl border bg-background p-5 shadow-xl" style={{ overflow: "visible" }}>
+        <MorphingDialogContent className="w-full max-w-2xl rounded-2xl glass-dialog p-5 shadow-xl" style={{ overflow: "visible" }}>
           <MorphingDialogTitle className="text-xl">Transaction Details</MorphingDialogTitle>
           <MorphingDialogDescription className="text-sm text-muted-foreground">
             Read-only transaction information.
@@ -364,7 +364,7 @@ export default function TransactionsManager({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="rounded-xl border bg-background p-4 animate-pulse">
+          <div key={i} className="rounded-xl glass-tile p-4 animate-pulse">
             <div className="h-5 w-40 bg-muted rounded"></div>
             <div className="h-4 w-1/2 bg-muted rounded mt-2"></div>
           </div>
@@ -375,7 +375,7 @@ export default function TransactionsManager({
 
   if (error) {
     return (
-      <div className="rounded-xl border bg-background p-4 text-red-500">
+      <div className="rounded-xl glass-tile p-4 text-red-500">
         Error: {error}
       </div>
     );
@@ -383,7 +383,7 @@ export default function TransactionsManager({
 
   if (transactions.length === 0) {
     return (
-      <div className="rounded-xl border bg-background p-8 text-center text-muted-foreground">
+      <div className="rounded-xl glass-tile p-8 text-center text-muted-foreground">
         <p>No transactions yet.</p>
         <p className="text-sm mt-2">Create your first transaction using the + button.</p>
       </div>
@@ -394,7 +394,7 @@ export default function TransactionsManager({
     <div className="space-y-3">
       {transactions.map((transaction) => (
         <MorphingDialog key={transaction.id}>
-          <div className="relative rounded-xl border bg-background p-4 transition-colors hover:bg-accent/50">
+          <div className="relative rounded-xl glass-tile glass-tile-hover p-4">
             <TransactionDetailsDialog transaction={transaction} accounts={accounts} categories={categories} />
 
             <div className="flex items-start justify-between">

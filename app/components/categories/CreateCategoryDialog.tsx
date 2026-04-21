@@ -120,7 +120,7 @@ export default function CreateCategoryDialog() {
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent
-          className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"
+          className="w-full max-w-lg rounded-2xl glass-dialog p-5 shadow-xl"
           style={{ overflow: "visible" }}
         >
           <MorphingDialogTitle className="text-xl">Create Category</MorphingDialogTitle>

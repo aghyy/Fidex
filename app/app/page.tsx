@@ -22,7 +22,7 @@ export default function Home() {
         <div className="flex items-center justify-between mb-6">
           <Skeleton className="h-7 w-40" />
         </div>
-        <div className="rounded-2xl border bg-card p-8">
+        <div className="rounded-2xl glass-card p-8">
           <Skeleton className="h-6 w-56 mb-4" />
           <Skeleton className="h-4 w-80 mb-2" />
           <Skeleton className="h-4 w-64" />

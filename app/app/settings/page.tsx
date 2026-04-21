@@ -23,7 +23,7 @@ export default function SettingsPage() {
         <Skeleton className="h-7 w-40 mb-6" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border bg-background p-5">
+            <div key={i} className="rounded-xl glass-tile p-5">
               <div className="flex items-start gap-3">
                 <Skeleton className="h-5 w-5 rounded mb-1" />
                 <div className="flex-1">
@@ -45,7 +45,7 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link href="/settings/profile" className="rounded-xl border bg-background p-5 hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Link href="/settings/profile" className="rounded-xl glass-tile glass-tile-hover p-5">
             <div className="flex items-start gap-3">
               <IconUser className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
@@ -55,7 +55,7 @@ export default function SettingsPage() {
             </div>
           </Link>
 
-          <Link href="/settings/manage-accounts" className="rounded-xl border bg-background p-5 hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Link href="/settings/manage-accounts" className="rounded-xl glass-tile glass-tile-hover p-5">
             <div className="flex items-start gap-3">
               <IconWallet className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
@@ -65,7 +65,7 @@ export default function SettingsPage() {
             </div>
           </Link>
 
-          <Link href="/settings/manage-categories" className="rounded-xl border bg-background p-5 hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Link href="/settings/manage-categories" className="rounded-xl glass-tile glass-tile-hover p-5">
             <div className="flex items-start gap-3">
               <IconCategory className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
@@ -75,7 +75,7 @@ export default function SettingsPage() {
             </div>
           </Link>
 
-          <Link href="/settings/financial-statement" className="rounded-xl border bg-background p-5 hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Link href="/settings/financial-statement" className="rounded-xl glass-tile glass-tile-hover p-5">
             <div className="flex items-start gap-3">
               <IconFileExport className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
@@ -85,7 +85,7 @@ export default function SettingsPage() {
             </div>
           </Link>
 
-          <Link href="/settings/advanced" className="rounded-xl border bg-background p-5 hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Link href="/settings/advanced" className="rounded-xl glass-tile glass-tile-hover p-5">
             <div className="flex items-start gap-3">
               <IconAdjustmentsHorizontal className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>

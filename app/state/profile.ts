@@ -10,6 +10,7 @@ export type UserProfile = {
   image: string;
   isOAuthUser: boolean;
   theme?: "light" | "dark" | "system";
+  accentColor?: string | null;
   bookAllTransactions?: boolean;
 };
 

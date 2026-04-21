@@ -69,12 +69,12 @@ export default function BudgetsPage() {
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <Skeleton className="h-7 w-48 mb-6" />
         <div className="space-y-4">
-          <div className="rounded-xl border bg-background p-5">
+          <div className="rounded-xl glass-tile p-5">
             <Skeleton className="h-5 w-40 mb-3" />
             <Skeleton className="h-4 w-full mb-2" />
             <Skeleton className="h-4 w-5/6" />
           </div>
-          <div className="rounded-xl border bg-background p-5">
+          <div className="rounded-xl glass-tile p-5">
             <Skeleton className="h-5 w-40 mb-3" />
             <Skeleton className="h-4 w-full mb-2" />
             <Skeleton className="h-4 w-2/3" />

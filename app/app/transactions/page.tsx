@@ -115,7 +115,7 @@ export default function TransactionsPage() {
         <Skeleton className="h-7 w-56 mb-6" />
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl border bg-background p-4">
+            <div key={i} className="rounded-xl glass-tile p-4">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-5 w-40" />
                 <Skeleton className="h-4 w-16" />

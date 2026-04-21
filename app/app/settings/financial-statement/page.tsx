@@ -133,7 +133,7 @@ export default function FinancialStatementPage() {
           <Skeleton className="h-5 w-5 rounded" />
           <Skeleton className="h-7 w-64" />
         </div>
-        <section className="rounded-xl border bg-background p-4 sm:p-6">
+        <section className="rounded-xl glass-card p-4 sm:p-6">
           <div className="space-y-4">
             <Skeleton className="h-5 w-48" />
             <Skeleton className="h-4 w-2/3" />
@@ -164,7 +164,7 @@ export default function FinancialStatementPage() {
         <h1 className="text-2xl font-bold flex-1">Financial Statement (PDF)</h1>
       </div>
 
-      <section className="rounded-xl border bg-background p-4 sm:p-6">
+      <section className="rounded-xl glass-card p-4 sm:p-6">
         <p className="text-xs text-muted-foreground mb-4">
           Generate a PDF financial statement for your tax advisor or accountant. Choose period, accounts, categories, and other options.
         </p>
@@ -230,7 +230,7 @@ export default function FinancialStatementPage() {
             </div>
           </div>
 
-          <div className="rounded-md border p-3">
+          <div className="rounded-md glass-tile p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Accounts</span>
               <div className="flex gap-2">
@@ -271,7 +271,7 @@ export default function FinancialStatementPage() {
             )}
           </div>
 
-          <div className="rounded-md border p-3">
+          <div className="rounded-md glass-tile p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Categories</span>
               <div className="flex gap-2">
@@ -312,7 +312,7 @@ export default function FinancialStatementPage() {
             )}
           </div>
 
-          <div className="rounded-md border p-3 space-y-3">
+          <div className="rounded-md glass-tile p-3 space-y-3">
             <span className="text-sm font-medium block">Options</span>
             <label className="flex items-start gap-3 cursor-pointer">
               <Checkbox

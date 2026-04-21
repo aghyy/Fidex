@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useSetAtom } from "jotai";
 import { profileAtom, profileLoadedAtom, type UserProfile } from "@/state/profile";
-import { themeAtom } from "@/state/theme";
+import { themeAtom, accentAtom } from "@/state/theme";
 import { BasicUser } from "@/types/user";
 
 function ProfileBootstrapper() {
@@ -13,6 +13,7 @@ function ProfileBootstrapper() {
   const setProfile = useSetAtom(profileAtom);
   const setLoaded = useSetAtom(profileLoadedAtom);
   const setTheme = useSetAtom(themeAtom);
+  const setAccent = useSetAtom(accentAtom);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,11 +38,15 @@ function ProfileBootstrapper() {
           isOAuthUser: Boolean((data?.user as BasicUser)?.isOAuthUser),
           theme: (data?.user?.theme ? String(data.user.theme).toLowerCase() : undefined) as
             | "light" | "dark" | "system" | undefined,
+          accentColor: typeof data?.user?.accentColor === "string" ? data.user.accentColor : null,
           bookAllTransactions: Boolean((data?.user as BasicUser)?.bookAllTransactions),
         };
         setProfile(profile);
         if (profile.theme) {
           setTheme(profile.theme);
+        }
+        if (typeof profile.accentColor === "string" && profile.accentColor) {
+          setAccent(profile.accentColor);
         }
       } catch {
         setProfile(null);
@@ -53,7 +58,7 @@ function ProfileBootstrapper() {
     return () => {
       cancelled = true;
     };
-  }, [status, setProfile, setLoaded]);
+  }, [status, setProfile, setLoaded, setTheme, setAccent]);
 
   return null;
 }

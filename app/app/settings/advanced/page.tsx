@@ -66,7 +66,7 @@ export default function AdvancedSettingsPage() {
           <Skeleton className="h-5 w-5 rounded" />
           <Skeleton className="h-7 w-40" />
         </div>
-        <section className="rounded-xl border bg-background p-4 sm:p-6">
+        <section className="rounded-xl glass-card p-4 sm:p-6">
           <div className="space-y-4">
             <Skeleton className="h-5 w-48" />
             <Skeleton className="h-4 w-2/3" />
@@ -96,13 +96,13 @@ export default function AdvancedSettingsPage() {
         <h1 className="text-2xl font-bold">Advanced Settings</h1>
       </div>
 
-      <section className="rounded-xl border bg-background p-4 sm:p-6">
+      <section className="rounded-xl glass-card p-4 sm:p-6">
         <form onSubmit={handleAdvancedUpdate} className="space-y-4">
           <p className="text-xs text-muted-foreground">
             Extra behavior and customization options will appear here.
           </p>
 
-          <div className="rounded-md border p-3">
+          <div className="rounded-md glass-tile p-3">
             <label className="flex items-start gap-3">
               <Checkbox
                 checked={bookAllTransactions}

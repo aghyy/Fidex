@@ -60,7 +60,7 @@ export function ConfirmDialog({
       />
       <div
         className={cn(
-          "relative z-[101] w-full max-w-md rounded-2xl border bg-background p-5 shadow-xl",
+          "relative z-[101] w-full max-w-md rounded-2xl glass-dialog p-5 shadow-xl",
           className
         )}
       >

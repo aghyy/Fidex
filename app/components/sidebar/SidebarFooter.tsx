@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
+import AccentColorPicker from "@/components/settings/AccentColorPicker";
 import { IconLogout } from "@tabler/icons-react";
 import { BasicUser } from "@/types/user";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -140,7 +141,10 @@ export default function SidebarFooter({
         </div>
 
         <MorphingDialogContainer>
-          <MorphingDialogContent className="w-[420px] max-w-[92vw] rounded-2xl bg-popover text-popover-foreground shadow-2xl border p-6 max-h-[90vh] overflow-y-auto">
+          <MorphingDialogContent
+            className="w-[420px] max-w-[92vw] rounded-2xl glass-dialog shadow-2xl p-6"
+            style={{ overflow: "visible" }}
+          >
             <div className="space-y-5">
               <div className="flex flex-col items-center gap-3">
                 <Avatar className="h-20 w-20 border-2">
@@ -161,8 +165,12 @@ export default function SidebarFooter({
 
               <div className="border-t pt-4 space-y-3">
                 <div className="flex flex-col gap-2">
-                  <span className="text-xs leading-none uppercase font-semibold text-muted-foreground">Theme</span>
+                  <span className="text-xs leading-none uppercase font-semibold text-muted-foreground">Mode</span>
                   <AnimatedThemeToggler />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs leading-none uppercase font-semibold text-muted-foreground">Accent color</span>
+                  <AccentColorPicker />
                 </div>
                 <button
                   type="button"

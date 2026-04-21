@@ -22,6 +22,8 @@ import DynamicCategories from "./DynamicCategories";
 import { useCategories, useCategoriesBootstrap } from "@/state/categories";
 import DynamicAccounts from "./DynamicAccounts";
 import { useAccountsBootstrap, useAccounts } from "@/state/accounts";
+import { useAtomValue, useSetAtom } from "jotai";
+import { isDarkAtom, accentAtom } from "@/state/theme";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -32,6 +34,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<BasicUser | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
+  const isDark = useAtomValue(isDarkAtom);
+  const setAccent = useSetAtom(accentAtom);
 
   useEffect(() => {
     if (session?.user) {
@@ -44,12 +48,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             if (data.user.image) {
               setProfileImage(data.user.image as string);
             }
+            if (typeof data.user.accentColor === "string" && data.user.accentColor) {
+              setAccent(data.user.accentColor);
+            }
           }
         })
         .catch(() => { })
         .finally(() => setImageLoading(false));
     }
-  }, [session?.user]);
+  }, [session?.user, setAccent]);
 
   // Bootstrap categories global store when authenticated
   useCategoriesBootstrap(Boolean(session?.user));
@@ -142,13 +149,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <main
-        className="flex-1 min-w-0 lg:my-2 mr-0 md:mr-2 lg:rounded-[1.2rem] bg-popover text-popover-foreground overflow-y-auto relative pb-20 md:pb-2"
-        // style={{
-        //   backgroundImage: "url('/backgrounds/test.png')",
-        //   backgroundSize: "cover",
-        //   backgroundPosition: "center",
-        //   backgroundRepeat: "no-repeat",
-        //  }}
+        className="flex-1 min-w-0 lg:my-2 mr-0 md:mr-2 lg:rounded-[1.2rem] text-foreground overflow-y-auto relative pb-20 md:pb-2"
+        style={{
+          backgroundImage: `url('/backgrounds/${isDark ? "blue.png" : "test-light.png"}')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+         }}
         onClick={() => sidebarOpen && setSidebarOpen(false)}
       >
         {children}

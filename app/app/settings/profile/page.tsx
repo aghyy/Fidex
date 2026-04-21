@@ -137,7 +137,7 @@ export default function ProfileSettingsPage() {
           <Skeleton className="h-7 w-32" />
         </div>
 
-        <section className="rounded-xl border bg-background p-4 sm:p-6">
+        <section className="rounded-xl glass-card p-4 sm:p-6">
           <div className="space-y-5">
             <div className="flex items-center md:justify-start justify-center gap-4">
               <Skeleton className="h-20 w-20 rounded-full" />
@@ -169,16 +169,16 @@ export default function ProfileSettingsPage() {
 
         <div className="mt-6 space-y-4">
           <div className="flex md:flex-row flex-col gap-4">
-            <div className="rounded-lg border p-4 flex-1">
+            <div className="rounded-lg glass-tile p-4 flex-1">
               <Skeleton className="h-5 w-40 mb-2" />
               <Skeleton className="h-4 w-2/3" />
             </div>
-            <div className="rounded-lg border p-4 flex-1">
+            <div className="rounded-lg glass-tile p-4 flex-1">
               <Skeleton className="h-5 w-40 mb-2" />
               <Skeleton className="h-4 w-1/2" />
             </div>
           </div>
-          <div className="rounded-lg border p-4">
+          <div className="rounded-lg glass-tile p-4">
             <Skeleton className="h-5 w-52 mb-2" />
             <Skeleton className="h-4 w-2/3" />
           </div>
@@ -204,7 +204,7 @@ export default function ProfileSettingsPage() {
           <h1 className="text-2xl font-bold">Profile</h1>
         </div>
 
-        <section className="rounded-xl border bg-background p-4 sm:p-6">
+        <section className="rounded-xl glass-card p-4 sm:p-6">
           <form onSubmit={handleProfileUpdate} className="space-y-5">
             <div className="flex items-center md:justify-start justify-center gap-4">
               <div className="relative group">
@@ -313,18 +313,18 @@ export default function ProfileSettingsPage() {
 
         <div className="mt-6 space-y-4">
           <div className="flex md:flex-row flex-col gap-4">
-            <div className="rounded-lg border p-4 flex-1">
+            <div className="rounded-lg glass-tile p-4 flex-1">
               {!isOAuthUser ? (
                 <PasswordDialog />
               ) : (
                 <p className="text-xs text-muted-foreground">Password managed by your Google account</p>
               )}
             </div>
-            <div className="rounded-lg border p-4 flex-1">
+            <div className="rounded-lg glass-tile p-4 flex-1">
               <PasskeysDialog isOAuthUser={isOAuthUser} />
             </div>
           </div>
-          <div className="rounded-lg border p-4">
+          <div className="rounded-lg glass-tile p-4">
             <DeleteAccountDialog isOAuthUser={isOAuthUser} />
           </div>
         </div>
