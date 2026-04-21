@@ -465,7 +465,7 @@ export default function AccountDetailPage() {
         </div>
 
         <div
-          className="mb-6 rounded-xl border p-4"
+          className="mb-6 rounded-xl p-4"
           style={{
             backgroundColor: account?.color ?? undefined,
             color: account?.color ? headerTextColor : undefined,

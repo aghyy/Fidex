@@ -140,7 +140,7 @@ export function DashboardOverviewSkeleton() {
         <Skeleton className="mt-2 h-4 w-64 max-w-full" />
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2 rounded-xl glass-tile p-3">
+            <div key={i} className="space-y-2">
               <Skeleton className="h-3 w-16" />
               <Skeleton className="h-6 w-[70%]" />
             </div>
@@ -861,21 +861,21 @@ export default function DashboardOverview() {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="rounded-xl glass-tile p-3">
+          <div>
             <p className="text-xs text-muted-foreground">Net Worth</p>
             <p className={`text-lg font-semibold ${netWorth >= 0 ? "text-green-600" : "text-red-600"}`}>
               EUR {formatEurAmount(netWorth)}
             </p>
           </div>
-          <div className="rounded-xl glass-tile p-3">
+          <div>
             <p className="text-xs text-muted-foreground">Income</p>
             <p className="text-lg font-semibold text-green-600">EUR {formatEurAmount(totals.income)}</p>
           </div>
-          <div className="rounded-xl glass-tile p-3">
+          <div>
             <p className="text-xs text-muted-foreground">Expense</p>
             <p className="text-lg font-semibold text-red-600">EUR {formatEurAmount(totals.expense)}</p>
           </div>
-          <div className="rounded-xl glass-tile p-3">
+          <div>
             <p className="text-xs text-muted-foreground">Net</p>
             <p className={`text-lg font-semibold ${totals.net >= 0 ? "text-green-600" : "text-red-600"}`}>
               EUR {formatEurAmount(totals.net)}

@@ -152,7 +152,7 @@ function EditCategoryForm({
             id={`category-name-${category.id}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="flex-1 rounded-md border bg-background px-3 py-2"
+            className="glass-form-trigger min-h-9 flex-1 rounded-md px-3 py-2 text-sm"
           />
         </div>
       </div>
@@ -390,7 +390,7 @@ export default function CategoryDetailPage() {
         </div>
 
         <div
-          className="mb-6 rounded-xl border p-4"
+          className="mb-6 rounded-xl p-4"
           style={{
             backgroundColor: category?.color ?? undefined,
             color: category?.color ? headerTextColor : undefined,
