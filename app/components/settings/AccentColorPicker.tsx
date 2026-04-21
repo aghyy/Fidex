@@ -2,41 +2,26 @@
 
 import { useAtom } from "jotai";
 import { accentAtom } from "@/state/theme";
-import { ColorPickerPopover } from "@/components/ui/color-picker";
-import { rgbaArrayToHex } from "@/utils/colors";
-import { Button } from "@/components/ui/button";
+import {
+  ColorSwatchPicker,
+  DEFAULT_COLOR_SWATCHES,
+  normalizeHexColor,
+} from "@/components/ui/color-swatch-picker";
 
 const DEFAULT_SWATCH = "#38bdf8";
 
 export default function AccentColorPicker() {
   const [accent, setAccent] = useAtom(accentAtom);
-  const isActive = Boolean(accent);
-  const popoverValue = accent ?? DEFAULT_SWATCH;
-
-  const handleChange = (input: unknown) => {
-    const hex = rgbaArrayToHex(input);
-    if (typeof hex === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(hex)) {
-      setAccent(hex);
-    }
-  };
+  const currentAccent = normalizeHexColor(accent, DEFAULT_SWATCH);
 
   return (
-    <div className="flex items-center gap-2">
-      <ColorPickerPopover
-        value={popoverValue}
-        onChange={handleChange}
-        isActive={isActive}
+    <div className="w-full max-w-full overflow-x-auto no-scrollbar pr-1">
+      <ColorSwatchPicker
+        value={currentAccent}
+        onChange={(hex) => setAccent(hex)}
+        colors={DEFAULT_COLOR_SWATCHES}
         showAlphaSlider={false}
       />
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setAccent(null)}
-        disabled={!isActive}
-      >
-        Use default
-      </Button>
     </div>
   );
 }

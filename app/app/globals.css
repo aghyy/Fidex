@@ -9,8 +9,8 @@ html, body {
 
 @layer base {
   :root {
-    /* Light mode – neutral grays for the app shell; glass surfaces sit over the bg image */
-    --background: 0 0% 96%;         /* white-gray shell (sidebar, input backgrounds) */
+    /* Light mode - neutral grays for the app shell; glass surfaces sit over the bg image */
+    --background: 0 0% 100%;        /* pure white light shell (sidebar, input backgrounds) */
     --foreground: 0 0% 10%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 10%;
@@ -18,9 +18,9 @@ html, body {
     --popover-foreground: 0 0% 10%;
     --primary: 202 83% 45%;         /* default accent when user hasn't picked one */
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 92%;
+    --secondary: 0 0% 86%;
     --secondary-foreground: 0 0% 10%;
-    --muted: 0 0% 93%;
+    --muted: 0 0% 87%;
     --muted-foreground: 0 0% 40%;
     --accent: 262 83% 88%;
     --accent-foreground: 247 43% 18%;
@@ -37,7 +37,7 @@ html, body {
     --radius: 0.6rem;
   }
   .dark {
-    /* Dark mode – neutral dark grays */
+    /* Dark mode - neutral dark grays */
     --background: 0 0% 9%;          /* near-black neutral shell */
     --foreground: 0 0% 96%;
     --card: 0 0% 13%;
@@ -89,6 +89,17 @@ html, body {
   /* Hover variant used on interactive tiles/links */
   .glass-tile-hover {
     @apply hover:bg-white/50 dark:hover:bg-black/40 transition-colors;
+  }
+  /* App shell background image. Driven by the .dark class on <html> so it doesn't
+     depend on any client-only state at render time (avoids hydration mismatches). */
+  .app-bg {
+    background-image: url('/backgrounds/light-background.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .dark .app-bg {
+    background-image: url('/backgrounds/dark-background.png');
   }
 }
 

@@ -186,8 +186,9 @@ export default function FinancialStatementPage() {
                     {formatDateLabel(fromDate)}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto overflow-hidden rounded-md p-0" align="start">
                   <Calendar
+                    className="rounded-md"
                     mode="single"
                     selected={fromDate}
                     onSelect={(date) => {
@@ -214,8 +215,9 @@ export default function FinancialStatementPage() {
                     {formatDateLabel(toDate)}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto overflow-hidden rounded-md p-0" align="start">
                   <Calendar
+                    className="rounded-md"
                     mode="single"
                     selected={toDate}
                     onSelect={(date) => {

@@ -22,8 +22,8 @@ import DynamicCategories from "./DynamicCategories";
 import { useCategories, useCategoriesBootstrap } from "@/state/categories";
 import DynamicAccounts from "./DynamicAccounts";
 import { useAccountsBootstrap, useAccounts } from "@/state/accounts";
-import { useAtomValue, useSetAtom } from "jotai";
-import { isDarkAtom, accentAtom } from "@/state/theme";
+import { useSetAtom } from "jotai";
+import { accentAtom } from "@/state/theme";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,7 +34,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<BasicUser | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
-  const isDark = useAtomValue(isDarkAtom);
   const setAccent = useSetAtom(accentAtom);
 
   useEffect(() => {
@@ -149,13 +148,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <main
-        className="flex-1 min-w-0 lg:my-2 mr-0 md:mr-2 lg:rounded-[1.2rem] text-foreground overflow-y-auto relative pb-20 md:pb-2"
-        style={{
-          backgroundImage: `url('/backgrounds/${isDark ? "blue.png" : "test-light.png"}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-         }}
+        className="app-bg flex-1 min-w-0 lg:my-2 mr-0 md:mr-2 lg:rounded-[1.2rem] text-foreground overflow-y-auto relative pb-20 md:pb-2"
         onClick={() => sidebarOpen && setSidebarOpen(false)}
       >
         {children}

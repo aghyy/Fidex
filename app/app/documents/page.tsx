@@ -4,10 +4,18 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { FileText, FileImage, FileType2, Upload, File, X, Loader2 } from "lucide-react";
+import { FileText, FileImage, FileType2, Upload, File, X, Loader2, Search } from "lucide-react";
 import { DocumentItem, DocumentKind } from "@/types/documents";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { uploadFiles } from "@/lib/uploadthing";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   FileUpload,
   FileUploadDropzone,
@@ -264,29 +272,42 @@ export default function DocumentsPage() {
       </div>
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void loadDocuments();
-          }}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm sm:max-w-md"
-          placeholder="Search by title, filename, notes..."
-        />
-        <div className="flex items-center gap-2">
-          <select
+        <div className="w-full sm:w-52">
+          <Select
             value={filterKind}
-            onChange={(e) => setFilterKind(e.target.value as "ALL" | DocumentKind)}
-            className="rounded-md border bg-background px-3 py-2 text-sm"
+            onValueChange={(value) => setFilterKind(value as "ALL" | DocumentKind)}
           >
-            <option value="ALL">All kinds</option>
-            <option value="CONTRACT">Contracts</option>
-            <option value="BILL">Bills</option>
-            <option value="RECEIPT">Receipts</option>
-            <option value="OTHER">Other</option>
-          </select>
-          <Button type="button" variant="outline" onClick={() => void loadDocuments()}>
-            Search
+            <SelectTrigger className="glass-tile border-white/30 dark:border-white/10 bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm">
+              <SelectValue placeholder="Filter by kind" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All kinds</SelectItem>
+              <SelectItem value="CONTRACT">Contracts</SelectItem>
+              <SelectItem value="BILL">Bills</SelectItem>
+              <SelectItem value="RECEIPT">Receipts</SelectItem>
+              <SelectItem value="OTHER">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex w-full items-center gap-2 sm:max-w-md">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void loadDocuments();
+            }}
+            className="w-full glass-tile border-white/30 dark:border-white/10 bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm"
+            placeholder="Search by title, filename, notes..."
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => void loadDocuments()}
+            aria-label="Search documents"
+            className="glass-tile glass-tile-hover h-9 aspect-square border-white/30 dark:border-white/10 bg-white/35 dark:bg-black/25 shadow-none backdrop-blur-sm"
+          >
+            <Search className="h-4 w-4" />
           </Button>
         </div>
       </div>

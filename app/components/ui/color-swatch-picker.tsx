@@ -81,7 +81,7 @@ export function ColorSwatchPicker({
 
   return (
     <div className={cn("w-full max-w-full", className)}>
-      <div className="flex min-w-max flex-nowrap items-center gap-2 pb-1 pr-1">
+      <div className="flex min-w-max flex-nowrap items-center gap-2 px-1 py-1 pr-2">
         <ColorPickerPopover
           value={popoverValue}
           onChange={handlePopoverChange}

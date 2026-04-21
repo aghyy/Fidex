@@ -165,9 +165,21 @@ export default function DocumentDetailPage() {
     <div className="px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Link href="/documents" className="rounded-md border px-2 py-1 text-sm hover:bg-accent">
-            Back
-          </Link>
+          <button
+            type="button"
+            onClick={() => router.push("/documents")}
+            className="p-1 hover:bg-accent rounded transition-colors"
+            aria-label="Back to documents"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
           <h1 className="truncate text-2xl font-bold">{document.title}</h1>
         </div>
         <a href={document.url} target="_blank" rel="noreferrer" className="rounded-md border px-3 py-2 text-sm hover:bg-accent">

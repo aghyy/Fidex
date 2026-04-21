@@ -12,6 +12,7 @@ import {
   MorphingDialogTrigger,
   useMorphingDialog,
 } from "@/components/motion-primitives/morphing-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Transaction {
   id: string;
@@ -233,6 +234,7 @@ export default function TransactionsManager({
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmTransaction, setDeleteConfirmTransaction] = useState<Transaction | null>(null);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -298,20 +300,18 @@ export default function TransactionsManager({
     };
   }, [fetchTransactions]);
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this transaction?")) return;
-
+  async function performDelete(transaction: Transaction) {
     try {
-      const res = await fetch(`/api/transaction/${id}`, {
+      const res = await fetch(`/api/transaction/${transaction.id}`, {
         method: "DELETE",
         credentials: "include",
       });
-
-      if (!res.ok) throw new Error("Failed to delete transaction");
-
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Failed to delete transaction");
+      setTransactions((prev) => prev.filter((t) => t.id !== transaction.id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to delete transaction");
+      setError(e instanceof Error ? e.message : "Failed to delete transaction");
+      throw e;
     }
   }
 
@@ -451,7 +451,7 @@ export default function TransactionsManager({
                   }
                 />
                 <button
-                  onClick={() => handleDelete(transaction.id)}
+                  onClick={() => setDeleteConfirmTransaction(transaction)}
                   className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
                   aria-label="Delete transaction"
                 >
@@ -462,6 +462,18 @@ export default function TransactionsManager({
           </div>
         </MorphingDialog>
       ))}
+      <ConfirmDialog
+        open={deleteConfirmTransaction !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmTransaction(null)}
+        title="Delete transaction"
+        description="Are you sure you want to delete this transaction? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={async () => {
+          if (deleteConfirmTransaction) await performDelete(deleteConfirmTransaction);
+        }}
+      />
     </div>
   );
 }
