@@ -20,6 +20,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Fidex",
   description: "Where your finances and documents find structure",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/icon.png",
+  },
 };
 
 // TODO: Cron Jobs for repeating transactions
