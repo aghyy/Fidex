@@ -100,7 +100,7 @@ export default function SidebarFooter({
   // All profile editing moved to settings page; dialog is read-only now
 
   const triggerContent = useMemo(() => (
-    <Avatar className="h-8 w-8 border-2 border-white/30 hover:border-white/50 transition-colors">
+    <Avatar className="h-10 w-10 border-2 border-white/30 hover:border-white/50 transition-colors">
       {!imageLoading && displayImage ? (
         <AvatarImage src={displayImage} alt={displayUserName} />
       ) : (
@@ -112,7 +112,11 @@ export default function SidebarFooter({
   ), [imageLoading, displayImage, displayInitials, displayUserName]);
 
   const triggerText = useMemo(() => (
-    <div className={`flex min-w-0 flex-col leading-tight transition-opacity duration-200 ${!open && "opacity-0"}`}>
+    <div
+      className={`flex min-w-0 flex-col leading-tight transition-all duration-200 ${
+        !open ? "w-0 overflow-hidden opacity-0" : "opacity-100"
+      }`}
+    >
       <span className="text-[13px] truncate" title={displayUserName}>
         {displayUserName}
       </span>
@@ -127,7 +131,7 @@ export default function SidebarFooter({
       <MorphingDialog lockSidebar>
         <div className="flex items-center justify-between gap-2">
           <MorphingDialogTrigger
-            className="flex items-center gap-2 overflow-hidden rounded-md"
+            className={`flex w-full items-center overflow-visible rounded-md gap-2 -ml-[0.125rem]`}
             style={isDialogOpen ? {
               pointerEvents: 'none',
               position: 'fixed',

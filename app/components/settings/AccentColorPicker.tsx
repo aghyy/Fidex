@@ -15,11 +15,11 @@ export default function AccentColorPicker() {
   const currentAccent = normalizeHexColor(accent, DEFAULT_SWATCH);
 
   return (
-    <div className="w-full max-w-full overflow-x-auto no-scrollbar pr-1">
+    <div className="w-full max-w-full overflow-visible pr-1">
       <ColorSwatchPicker
         value={currentAccent}
         onChange={(hex) => setAccent(hex)}
-        colors={DEFAULT_COLOR_SWATCHES}
+        colors={DEFAULT_COLOR_SWATCHES.slice(0, 10)}
         showAlphaSlider={false}
       />
     </div>
