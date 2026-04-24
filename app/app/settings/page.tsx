@@ -5,7 +5,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/skeleton";
 import Link from "next/link";
-import { IconUser, IconCategory, IconWallet, IconLogout, IconAdjustmentsHorizontal, IconFileExport } from "@tabler/icons-react";
+import { IconUser, IconCategory, IconWallet, IconLogout, IconAdjustmentsHorizontal, IconFileExport, IconRepeat } from "@tabler/icons-react";
 
 export default function SettingsPage() {
   const { status } = useSession();
@@ -71,6 +71,16 @@ export default function SettingsPage() {
               <div>
                 <h2 className="text-base font-semibold">Manage Categories</h2>
                 <p className="text-sm text-muted-foreground">Create, edit, and organize your categories.</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/settings/recurring-transactions" className="rounded-xl glass-tile glass-tile-hover p-5">
+            <div className="flex items-start gap-3">
+              <IconRepeat className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <h2 className="text-base font-semibold">Recurring Transactions</h2>
+                <p className="text-sm text-muted-foreground">Manage subscriptions and scheduled transactions that repeat automatically.</p>
               </div>
             </div>
           </Link>

@@ -533,6 +533,14 @@ function FormContent({
               <p className="text-xs text-muted-foreground">Expires must be tomorrow or later.</p>
             </div>
           ) : null}
+
+          {interval !== "ONCE" ? (
+            <div className="rounded-md border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground lg:col-span-2">
+              The schedule for this transaction lives on the recurring template.
+              Edit the schedule (including pausing it) from Settings → Recurring
+              Transactions.
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-2">

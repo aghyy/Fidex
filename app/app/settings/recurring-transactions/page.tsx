@@ -1,0 +1,62 @@
+"use client";
+
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Skeleton from "@/components/ui/skeleton";
+import RecurringTransactionsManager from "@/components/recurring-transactions/RecurringTransactionsManager";
+
+export default function RecurringTransactionsSettingsPage() {
+  const { status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signup");
+    }
+  }, [status, router]);
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-7 w-64" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl glass-tile p-4">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="mt-2 h-4 w-2/3" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => router.push("/settings")}
+          className="p-1 hover:bg-accent rounded transition-colors"
+          aria-label="Back to settings"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-2xl font-bold flex-1">Recurring Transactions</h1>
+      </div>
+
+      <p className="mb-4 text-sm text-muted-foreground">
+        Templates that automatically create transactions on a schedule. A Vercel cron
+        job runs nightly and materializes any due occurrences.
+      </p>
+
+      <RecurringTransactionsManager />
+    </div>
+  );
+}

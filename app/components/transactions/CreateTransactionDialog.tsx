@@ -200,8 +200,11 @@ function FormContent({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create");
 
-      if (selectedDocumentIds.length > 0 && data?.transaction?.id) {
-        const linkRes = await fetch(`/api/transaction/${data.transaction.id}/documents`, {
+      const createdTransactionId = data?.transaction?.id as string | undefined;
+      const createdRecurring = data?.recurringTransaction;
+
+      if (selectedDocumentIds.length > 0 && createdTransactionId) {
+        const linkRes = await fetch(`/api/transaction/${createdTransactionId}/documents`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -212,6 +215,11 @@ function FormContent({
       }
 
       try {
+        if (createdRecurring) {
+          window.dispatchEvent(
+            new CustomEvent("recurring-transaction:created", { detail: createdRecurring })
+          );
+        }
         window.dispatchEvent(new CustomEvent("transaction:created", { detail: data.transaction }));
       } catch { }
 
@@ -545,7 +553,15 @@ function FormContent({
                   />
                 </PopoverContent>
               </Popover>
-              <p className="text-xs text-muted-foreground">Expires must be tomorrow or later.</p>
+              <p className="text-xs text-muted-foreground">Optional end date for the recurrence.</p>
+            </div>
+          ) : null}
+
+          {interval !== "ONCE" ? (
+            <div className="rounded-md border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground lg:col-span-2">
+              This creates a recurring template. A scheduled job materializes future
+              occurrences automatically. You can pause, resume, or delete it from
+              Settings → Recurring Transactions.
             </div>
           ) : null}
         </div>

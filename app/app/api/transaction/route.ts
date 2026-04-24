@@ -3,6 +3,7 @@ import { prisma } from "../../../lib/prisma";
 import { auth } from "../../../auth";
 import { TransactionInterval, TransactionType } from "@/types/transactions";
 import { parseMoneyInput, roundMoney, toMoneyNumber } from "@/lib/money";
+import { materializeSingleTemplate } from "@/lib/recurring-transactions";
 
 export const runtime = "nodejs";
 
@@ -128,6 +129,8 @@ export async function POST(request: Request) {
             pending,
         } = await request.json();
         const normalizedType = (type as TransactionType | undefined) ?? "EXPENSE";
+        const normalizedInterval = (interval as TransactionInterval | undefined) ?? "ONCE";
+        const isRecurring = normalizedInterval !== "ONCE";
         const isPending = Boolean(pending);
 
         if (!originAccountId || typeof originAccountId !== "string") {
@@ -155,6 +158,81 @@ export async function POST(request: Request) {
         }
         const originId = String(originAccountId).trim();
         const categoryId = String(category).trim();
+
+        if (isRecurring) {
+            const now = new Date();
+            const endDate = expires ? expiresDate : null;
+
+            const created = await prisma.$transaction(async (tx) => {
+                const origin = await tx.account.findFirst({ where: { id: originId, userId: session.user.id } });
+                if (!origin) throw new Error("Origin account not found");
+                if (origin.currency !== "EUR") throw new Error("Only EUR accounts are currently supported");
+
+                const existingCategory = await tx.category.findFirst({ where: { id: categoryId, userId: session.user.id } });
+                if (!existingCategory) throw new Error("Category not found");
+
+                const resolvedTargetId =
+                    normalizedType === "TRANSFER"
+                        ? String(targetAccountId).trim()
+                        : originId;
+
+                if (normalizedType === "TRANSFER") {
+                    const target = await tx.account.findFirst({
+                        where: { id: resolvedTargetId, userId: session.user.id },
+                    });
+                    if (!target) throw new Error("Target account not found");
+                    if (target.currency !== "EUR") throw new Error("Only EUR accounts are currently supported");
+                }
+
+                const recurring = await tx.recurringTransaction.create({
+                    data: {
+                        userId: session.user.id,
+                        originAccountId: originId,
+                        targetAccountId: resolvedTargetId,
+                        amount: parsedAmount,
+                        notes: notes ? String(notes).trim() : "",
+                        interval: normalizedInterval,
+                        type: normalizedType,
+                        category: categoryId,
+                        startDate: occurredAtDate,
+                        endDate,
+                        nextOccurrenceAt: occurredAtDate,
+                        active: true,
+                    },
+                });
+
+                // Immediately materialize any occurrences whose scheduled date
+                // is already due (this lets users see the first occurrence
+                // straight away when they pick a past/today start date).
+                await materializeSingleTemplate(
+                    tx as unknown as Parameters<typeof materializeSingleTemplate>[0],
+                    {
+                        id: recurring.id,
+                        userId: recurring.userId,
+                        originAccountId: recurring.originAccountId,
+                        targetAccountId: recurring.targetAccountId,
+                        amount: toMoneyNumber(recurring.amount),
+                        notes: recurring.notes,
+                        interval: recurring.interval as TransactionInterval,
+                        type: recurring.type as TransactionType,
+                        category: recurring.category,
+                        startDate: recurring.startDate,
+                        endDate: recurring.endDate,
+                        nextOccurrenceAt: recurring.nextOccurrenceAt,
+                        lastOccurrenceAt: recurring.lastOccurrenceAt,
+                        active: recurring.active,
+                    },
+                    now
+                );
+
+                return recurring;
+            });
+
+            return NextResponse.json(
+                { recurringTransaction: toJsonSafe(created) },
+                { status: 201 }
+            );
+        }
 
         const db = prisma as unknown as {
             $transaction: <T>(fn: (tx: {
@@ -216,7 +294,7 @@ export async function POST(request: Request) {
                     targetAccountId: resolvedTargetId,
                     amount: parsedAmount,
                     notes: notes ? String(notes).trim() : "",
-                    interval: (interval as TransactionInterval) ?? "ONCE",
+                    interval: normalizedInterval,
                     type: normalizedType,
                     category: categoryId,
                     occurredAt: occurredAtDate,
