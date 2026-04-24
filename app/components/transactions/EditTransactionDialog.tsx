@@ -176,7 +176,7 @@ function FormContent({
           month: "short",
           year: "numeric",
         })
-      : "Pick expiration date";
+      : "No end date";
   const formatTransactionDateLabel = (date: Date) =>
     date.toLocaleDateString(undefined, {
       day: "2-digit",
@@ -488,7 +488,7 @@ function FormContent({
 
           {interval !== "ONCE" ? (
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Expires</label>
+              <label className="text-sm text-muted-foreground">End date (optional)</label>
               <Popover
                 open={isExpiresPopoverOpen}
                 onOpenChange={(open) => {
@@ -530,15 +530,14 @@ function FormContent({
                   />
                 </PopoverContent>
               </Popover>
-              <p className="text-xs text-muted-foreground">Expires must be tomorrow or later.</p>
+              <p className="text-xs text-muted-foreground">Leave empty to keep repeating until you pause or delete it.</p>
             </div>
           ) : null}
 
           {interval !== "ONCE" ? (
             <div className="rounded-md border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground lg:col-span-2">
-              The schedule for this transaction lives on the recurring template.
-              Edit the schedule (including pausing it) from Settings → Recurring
-              Transactions.
+              This is a recurring transaction. Change or pause its schedule from
+              Settings → Recurring Transactions.
             </div>
           ) : null}
         </div>

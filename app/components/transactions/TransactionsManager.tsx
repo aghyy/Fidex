@@ -71,6 +71,29 @@ function formatDateTime(dateString?: string): string {
   });
 }
 
+const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+  EXPENSE: "Expense",
+  INCOME: "Income",
+  TRANSFER: "Transfer",
+};
+
+const INTERVAL_LABELS: Record<string, string> = {
+  ONCE: "One-time",
+  DAILY: "Daily",
+  WEEKLY: "Weekly",
+  MONTHLY: "Monthly",
+  QUARTERLY: "Quarterly",
+  YEARLY: "Yearly",
+};
+
+function formatIntervalLabel(interval: string): string {
+  return INTERVAL_LABELS[interval] ?? interval;
+}
+
+function formatTypeLabel(type: string): string {
+  return TRANSACTION_TYPE_LABELS[type] ?? type;
+}
+
 function TransactionDetailsDialog({
   transaction,
   accounts,
@@ -148,25 +171,24 @@ function TransactionDetailsDialog({
                   </span>
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Type:</span> {transaction.type}
+                  <span className="text-muted-foreground">Type:</span> {formatTypeLabel(transaction.type)}
                 </p>
                 <p>
                   <span className="text-muted-foreground">Category:</span> {categoryName}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Pending:</span> {transaction.pending ? "Yes" : "No"}
+                  <span className="text-muted-foreground">Status:</span> {transaction.pending ? "Pending" : "Booked"}
                 </p>
+                {transaction.interval !== "ONCE" ? (
+                  <p>
+                    <span className="text-muted-foreground">Repeats:</span> {formatIntervalLabel(transaction.interval)}
+                  </p>
+                ) : null}
                 <p>
-                  <span className="text-muted-foreground">Interval:</span> {transaction.interval}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Occurred:</span> {formatDateTime(transaction.occurredAt || transaction.createdAt)}
+                  <span className="text-muted-foreground">Date:</span> {formatDateTime(transaction.occurredAt || transaction.createdAt)}
                 </p>
                 <p>
                   <span className="text-muted-foreground">Created:</span> {formatDateTime(transaction.createdAt)}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Expires:</span> {formatDateTime(transaction.expires)}
                 </p>
               </div>
             </div>
@@ -419,13 +441,13 @@ export default function TransactionsManager({
                     ) : null}
                   </span>
                   <span>•</span>
-                  <span className="capitalize">{transaction.type.toLowerCase()}</span>
+                  <span>{formatTypeLabel(transaction.type)}</span>
                   {transaction.interval !== "ONCE" && (
                     <>
                       <span>•</span>
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {transaction.interval}
+                        {formatIntervalLabel(transaction.interval)}
                       </span>
                     </>
                   )}

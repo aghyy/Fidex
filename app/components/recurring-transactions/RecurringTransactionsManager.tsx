@@ -45,6 +45,14 @@ function formatDate(value?: string | null): string {
   });
 }
 
+const INTERVAL_LABELS: Record<string, string> = {
+  DAILY: "Daily",
+  WEEKLY: "Weekly",
+  MONTHLY: "Monthly",
+  QUARTERLY: "Quarterly",
+  YEARLY: "Yearly",
+};
+
 function getTypeColor(type: string): string {
   switch (type) {
     case "EXPENSE":
@@ -199,8 +207,8 @@ export default function RecurringTransactionsManager() {
       <div className="rounded-xl glass-tile p-8 text-center text-muted-foreground">
         <p>No recurring transactions yet.</p>
         <p className="mt-2 text-sm">
-          Create one from the transactions page by selecting an interval other than
-          &quot;Once&quot;.
+          When you create a transaction, pick a repeat interval like Monthly or
+          Weekly to set one up.
         </p>
       </div>
     );
@@ -228,16 +236,16 @@ export default function RecurringTransactionsManager() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{title}</span>
-                  <span className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    {item.interval}
+                    {INTERVAL_LABELS[item.interval] ?? item.interval}
                   </span>
                   {item.active ? (
-                    <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600">
+                    <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-600">
                       Active
                     </span>
                   ) : (
-                    <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
+                    <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-600">
                       Paused
                     </span>
                   )}
@@ -262,14 +270,17 @@ export default function RecurringTransactionsManager() {
                 </div>
                 <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-3">
                   <span>
-                    <span className="font-medium">Starts:</span> {formatDate(item.startDate)}
+                    <span className="font-medium">Started:</span> {formatDate(item.startDate)}
                   </span>
                   <span>
-                    <span className="font-medium">Next:</span> {formatDate(item.nextOccurrenceAt)}
+                    <span className="font-medium">Next:</span>{" "}
+                    {item.active ? formatDate(item.nextOccurrenceAt) : "Paused"}
                   </span>
-                  <span>
-                    <span className="font-medium">Ends:</span> {formatDate(item.endDate)}
-                  </span>
+                  {item.endDate ? (
+                    <span>
+                      <span className="font-medium">Ends:</span> {formatDate(item.endDate)}
+                    </span>
+                  ) : null}
                 </div>
                 {item.notes ? (
                   <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
@@ -282,8 +293,8 @@ export default function RecurringTransactionsManager() {
                   type="button"
                   onClick={() => runNow(item)}
                   className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-                  aria-label="Run due occurrences now"
-                  title="Run due occurrences now"
+                  aria-label="Add any due transactions now"
+                  title="Add any due transactions now"
                   disabled={busyId === item.id}
                 >
                   <RefreshCcw className="h-4 w-4" />
@@ -321,7 +332,7 @@ export default function RecurringTransactionsManager() {
         open={deleteConfirm !== null}
         onOpenChange={(open) => !open && setDeleteConfirm(null)}
         title="Delete recurring transaction"
-        description="This stops future materializations. Already created transactions will remain untouched."
+        description="No more transactions will be added after this. Transactions already created stay in place."
         confirmLabel="Delete"
         cancelLabel="Cancel"
         variant="destructive"

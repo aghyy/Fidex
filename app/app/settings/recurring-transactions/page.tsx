@@ -52,8 +52,7 @@ export default function RecurringTransactionsSettingsPage() {
       </div>
 
       <p className="mb-4 text-sm text-muted-foreground">
-        Templates that automatically create transactions on a schedule. A Vercel cron
-        job runs nightly and materializes any due occurrences.
+        Subscriptions, bills, and other transactions that repeat on a schedule.
       </p>
 
       <RecurringTransactionsManager />

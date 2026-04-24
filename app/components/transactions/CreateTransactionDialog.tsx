@@ -254,7 +254,7 @@ function FormContent({
         month: "short",
         year: "numeric",
       })
-      : "Pick expiration date";
+      : "No end date";
   const tomorrowStart = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -511,7 +511,7 @@ function FormContent({
 
           {interval !== "ONCE" ? (
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Expires</label>
+              <label className="text-sm text-muted-foreground">End date (optional)</label>
               <Popover
                 open={isExpiresPopoverOpen}
                 onOpenChange={(open) => {
@@ -553,15 +553,14 @@ function FormContent({
                   />
                 </PopoverContent>
               </Popover>
-              <p className="text-xs text-muted-foreground">Optional end date for the recurrence.</p>
+              <p className="text-xs text-muted-foreground">Leave empty to keep repeating until you pause or delete it.</p>
             </div>
           ) : null}
 
           {interval !== "ONCE" ? (
             <div className="rounded-md border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground lg:col-span-2">
-              This creates a recurring template. A scheduled job materializes future
-              occurrences automatically. You can pause, resume, or delete it from
-              Settings → Recurring Transactions.
+              This transaction will repeat automatically. You can pause or stop it
+              anytime from Settings → Recurring Transactions.
             </div>
           ) : null}
         </div>
