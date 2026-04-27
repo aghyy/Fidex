@@ -165,7 +165,7 @@ export default function FinancialStatementPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-2xl font-bold flex-1">Financial Statement (PDF)</h1>
+        <h1 className="text-2xl font-bold flex-1">Financial Statement</h1>
       </div>
 
       <section className="rounded-xl glass-card p-4 sm:p-6">
