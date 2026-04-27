@@ -12,18 +12,22 @@ import { IconFileExport, IconCalendar } from "@tabler/icons-react";
 import type { Account } from "@/types/accounts";
 import type { Category } from "@/types/categories";
 
-function toISODate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+function toLocalISODate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export default function FinancialStatementPage() {
   const { status } = useSession();
   const router = useRouter();
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const currentYear = now.getFullYear();
 
   const [fromDate, setFromDate] = useState<Date>(() => new Date(currentYear, 0, 1));
-  const [toDate, setToDate] = useState<Date>(() => new Date(currentYear, 11, 31));
+  const [toDate, setToDate] = useState<Date>(() => today);
   const [fromPopoverOpen, setFromPopoverOpen] = useState(false);
   const [toPopoverOpen, setToPopoverOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -91,8 +95,8 @@ export default function FinancialStatementPage() {
     setError(null);
     setLoading(true);
     try {
-      const from = toISODate(fromDate);
-      const to = toISODate(toDate);
+      const from = toLocalISODate(fromDate);
+      const to = toLocalISODate(toDate);
       const params = new URLSearchParams({ from, to });
       if (selectedAccountIds.size < accounts.length) {
         params.set("accounts", [...selectedAccountIds].join(","));
@@ -192,9 +196,13 @@ export default function FinancialStatementPage() {
                     mode="single"
                     selected={fromDate}
                     onSelect={(date) => {
-                      if (date) setFromDate(date);
+                      if (date) {
+                        setFromDate(date);
+                        if (date > toDate) setToDate(date > today ? today : date);
+                      }
                       setFromPopoverOpen(false);
                     }}
+                    disabled={(date) => date > today}
                     initialFocus
                   />
                 </PopoverContent>
@@ -224,7 +232,7 @@ export default function FinancialStatementPage() {
                       if (date) setToDate(date);
                       setToPopoverOpen(false);
                     }}
-                    disabled={(date) => date < fromDate}
+                    disabled={(date) => date < fromDate || date > today}
                     initialFocus
                   />
                 </PopoverContent>

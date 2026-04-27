@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Area,
   Bar,
@@ -37,15 +38,31 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { formatEurAmount } from "@/lib/money";
+import EditTransactionDialog from "@/components/transactions/EditTransactionDialog";
+import { Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  MorphingDialog,
+  MorphingDialogContainer,
+  MorphingDialogContent,
+  MorphingDialogDescription,
+  MorphingDialogTitle,
+  MorphingDialogTrigger,
+} from "@/components/motion-primitives/morphing-dialog";
 
 type DashboardTransaction = {
   id: string;
   originAccountId: string;
   targetAccountId: string;
-  amount: string | number;
+  amount: string;
+  notes: string;
+  interval: string;
   type: TransactionType;
   category: string;
   occurredAt: string;
+  pending: boolean;
+  createdAt: string;
+  expires: string;
 };
 
 type PeriodMode = "month" | "year";
@@ -220,6 +237,7 @@ export function DashboardOverviewSkeleton() {
 
 export default function DashboardOverview() {
   const { status: sessionStatus } = useSession();
+  const router = useRouter();
   const categoryListDefaultLimit = 5;
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -237,6 +255,8 @@ export default function DashboardOverview() {
   const [error, setError] = useState<string | null>(null);
   const [showAllSpendingCategories, setShowAllSpendingCategories] = useState(false);
   const [showAllEarningCategories, setShowAllEarningCategories] = useState(false);
+  const [showAllPlannedTransactions, setShowAllPlannedTransactions] = useState(false);
+  const [deleteConfirmTransaction, setDeleteConfirmTransaction] = useState<DashboardTransaction | null>(null);
   const [activeChartIndex, setActiveChartIndex] = useState(0);
   const [hasLoadedChartIndex, setHasLoadedChartIndex] = useState(false);
   const isFilterChangeInProgress = useRef(false);
@@ -288,47 +308,72 @@ export default function DashboardOverview() {
     window.localStorage.setItem("dashboardPeriodMonth", appliedSelectedMonth);
   }, [appliedPeriodMode, appliedSelectedYear, appliedSelectedMonth, hasLoadedPeriodFilter]);
 
+  const loadDashboardData = useCallback(async () => {
+    if (!hasLoadedPeriodFilter) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const txParams = new URLSearchParams({
+        from: range.start.toISOString(),
+        to: balanceCutoff.toISOString(),
+        includePending: String(includePending),
+      });
+      const [accountsRes, categoriesRes, txRes, allTxRes] = await Promise.all([
+        fetch("/api/account", { credentials: "include" }),
+        fetch("/api/category", { credentials: "include" }),
+        fetch(`/api/transaction?${txParams.toString()}`, { credentials: "include" }),
+          fetch(`/api/transaction?${new URLSearchParams({ includePending: "true" }).toString()}`, { credentials: "include" }),
+      ]);
+
+      if (!accountsRes.ok || !categoriesRes.ok || !txRes.ok || !allTxRes.ok) {
+        throw new Error("Failed to load dashboard data");
+      }
+
+      const accountsData = await accountsRes.json();
+      const categoriesData = await categoriesRes.json();
+      const txData = await txRes.json();
+      const allTxData = await allTxRes.json();
+
+      setAccounts(accountsData.accounts ?? []);
+      setCategories(categoriesData.categories ?? []);
+      setTransactions(txData.transactions ?? []);
+      setAllTransactions(allTxData.transactions ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  }, [range.start, balanceCutoff, includePending, hasLoadedPeriodFilter]);
+
   useEffect(() => {
     if (sessionStatus !== "authenticated") return;
+    if (!hasLoadedPeriodFilter) return;
 
-    async function loadDashboardData() {
+    async function load() {
       setLoading(true);
-      setError(null);
-      try {
-        const txParams = new URLSearchParams({
-          from: range.start.toISOString(),
-          to: balanceCutoff.toISOString(),
-          includePending: String(includePending),
-        });
-        const [accountsRes, categoriesRes, txRes, allTxRes] = await Promise.all([
-          fetch("/api/account", { credentials: "include" }),
-          fetch("/api/category", { credentials: "include" }),
-          fetch(`/api/transaction?${txParams.toString()}`, { credentials: "include" }),
-          fetch(`/api/transaction?${new URLSearchParams({ includePending: String(includePending) }).toString()}`, { credentials: "include" }),
-        ]);
-
-        if (!accountsRes.ok || !categoriesRes.ok || !txRes.ok || !allTxRes.ok) {
-          throw new Error("Failed to load dashboard data");
-        }
-
-        const accountsData = await accountsRes.json();
-        const categoriesData = await categoriesRes.json();
-        const txData = await txRes.json();
-        const allTxData = await allTxRes.json();
-
-        setAccounts(accountsData.accounts ?? []);
-        setCategories(categoriesData.categories ?? []);
-        setTransactions(txData.transactions ?? []);
-        setAllTransactions(allTxData.transactions ?? []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
+      await loadDashboardData();
     }
 
-    void loadDashboardData();
-  }, [sessionStatus, range.start, balanceCutoff, includePending]);
+    void load();
+  }, [sessionStatus, hasLoadedPeriodFilter, loadDashboardData]);
+
+  const handleDeletePlannedTransaction = useCallback(async () => {
+    if (!deleteConfirmTransaction) return;
+    try {
+      const res = await fetch(`/api/transaction/${deleteConfirmTransaction.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Failed to delete transaction");
+      setTransactions((prev) => prev.filter((t) => t.id !== deleteConfirmTransaction.id));
+      setAllTransactions((prev) => prev.filter((t) => t.id !== deleteConfirmTransaction.id));
+      setDeleteConfirmTransaction(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete transaction");
+      throw err;
+    }
+  }, [deleteConfirmTransaction]);
 
   // When data finishes reloading after a filter change, allow scroll-sync again.
   useEffect(() => {
@@ -658,6 +703,24 @@ export default function DashboardOverview() {
     [showAllEarningCategories, categoryIncomeData]
   );
 
+  const plannedTransactions = useMemo(() => {
+    const now = new Date();
+    return allTransactions
+      .filter((tx) => {
+        const occurredAt = new Date(tx.occurredAt);
+        return !Number.isNaN(occurredAt.getTime()) && occurredAt.getTime() > now.getTime();
+      })
+      .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
+  }, [allTransactions]);
+
+  const visiblePlannedTransactions = useMemo(
+    () =>
+      showAllPlannedTransactions
+        ? plannedTransactions
+        : plannedTransactions.slice(0, categoryListDefaultLimit),
+    [showAllPlannedTransactions, plannedTransactions, categoryListDefaultLimit]
+  );
+
   const accountOverview = useMemo(() => {
     const stats = new Map<
       string,
@@ -885,10 +948,7 @@ export default function DashboardOverview() {
       </div>
 
       <div className="rounded-2xl glass-card p-4 sm:p-6">
-        <h3 className="mb-1 text-base font-semibold">Cashflow & categories</h3>
-        <p className="mb-4 text-xs text-muted-foreground">
-          Swipe to explore cashflow, stacked spending, and radar view.
-        </p>
+        <h3 className="mb-4 text-base font-semibold">Cashflow & categories</h3>
 
         <div
           ref={chartsContainerRef}
@@ -1104,10 +1164,150 @@ export default function DashboardOverview() {
         </div>
       </div>
 
+      <div className="rounded-2xl glass-card p-4 sm:p-6">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold">Planned Transactions</h3>
+          </div>
+          <Button asChild type="button" variant="glass" size="sm">
+            <Link href="/transactions">Manage</Link>
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {visiblePlannedTransactions.map((tx) => {
+            const amount = parseAmount(tx.amount);
+            const category = categoryById.get(tx.category);
+            const occurredAt = new Date(tx.occurredAt);
+            const txTypeLabel =
+              tx.type === "INCOME" ? "Income" : tx.type === "EXPENSE" ? "Expense" : "Transfer";
+            const amountClassName =
+              tx.type === "INCOME"
+                ? "text-green-600"
+                : tx.type === "EXPENSE"
+                  ? "text-red-600"
+                  : "text-blue-600";
+
+            return (
+              <MorphingDialog key={tx.id}>
+                <div className="flex items-center justify-between rounded-lg glass-tile p-1">
+                  <MorphingDialogTrigger
+                    className="h-auto flex-1 rounded-md p-2 text-left text-foreground"
+                    aria-label="Open planned transaction details"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{category?.name ?? "Unknown category"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {txTypeLabel} ·{" "}
+                          {Number.isNaN(occurredAt.getTime())
+                            ? "Invalid date"
+                            : occurredAt.toLocaleDateString()}
+                        </p>
+                      </div>
+                      <p className={`shrink-0 text-sm font-semibold ${amountClassName}`}>
+                        {tx.type === "EXPENSE" ? "-" : tx.type === "INCOME" ? "+" : ""}
+                        EUR {formatEurAmount(amount)}
+                      </p>
+                    </div>
+                  </MorphingDialogTrigger>
+                  <div className="ml-1 flex items-center gap-1">
+                    <EditTransactionDialog
+                      transaction={tx}
+                      accounts={accounts}
+                      categories={categories}
+                      onUpdated={(updated) => {
+                        setTransactions((prev) =>
+                          prev.map((transaction) => (transaction.id === updated.id ? updated : transaction))
+                        );
+                        setAllTransactions((prev) =>
+                          prev.map((transaction) => (transaction.id === updated.id ? updated : transaction))
+                        );
+                        void loadDashboardData();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirmTransaction(tx)}
+                      className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
+                      aria-label="Delete planned transaction"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <MorphingDialogContainer>
+                  <MorphingDialogContent
+                    className="w-full max-w-2xl rounded-2xl glass-dialog p-5 shadow-xl"
+                    style={{ overflow: "visible" }}
+                  >
+                    <MorphingDialogTitle className="text-xl">Transaction Details</MorphingDialogTitle>
+                    <MorphingDialogDescription className="text-sm text-muted-foreground">
+                      Read-only transaction information.
+                    </MorphingDialogDescription>
+                    <div className="mt-4 space-y-4">
+                      <div className="rounded-lg border p-3">
+                        <p className="text-base font-semibold">{category?.name ?? "Unknown category"}</p>
+                        <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                          <p>
+                            <span className="text-muted-foreground">Amount:</span>{" "}
+                            <span className={amountClassName}>EUR {formatEurAmount(amount)}</span>
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">Type:</span> {txTypeLabel}
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">Status:</span>{" "}
+                            {tx.pending ? "Pending" : "Booked"}
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">Date:</span>{" "}
+                            {Number.isNaN(occurredAt.getTime())
+                              ? "Invalid date"
+                              : occurredAt.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="rounded-lg border p-3 text-sm">
+                        <p className="text-muted-foreground">Notes</p>
+                        <p className="mt-1 whitespace-pre-wrap">{tx.notes?.trim() ? tx.notes : "-"}</p>
+                      </div>
+                    </div>
+                  </MorphingDialogContent>
+                </MorphingDialogContainer>
+              </MorphingDialog>
+            );
+          })}
+          {plannedTransactions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No planned transactions.</p>
+          ) : null}
+          {plannedTransactions.length > categoryListDefaultLimit ? (
+            <Button
+              type="button"
+              variant="glass"
+              size="sm"
+              onClick={() => setShowAllPlannedTransactions((prev) => !prev)}
+            >
+              {showAllPlannedTransactions
+                ? "Show less"
+                : `Show more (${plannedTransactions.length - categoryListDefaultLimit} more)`}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <ConfirmDialog
+        open={deleteConfirmTransaction !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmTransaction(null)}
+        title="Delete transaction"
+        description="Are you sure you want to delete this transaction? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={handleDeletePlannedTransaction}
+      />
+
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
         <div className="rounded-2xl glass-card p-4 sm:p-6">
-          <h3 className="mb-1 text-base font-semibold">Spending by Category</h3>
-          <p className="mb-4 text-xs text-muted-foreground">Only expense transactions are included.</p>
+          <h3 className="mb-4 text-base font-semibold">Spending by Category</h3>
           <ChartContainer config={spendingChartConfig} className="h-[260px] w-full">
             <BarChart data={categorySpendData}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -1160,7 +1360,7 @@ export default function DashboardOverview() {
             {categorySpendData.length > categoryListDefaultLimit ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="glass"
                 size="sm"
                 onClick={() => setShowAllSpendingCategories((prev) => !prev)}
               >
@@ -1171,8 +1371,7 @@ export default function DashboardOverview() {
         </div>
 
         <div className="rounded-2xl glass-card p-4 sm:p-6">
-          <h3 className="mb-1 text-base font-semibold">Earnings by Category</h3>
-          <p className="mb-4 text-xs text-muted-foreground">Only income transactions are included.</p>
+          <h3 className="mb-4 text-base font-semibold">Earnings by Category</h3>
           <ChartContainer config={earningChartConfig} className="h-[260px] w-full">
             <BarChart data={categoryIncomeData}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -1225,7 +1424,7 @@ export default function DashboardOverview() {
             {categoryIncomeData.length > categoryListDefaultLimit ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="glass"
                 size="sm"
                 onClick={() => setShowAllEarningCategories((prev) => !prev)}
               >

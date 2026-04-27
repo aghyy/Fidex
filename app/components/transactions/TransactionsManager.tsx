@@ -378,6 +378,12 @@ export default function TransactionsManager({
     }
   }
 
+  function isPlannedTransaction(transaction: Transaction): boolean {
+    const occurredAt = new Date(transaction.occurredAt || transaction.createdAt);
+    if (Number.isNaN(occurredAt.getTime())) return false;
+    return occurredAt.getTime() > Date.now();
+  }
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -419,6 +425,11 @@ export default function TransactionsManager({
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{getTransactionTitle(transaction)}</span>
+                  {isPlannedTransaction(transaction) ? (
+                    <span className="rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-600">
+                      Planned
+                    </span>
+                  ) : null}
                   {transaction.pending ? (
                     <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
                       Pending

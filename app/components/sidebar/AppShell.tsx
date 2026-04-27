@@ -10,7 +10,7 @@ import {
 import {
   IconLayoutDashboard,
   IconWallet,
-  IconReceipt,
+  IconArrowsExchange,
   IconFileDescription,
   IconSettings,
 } from "@tabler/icons-react";
@@ -22,14 +22,16 @@ import DynamicCategories from "./DynamicCategories";
 import { useCategories, useCategoriesBootstrap } from "@/state/categories";
 import DynamicAccounts from "./DynamicAccounts";
 import { useAccountsBootstrap, useAccounts } from "@/state/accounts";
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { accentAtom } from "@/state/theme";
+import { profileAtom } from "@/state/profile";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const categoriesState = useCategories();
   const accountsState = useAccounts();
+  const profile = useAtomValue(profileAtom);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<BasicUser | null>(null);
@@ -44,9 +46,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         .then((data) => {
           if (data.user) {
             setProfileData(data.user);
-            if (data.user.image) {
-              setProfileImage(data.user.image as string);
-            }
+            setProfileImage(typeof data.user.image === "string" && data.user.image ? data.user.image : null);
             if (typeof data.user.accentColor === "string" && data.user.accentColor) {
               setAccent(data.user.accentColor);
             }
@@ -56,6 +56,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         .finally(() => setImageLoading(false));
     }
   }, [session?.user, setAccent]);
+
+  useEffect(() => {
+    if (!profile) return;
+    setProfileImage(typeof profile.image === "string" && profile.image ? profile.image : null);
+    setProfileData((prev) => ({
+      ...(prev ?? ({} as BasicUser)),
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      username: profile.username,
+      email: profile.email,
+      image: profile.image || null,
+    }));
+  }, [profile]);
 
   // Bootstrap categories global store when authenticated
   useCategoriesBootstrap(Boolean(session?.user));
@@ -82,7 +95,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     {
       label: "Transactions",
       href: "/transactions",
-      icon: <IconReceipt className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
+      icon: <IconArrowsExchange className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />,
     },
     {
       label: "Documents",

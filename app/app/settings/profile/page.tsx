@@ -253,7 +253,7 @@ export default function ProfileSettingsPage() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   disabled={isOAuthUser}
-                  className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="glass-form-trigger min-h-9 w-full rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="First name"
                 />
               </div>
@@ -264,7 +264,7 @@ export default function ProfileSettingsPage() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   disabled={isOAuthUser}
-                  className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="glass-form-trigger min-h-9 w-full rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Last name"
                 />
               </div>
@@ -276,7 +276,7 @@ export default function ProfileSettingsPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                className="glass-form-trigger min-h-9 w-full rounded-md px-3 py-2 text-sm"
                 placeholder="username"
               />
               <p className="text-[10px] text-muted-foreground mt-1">3-20 characters, letters, numbers, and underscores</p>
@@ -288,7 +288,7 @@ export default function ProfileSettingsPage() {
                 type="email"
                 value={email}
                 disabled
-                className="w-full px-3 py-2 text-sm border rounded-md bg-muted text-muted-foreground cursor-not-allowed"
+                className="glass-form-trigger min-h-9 w-full rounded-md px-3 py-2 text-sm text-muted-foreground cursor-not-allowed disabled:opacity-70"
               />
               <p className="text-[10px] text-muted-foreground mt-1">Email cannot be changed</p>
             </div>

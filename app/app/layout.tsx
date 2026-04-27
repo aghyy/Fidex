@@ -29,9 +29,6 @@ export const metadata: Metadata = {
   },
 };
 
-// TODO: future transactions
-// TODO: check mobile responsiveness
-
 export default function RootLayout({
   children,
 }: Readonly<{

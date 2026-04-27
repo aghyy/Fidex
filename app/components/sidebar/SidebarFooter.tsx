@@ -13,7 +13,7 @@ import {
   MorphingDialogContent,
 } from "../motion-primitives/morphing-dialog";
 import { useSidebar } from "../ui/sidebar";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useMemo } from "react";
 
 interface SidebarFooterProps {
   sessionUser?: BasicUser;
@@ -28,88 +28,41 @@ export default function SidebarFooter({
   profileData,
   imageLoading
 }: SidebarFooterProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const triggerContentRef = useRef<{
-    image: string | null;
-    initials: string;
-    userName: string;
-    username: string;
-  } | null>(null);
-
   const triggerFirstName = profileData?.firstName || sessionUser?.firstName || "";
   const triggerLastName = profileData?.lastName || sessionUser?.lastName || "";
   const triggerEmail = sessionUser?.email || "";
   const triggerUsername = profileData?.username || "user";
-  const triggerInitials = triggerFirstName && triggerLastName
-    ? `${triggerFirstName[0]}${triggerLastName[0]}`.toUpperCase()
-    : (triggerEmail?.[0] || "U").toUpperCase();
+  const triggerInitials = useMemo(() => {
+    const first = triggerFirstName.trim();
+    const last = triggerLastName.trim();
+    if (first && last) return `${first[0]}${last[0]}`.toUpperCase();
+    if (first) return first.slice(0, 2).toUpperCase();
+    if (last) return last.slice(0, 2).toUpperCase();
+    if (triggerUsername) return triggerUsername.slice(0, 2).toUpperCase();
+    if (triggerEmail) return triggerEmail.slice(0, 2).toUpperCase();
+    return "U";
+  }, [triggerFirstName, triggerLastName, triggerUsername, triggerEmail]);
   const triggerUserNameLabel = triggerFirstName && triggerLastName ? `${triggerFirstName} ${triggerLastName}` : "User";
 
   const { open } = useSidebar();
 
-  const { displayImage, displayInitials, displayUserName, displayUsername } = useMemo(() => {
-    if (isDialogOpen && triggerContentRef.current) {
-      return {
-        displayImage: triggerContentRef.current.image,
-        displayInitials: triggerContentRef.current.initials,
-        displayUserName: triggerContentRef.current.userName,
-        displayUsername: triggerContentRef.current.username,
-      };
-    }
-    return {
-      displayImage: profileImage,
-      displayInitials: triggerInitials,
-      displayUserName: triggerUserNameLabel,
-      displayUsername: triggerUsername,
-    };
-  }, [isDialogOpen, profileImage, triggerInitials, triggerUserNameLabel, triggerUsername]);
-
   // TODO: dont allow change username more than 3 times in 30 days but one can always change to old username for 14 days (new table for reserved usernames)
   // TODO: allow change email but with verification email (new table for email verification tokens)
 
-  useEffect(() => {
-    // no-op: dialog now shows read-only info
-  }, [sessionUser]);
-
-  useEffect(() => {
-    const handleDialogOpen = () => {
-      triggerContentRef.current = {
-        image: profileImage,
-        initials: triggerInitials,
-        userName: triggerUserNameLabel,
-        username: triggerUsername,
-      };
-      setIsDialogOpen(true);
-    };
-
-    const handleDialogClose = () => {
-      setIsDialogOpen(false);
-      setTimeout(() => triggerContentRef.current = null, 300);
-    };
-
-    window.addEventListener('morphing-dialog:opened', handleDialogOpen);
-    window.addEventListener('morphing-dialog:closed', handleDialogClose);
-
-    return () => {
-      window.removeEventListener('morphing-dialog:opened', handleDialogOpen);
-      window.removeEventListener('morphing-dialog:closed', handleDialogClose);
-    };
-  }, [profileImage, triggerInitials, triggerUserNameLabel, triggerUsername, profileData, sessionUser]);
-
-  // All profile editing moved to settings page; dialog is read-only now
-
   const triggerContent = useMemo(() => (
-    <Avatar className="h-10 w-10 border-2 border-white/30 hover:border-white/50 transition-colors">
-      {!imageLoading && displayImage ? (
-        <AvatarImage src={displayImage} alt={displayUserName} />
+    <Avatar
+      key={profileImage ?? "no-image"}
+      className="h-10 w-10 border-2 border-white/30 hover:border-white/50 transition-colors"
+    >
+      {!imageLoading && profileImage ? (
+        <AvatarImage src={profileImage} alt={triggerUserNameLabel} />
       ) : (
         <AvatarFallback className="text-xs font-semibold">
-          {displayInitials}
+          {triggerInitials}
         </AvatarFallback>
       )}
     </Avatar>
-  ), [imageLoading, displayImage, displayInitials, displayUserName]);
+  ), [imageLoading, profileImage, triggerInitials, triggerUserNameLabel]);
 
   const triggerText = useMemo(() => (
     <div
@@ -117,14 +70,14 @@ export default function SidebarFooter({
         !open ? "w-0 overflow-hidden opacity-0" : "opacity-100"
       }`}
     >
-      <span className="text-[13px] truncate" title={displayUserName}>
-        {displayUserName}
+      <span className="text-[13px] truncate" title={triggerUserNameLabel}>
+        {triggerUserNameLabel}
       </span>
-      <span className="text-[11px] text-muted-foreground truncate text-left" title={`@${displayUsername}`}>
-        @{displayUsername}
+      <span className="text-[11px] text-muted-foreground truncate text-left" title={`@${triggerUsername}`}>
+        @{triggerUsername}
       </span>
     </div>
-  ), [open, displayUserName, displayUsername]);
+  ), [open, triggerUserNameLabel, triggerUsername]);
 
   return (
     <div className={`flex flex-col transition-all duration-200 gap-2`}>
@@ -132,12 +85,6 @@ export default function SidebarFooter({
         <div className="flex items-center justify-between gap-2">
           <MorphingDialogTrigger
             className={`flex w-full items-center overflow-visible rounded-md gap-2 -ml-[0.125rem]`}
-            style={isDialogOpen ? {
-              pointerEvents: 'none',
-              position: 'fixed',
-              zIndex: -1,
-              opacity: 0
-            } : undefined}
           >
             {triggerContent}
             {triggerText}
@@ -151,12 +98,12 @@ export default function SidebarFooter({
           >
             <div className="space-y-5">
               <div className="flex flex-col items-center gap-3">
-                <Avatar className="h-20 w-20 border-2">
-                  {!imageLoading && displayImage ? (
-                    <AvatarImage src={displayImage} alt={displayUserName} />
+                <Avatar key={profileImage ?? "no-image-dialog"} className="h-20 w-20 border-2">
+                  {!imageLoading && profileImage ? (
+                    <AvatarImage src={profileImage} alt={triggerUserNameLabel} />
                   ) : (
                     <AvatarFallback className="text-xl font-semibold">
-                      {displayInitials}
+                      {triggerInitials}
                     </AvatarFallback>
                   )}
                 </Avatar>

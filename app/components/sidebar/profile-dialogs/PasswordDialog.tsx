@@ -80,7 +80,7 @@ export default function PasswordDialog() {
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="glass-form-trigger min-h-9 w-full rounded-md px-3 py-2 text-sm"
             placeholder="Enter current password"
           />
         </div>
@@ -93,7 +93,7 @@ export default function PasswordDialog() {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="glass-form-trigger min-h-9 w-full rounded-md px-3 py-2 text-sm"
             placeholder="Min 6 characters"
           />
         </div>
@@ -106,7 +106,7 @@ export default function PasswordDialog() {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="glass-form-trigger min-h-9 w-full rounded-md px-3 py-2 text-sm"
             placeholder="Confirm new password"
           />
         </div>

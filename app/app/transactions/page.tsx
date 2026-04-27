@@ -89,11 +89,6 @@ export default function TransactionsPage() {
     () => getRange(periodMode, selectedMonth, selectedYear),
     [periodMode, selectedMonth, selectedYear]
   );
-  const effectiveTo = useMemo(() => {
-    const now = new Date();
-    return range.end.getTime() > now.getTime() ? now : range.end;
-  }, [range.end]);
-
   useEffect(() => {
     if (periodOptions.years.length > 0 && !periodOptions.years.includes(selectedYear)) {
       setSelectedYear(periodOptions.years[0]);
@@ -149,7 +144,7 @@ export default function TransactionsPage() {
             />
           </div>
         </div>
-        <TransactionsManager from={range.start.toISOString()} to={effectiveTo.toISOString()} />
+        <TransactionsManager from={range.start.toISOString()} to={range.end.toISOString()} />
       </div>
       <TransactionFAB />
     </>

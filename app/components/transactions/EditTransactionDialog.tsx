@@ -52,6 +52,9 @@ type EditTransactionDialogProps = {
   accounts: Account[];
   categories: Category[];
   onUpdated: (updated: Transaction) => void;
+  triggerClassName?: string;
+  triggerContent?: ReactNode;
+  triggerAriaLabel?: string;
 };
 
 function SafeDialogSelect({
@@ -626,13 +629,23 @@ function FormContent({
 }
 
 export default function EditTransactionDialog(props: EditTransactionDialogProps) {
+  const {
+    triggerClassName,
+    triggerContent,
+    triggerAriaLabel = "Edit transaction",
+    ...formProps
+  } = props;
+
   return (
     <MorphingDialog>
       <MorphingDialogTrigger
-        className="p-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-md transition-colors"
-        aria-label="Edit transaction"
+        className={cn(
+          "p-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-md transition-colors",
+          triggerClassName
+        )}
+        aria-label={triggerAriaLabel}
       >
-        <Pencil className="h-4 w-4" />
+        {triggerContent ?? <Pencil className="h-4 w-4" />}
       </MorphingDialogTrigger>
       <MorphingDialogContainer>
         <MorphingDialogContent
@@ -643,7 +656,7 @@ export default function EditTransactionDialog(props: EditTransactionDialogProps)
           <MorphingDialogDescription className="text-sm text-muted-foreground">
             Update transaction details.
           </MorphingDialogDescription>
-          <FormContent {...props} />
+          <FormContent {...formProps} />
         </MorphingDialogContent>
       </MorphingDialogContainer>
     </MorphingDialog>

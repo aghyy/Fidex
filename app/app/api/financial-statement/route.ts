@@ -48,6 +48,18 @@ function truncateText(text: string, maxLength: number): string {
   return text.length <= maxLength ? text : `${text.slice(0, maxLength - 1)}…`;
 }
 
+function parseLocalDateParam(value: string, endOfDay: boolean): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const date = endOfDay
+    ? new Date(year, month, day, 23, 59, 59, 999)
+    : new Date(year, month, day, 0, 0, 0, 0);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 async function loadFidexLogoPng(): Promise<Uint8Array | null> {
   const logoPath = path.join(process.cwd(), "public", "icon.png");
   try {
@@ -83,11 +95,19 @@ export async function GET(request: Request) {
       : null;
 
   const now = new Date();
-  const from = fromParam ? new Date(fromParam) : new Date(now.getFullYear(), 0, 1);
-  const to = toParam ? new Date(toParam) : new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+  const from = fromParam
+    ? parseLocalDateParam(fromParam, false)
+    : new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+  const requestedTo = toParam
+    ? parseLocalDateParam(toParam, true)
+    : new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+  if (!from || !requestedTo) {
     return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
   }
+  if (from.getTime() > requestedTo.getTime()) {
+    return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
+  }
+  const to = requestedTo.getTime() > now.getTime() ? now : requestedTo;
 
   try {
     const [user, allAccounts, categories, allTransactions, logoPngBytes] = await Promise.all([
