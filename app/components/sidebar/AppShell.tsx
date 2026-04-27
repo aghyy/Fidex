@@ -66,7 +66,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       lastName: profile.lastName,
       username: profile.username,
       email: profile.email,
-      image: profile.image || null,
+      image: profile.image || undefined,
     }));
   }, [profile]);
 
