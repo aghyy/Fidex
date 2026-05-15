@@ -112,6 +112,7 @@ async function resetUserFinanceData(userId) {
     }
 
     await tx.transaction.deleteMany({ where: { userId } });
+    await tx.recurringTransaction.deleteMany({ where: { userId } });
     await tx.budget.deleteMany({ where: { userId } });
     await tx.category.deleteMany({ where: { userId } });
     await tx.account.deleteMany({ where: { userId } });
